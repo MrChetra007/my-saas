@@ -12,6 +12,12 @@
       </button>
     </div>
 
+    <!-- Upgrade success banner -->
+    <div v-if="showUpgradedBanner" class="upgrade-banner">
+      🎉 Welcome to {{ planDisplayName }}! Your subscription is now active.
+      <button class="banner-close" @click="showUpgradedBanner = false">✕</button>
+    </div>
+
     <!-- Loading -->
     <div v-if="loading" class="loading-grid">
       <div v-for="n in 3" :key="n" class="skeleton-block"></div>
@@ -27,7 +33,6 @@
           <!-- Logo -->
           <div class="logo-row">
             <div class="logo-preview">
-              <!-- Show existing logo if available, else placeholder -->
               <img v-if="form.logoUrl" :src="form.logoUrl" alt="Restaurant Logo" class="logo-img" />
               <span v-else class="logo-placeholder">🍽️</span>
             </div>
@@ -150,7 +155,7 @@
             <span class="plan-badge" :class="`badge--${planStatus}`">{{ planBadgeLabel }}</span>
           </div>
 
-          <!-- Trial Countdown — shown when on trial -->
+          <!-- Trial Countdown -->
           <div v-if="isOnTrial" class="trial-countdown">
             <div class="countdown-header">
               <span class="countdown-title">⏳ Trial Period</span>
@@ -158,8 +163,6 @@
                 >Expires {{ formatDate(restaurant.trial_ends_at) }}</span
               >
             </div>
-
-            <!-- Big day counter -->
             <div class="countdown-days-row">
               <div class="countdown-day-block">
                 <span class="countdown-number">{{ trialTimeLeft.days }}</span>
@@ -181,8 +184,6 @@
                 <span class="countdown-unit">secs</span>
               </div>
             </div>
-
-            <!-- Progress bar -->
             <div class="trial-progress-bar">
               <div class="trial-progress-fill" :style="{ width: `${trialPercent}%` }"></div>
             </div>
@@ -193,7 +194,7 @@
             </div>
           </div>
 
-          <!-- Expired notice -->
+          <!-- Expired Notice -->
           <div v-else-if="planStatus === 'expired'" class="expired-notice">
             <span class="expired-icon">🔒</span>
             <div>
@@ -226,16 +227,32 @@
 
           <!-- CTA Buttons -->
           <div class="billing-actions">
-            <button v-if="!hasActiveSubscription" class="btn-upgrade" @click="goToCheckout">
-              ⚡ Upgrade to Pro
+            <!-- Upgrade button — shown when not subscribed -->
+            <button
+              v-if="!hasActiveSubscription"
+              class="btn-upgrade"
+              @click="showPlanPicker = true"
+              :disabled="checkoutLoading"
+            >
+              <span v-if="checkoutLoading" class="spinner"></span>
+              <span v-else>⚡ Upgrade Plan</span>
             </button>
+
+            <!-- Manage billing — shown when subscribed and has Stripe customer -->
             <button
               v-if="hasActiveSubscription && restaurant.stripe_customer_id"
               class="btn-portal"
               @click="goToPortal"
+              :disabled="portalLoading"
             >
-              Manage Billing →
+              <span v-if="portalLoading" class="spinner spinner--dark"></span>
+              <span v-else>Manage Billing →</span>
             </button>
+          </div>
+
+          <!-- Billing error -->
+          <div v-if="billingError" class="alert alert--error" style="margin-top: 1rem">
+            {{ billingError }}
           </div>
         </div>
       </div>
@@ -253,21 +270,106 @@
         <button v-if="isDirty" class="btn-discard" @click="discardChanges">Discard</button>
       </div>
     </template>
+
+    <!-- ── Plan Picker Modal ── -->
+    <Teleport to="body">
+      <div v-if="showPlanPicker" class="modal-overlay" @click.self="showPlanPicker = false">
+        <div class="modal">
+          <div class="modal-header">
+            <h2 class="modal-title">Choose a Plan</h2>
+            <button class="modal-close" @click="showPlanPicker = false">✕</button>
+          </div>
+          <p class="modal-subtitle">You'll be taken to Stripe's secure checkout page.</p>
+
+          <div class="modal-plans">
+            <!-- Starter -->
+            <div
+              class="modal-plan"
+              :class="{ 'modal-plan--selected': selectedPlan === 'starter' }"
+              @click="selectedPlan = 'starter'"
+            >
+              <div class="modal-plan-top">
+                <div>
+                  <div class="modal-plan-name">Starter</div>
+                  <div class="modal-plan-price">$29<span>/mo</span></div>
+                </div>
+                <div class="modal-plan-check" v-if="selectedPlan === 'starter'">✓</div>
+              </div>
+              <ul class="modal-plan-features">
+                <li>Up to 3 staff accounts</li>
+                <li>Unlimited orders & tables</li>
+                <li>Kitchen, cashier & waiter views</li>
+                <li>Email support</li>
+              </ul>
+            </div>
+
+            <!-- Pro -->
+            <div
+              class="modal-plan modal-plan--featured"
+              :class="{ 'modal-plan--selected': selectedPlan === 'pro' }"
+              @click="selectedPlan = 'pro'"
+            >
+              <div class="modal-plan-popular">Most Popular</div>
+              <div class="modal-plan-top">
+                <div>
+                  <div class="modal-plan-name">Pro</div>
+                  <div class="modal-plan-price">$59<span>/mo</span></div>
+                </div>
+                <div class="modal-plan-check" v-if="selectedPlan === 'pro'">✓</div>
+              </div>
+              <ul class="modal-plan-features">
+                <li>Unlimited staff accounts</li>
+                <li>Unlimited orders & tables</li>
+                <li>Kitchen, cashier & waiter views</li>
+                <li>Dashboard analytics</li>
+                <li>Priority support</li>
+              </ul>
+            </div>
+          </div>
+
+          <button
+            class="modal-checkout-btn"
+            @click="goToCheckout"
+            :disabled="!selectedPlan || checkoutLoading"
+          >
+            <span v-if="checkoutLoading" class="spinner"></span>
+            <span v-else>Continue to Checkout →</span>
+          </button>
+
+          <p class="modal-secure">🔒 Powered by Stripe. Cancel anytime.</p>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
 
 const authStore = useAuthStore()
+const route = useRoute()
+
 const loading = ref(true)
 const saving = ref(false)
 const uploadingLogo = ref(false)
 const isDirty = ref(false)
 const saveError = ref('')
 const saveSuccess = ref('')
+
+// Stripe loading states
+const checkoutLoading = ref(false)
+const portalLoading = ref(false)
+const billingError = ref('')
+
+// Plan picker modal
+const showPlanPicker = ref(false)
+const selectedPlan = ref('pro') // default to Pro
+
+// Upgrade success banner (shown when returning from Stripe with ?upgraded=true)
+const showUpgradedBanner = ref(false)
 
 // Raw restaurant row — used for read-only billing display
 const restaurant = ref({})
@@ -311,13 +413,11 @@ const hasActiveSubscription = computed(() => {
   return plan && plan !== 'trial' && plan !== 'expired' && plan !== 'free' && plan !== null
 })
 
-// How many ms remain in trial
 const trialMsLeft = computed(() => {
   if (!restaurant.value.trial_ends_at) return 0
   return Math.max(0, new Date(restaurant.value.trial_ends_at) - now.value)
 })
 
-// Break ms into d/h/m/s for the countdown display
 const trialTimeLeft = computed(() => {
   const total = trialMsLeft.value
   const days = Math.floor(total / (1000 * 60 * 60 * 24))
@@ -332,7 +432,6 @@ const trialTimeLeft = computed(() => {
   }
 })
 
-// Days elapsed out of 14 for progress bar
 const trialTotalDays = computed(() => {
   if (!restaurant.value.trial_ends_at || !restaurant.value.created_at) return 0
   const elapsed = now.value - new Date(restaurant.value.created_at)
@@ -354,6 +453,7 @@ const planDisplayName = computed(() => {
   if (!plan || plan === 'free') return 'Free'
   if (plan === 'trial') return 'Trial'
   if (plan === 'pro') return 'Pro'
+  if (plan === 'starter') return 'Starter'
   if (plan === 'expired') return 'Expired'
   return plan.charAt(0).toUpperCase() + plan.slice(1)
 })
@@ -460,7 +560,7 @@ async function fetchSettings() {
       name: data.name || '',
       slug: data.slug || '',
       address: data.address || '',
-      logoUrl: data.logo_url || '', // could be null/empty — logo section handles both cases
+      logoUrl: data.logo_url || '',
       currency: data.currency || 'USD',
       timezone: data.timezone || 'UTC',
     }
@@ -498,7 +598,6 @@ async function handleLogoUpload(event) {
   }
 
   const { data: urlData } = supabase.storage.from('restaurant-assets').getPublicUrl(path)
-
   form.value.logoUrl = urlData.publicUrl
   markDirty()
   uploadingLogo.value = false
@@ -556,18 +655,78 @@ function discardChanges() {
   saveSuccess.value = ''
 }
 
-// ─── Stripe Placeholders (Phase 3) ───────────────────────────────────────────
-function goToCheckout() {
-  alert('Stripe Checkout will be wired in Phase 3.')
+// ─── Stripe: Checkout ─────────────────────────────────────────────────────────
+async function goToCheckout() {
+  if (!selectedPlan.value) return
+  billingError.value = ''
+  checkoutLoading.value = true
+
+  try {
+    const { data, error } = await supabase.functions.invoke('create-checkout-session', {
+      body: {
+        plan: selectedPlan.value,
+        restaurantId: authStore.profile.restaurant_id,
+        successUrl: `${window.location.origin}/app/settings?upgraded=true`,
+        cancelUrl: `${window.location.origin}/app/settings`,
+      },
+    })
+
+    if (error) throw error
+
+    if (data?.url) {
+      window.location.href = data.url
+    } else {
+      throw new Error('No checkout URL returned from Edge Function.')
+    }
+  } catch (err) {
+    console.error('Checkout error:', err)
+    billingError.value = 'Could not start checkout. Please try again or contact support.'
+    checkoutLoading.value = false
+  }
+
+  // Note: don't set checkoutLoading = false on success — page is redirecting
 }
-function goToPortal() {
-  alert('Stripe Portal will be wired in Phase 3.')
+
+// ─── Stripe: Customer Portal ──────────────────────────────────────────────────
+async function goToPortal() {
+  billingError.value = ''
+  portalLoading.value = true
+
+  try {
+    const { data, error } = await supabase.functions.invoke('create-portal-session', {
+      body: {
+        restaurantId: authStore.profile.restaurant_id,
+        returnUrl: `${window.location.origin}/app/settings`,
+      },
+    })
+
+    if (error) throw error
+
+    if (data?.url) {
+      window.location.href = data.url
+    } else {
+      throw new Error('No portal URL returned from Edge Function.')
+    }
+  } catch (err) {
+    console.error('Portal error:', err)
+    billingError.value = 'Could not open billing portal. Please try again or contact support.'
+    portalLoading.value = false
+  }
 }
 
 // ─── Lifecycle ────────────────────────────────────────────────────────────────
 onMounted(async () => {
   await fetchSettings()
   startTimer()
+
+  // Show success banner if returning from Stripe Checkout
+  if (route.query.upgraded === 'true') {
+    showUpgradedBanner.value = true
+    // Refetch so plan/billing fields update immediately
+    await fetchSettings()
+    // Clean the query param from URL without navigation
+    window.history.replaceState({}, '', '/app/settings')
+  }
 })
 
 onUnmounted(() => {
@@ -581,6 +740,50 @@ onUnmounted(() => {
   max-width: 820px;
   margin: 0 auto;
   font-family: 'DM Sans', sans-serif;
+}
+
+/* ── Upgrade Banner ── */
+.upgrade-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.9rem 1.25rem;
+  background: #f0fdf4;
+  border: 1.5px solid #86efac;
+  border-radius: 12px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #15803d;
+  margin-bottom: 1.5rem;
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.banner-close {
+  background: none;
+  border: none;
+  color: #15803d;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  opacity: 0.7;
+  transition: opacity 0.15s;
+}
+.banner-close:hover {
+  opacity: 1;
 }
 
 /* ── Header ── */
@@ -893,7 +1096,6 @@ onUnmounted(() => {
   font-size: 0.75rem;
   color: #d97706;
 }
-
 .countdown-days-row {
   display: flex;
   align-items: center;
@@ -932,7 +1134,6 @@ onUnmounted(() => {
   color: #fbbf24;
   margin-bottom: 1rem;
 }
-
 .trial-progress-bar {
   height: 7px;
   background: #fef3c7;
@@ -1018,6 +1219,9 @@ onUnmounted(() => {
   flex-wrap: wrap;
 }
 .btn-upgrade {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
   padding: 0.65rem 1.25rem;
   background: #4f46e5;
   color: #fff;
@@ -1025,13 +1229,21 @@ onUnmounted(() => {
   border-radius: 10px;
   font-size: 0.85rem;
   font-weight: 600;
+  font-family: 'DM Sans', sans-serif;
   cursor: pointer;
   transition: background 0.15s;
 }
-.btn-upgrade:hover {
+.btn-upgrade:hover:not(:disabled) {
   background: #4338ca;
 }
+.btn-upgrade:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
 .btn-portal {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
   padding: 0.65rem 1.25rem;
   background: #f3f4f6;
   color: #374151;
@@ -1039,11 +1251,16 @@ onUnmounted(() => {
   border-radius: 10px;
   font-size: 0.85rem;
   font-weight: 600;
+  font-family: 'DM Sans', sans-serif;
   cursor: pointer;
   transition: all 0.15s;
 }
-.btn-portal:hover {
+.btn-portal:hover:not(:disabled) {
   background: #e5e7eb;
+}
+.btn-portal:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 /* ── Alerts ── */
@@ -1082,6 +1299,7 @@ onUnmounted(() => {
   border-radius: 10px;
   font-size: 0.88rem;
   font-weight: 600;
+  font-family: 'DM Sans', sans-serif;
   cursor: pointer;
   transition: background 0.15s;
 }
@@ -1100,6 +1318,7 @@ onUnmounted(() => {
   border-radius: 10px;
   font-size: 0.85rem;
   font-weight: 600;
+  font-family: 'DM Sans', sans-serif;
   cursor: pointer;
   transition: all 0.12s;
 }
@@ -1116,6 +1335,8 @@ onUnmounted(() => {
   border-top-color: #fff;
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
+  display: inline-block;
+  flex-shrink: 0;
 }
 .spinner--dark {
   border-color: rgba(0, 0, 0, 0.12);
@@ -1125,6 +1346,273 @@ onUnmounted(() => {
   to {
     transform: rotate(360deg);
   }
+}
+
+/* ── Plan Picker Modal ── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  animation: fadeIn 0.15s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.modal {
+  background: #fff;
+  border-radius: 18px;
+  padding: 32px 28px;
+  width: 100%;
+  max-width: 560px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  animation: slideUp 0.2s ease;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.modal-title {
+  font-family: 'Fraunces', serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: #111827;
+  letter-spacing: -0.3px;
+  margin: 0;
+}
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: #9ca3af;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: color 0.15s;
+}
+.modal-close:hover {
+  color: #374151;
+}
+
+.modal-subtitle {
+  font-size: 13.5px;
+  color: #6b7280;
+  margin: -12px 0 0;
+}
+
+.modal-plans {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.modal-plan {
+  border: 1.5px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 20px 16px;
+  cursor: pointer;
+  position: relative;
+  background: #fafafa;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.modal-plan:hover {
+  border-color: #a5b4fc;
+  background: #f5f3ff;
+}
+
+.modal-plan--selected {
+  border-color: #4f46e5 !important;
+  background: #eef2ff !important;
+}
+
+.modal-plan--featured {
+  background: #1c1917;
+  border-color: #1c1917;
+}
+
+.modal-plan--featured:hover {
+  background: #2d2421;
+  border-color: #c8733a;
+}
+
+.modal-plan--featured.modal-plan--selected {
+  border-color: #c8733a !important;
+  background: #1c1917 !important;
+}
+
+.modal-plan-popular {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #c8733a;
+  color: white;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 99px;
+  white-space: nowrap;
+}
+
+.modal-plan-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.modal-plan-name {
+  font-family: 'Fraunces', serif;
+  font-size: 17px;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 4px;
+}
+
+.modal-plan--featured .modal-plan-name {
+  color: #faf8f5;
+}
+
+.modal-plan-price {
+  font-family: 'Fraunces', serif;
+  font-size: 28px;
+  font-weight: 800;
+  color: #111827;
+  letter-spacing: -1px;
+  line-height: 1;
+}
+
+.modal-plan--featured .modal-plan-price {
+  color: #faf8f5;
+}
+
+.modal-plan-price span {
+  font-size: 13px;
+  font-weight: 500;
+  color: #9ca3af;
+  letter-spacing: 0;
+}
+
+.modal-plan--featured .modal-plan-price span {
+  color: rgba(250, 248, 245, 0.45);
+}
+
+.modal-plan-check {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #4f46e5;
+  color: white;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.modal-plan--featured .modal-plan-check {
+  background: #c8733a;
+}
+
+.modal-plan-features {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.modal-plan-features li {
+  font-size: 12.5px;
+  color: #4b5563;
+  padding-left: 14px;
+  position: relative;
+  line-height: 1.4;
+}
+
+.modal-plan-features li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  color: #4f46e5;
+  font-weight: 700;
+  font-size: 11px;
+}
+
+.modal-plan--featured .modal-plan-features li {
+  color: rgba(250, 248, 245, 0.65);
+}
+.modal-plan--featured .modal-plan-features li::before {
+  color: #c8733a;
+}
+
+.modal-checkout-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 13px 20px;
+  background: #4f46e5;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.modal-checkout-btn:hover:not(:disabled) {
+  background: #4338ca;
+}
+.modal-checkout-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.modal-secure {
+  text-align: center;
+  font-size: 12px;
+  color: #9ca3af;
+  margin: -8px 0 0;
 }
 
 /* ── Responsive ── */
@@ -1158,6 +1646,12 @@ onUnmounted(() => {
   }
   .countdown-number {
     font-size: 1.35rem;
+  }
+  .modal-plans {
+    grid-template-columns: 1fr;
+  }
+  .modal {
+    padding: 24px 20px;
   }
 }
 </style>
