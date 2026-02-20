@@ -17,6 +17,7 @@
     "@supabase/supabase-js": "^2.96.0",
     "@tailwindcss/vite": "^4.1.18",
     "@vueuse/core": "^14.2.1",
+    "chart.js": "^4.5.1",
     "pinia": "^3.0.4",
     "qrcode": "^1.5.4",
     "tailwindcss": "^4.1.18",

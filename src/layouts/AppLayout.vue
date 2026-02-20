@@ -29,6 +29,12 @@
           <span class="nav-tooltip" v-show="sidebarCollapsed">Dashboard</span>
         </RouterLink>
 
+        <RouterLink to="/app/analytics" class="nav-item" active-class="nav-active">
+          <span class="nav-icon">{{ icons.analytics }}</span>
+          <span class="nav-label" v-show="!sidebarCollapsed">Analytics</span>
+          <span class="nav-tooltip" v-show="sidebarCollapsed">Analytics</span>
+        </RouterLink>
+
         <div class="nav-section-label" v-show="!sidebarCollapsed">Operations</div>
         <RouterLink to="/app/orders" class="nav-item" active-class="nav-active">
           <span class="nav-icon">{{ icons.orders }}</span>
@@ -38,6 +44,11 @@
             pendingCount
           }}</span>
           <span class="nav-badge-dot" v-if="pendingCount > 0" v-show="sidebarCollapsed" />
+        </RouterLink>
+        <RouterLink to="/app/order-history" class="nav-item" active-class="nav-active">
+          <span class="nav-icon">{{ icons.history }}</span>
+          <span class="nav-label" v-show="!sidebarCollapsed">Order History</span>
+          <span class="nav-tooltip" v-show="sidebarCollapsed">Order History</span>
         </RouterLink>
         <RouterLink to="/app/kitchen" class="nav-item" active-class="nav-active">
           <span class="nav-icon">{{ icons.kitchen }}</span>
@@ -143,6 +154,8 @@ const icons = {
   tables: '⬡',
   staff: '👥',
   settings: '⚙',
+  history: '📜',
+  analytics: '📊',
 }
 
 const pageTitles = {
@@ -151,6 +164,8 @@ const pageTitles = {
   '/app/kitchen': 'Kitchen View',
   '/app/menu': 'Menu Management',
   '/app/tables': 'Tables & QR Codes',
+  'app/order-history': 'Order History',
+  'app/analytics': 'Analytics',
   '/app/staff': 'Staff',
   '/app/settings': 'Settings',
 }

@@ -327,9 +327,10 @@ const activeCatId = ref(null)
 const cartOpen = ref(false)
 const tabsEl = ref(null)
 let statusChannel = null
+let menuChannel = null // ← NEW: channel for real-time menu availability
 
 // ── Cart ─────────────────────────────────────
-const cart = ref([]) // [{ itemId, name, price, qty, notes }]
+const cart = ref([])
 
 const cartItemCount = computed(() => cart.value.reduce((n, l) => n + l.qty, 0))
 const cartTotal = computed(() => cart.value.reduce((n, l) => n + l.price * l.qty, 0))
@@ -433,12 +434,57 @@ function resetOrder() {
   }
 }
 
+// ── Real-time menu availability ──────────────
+// ← NEW: subscribe to menu_items UPDATE events for this restaurant.
+// When the admin toggles a sold-out item, the customer's menu updates
+// instantly without a page refresh.
+function subscribeToMenuAvailability(restaurantId) {
+  menuChannel = supabase
+    .channel(`menu-availability-${restaurantId}`)
+    .on(
+      'postgres_changes',
+      {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'menu_items',
+        filter: `restaurant_id=eq.${restaurantId}`,
+      },
+      (payload) => {
+        const updated = payload.new
+        // Find the item across all categories and patch is_available in-place
+        for (const cat of categories.value) {
+          const item = cat.items?.find((i) => i.id === updated.id)
+          if (item) {
+            item.is_available = updated.is_available
+
+            // If item is now unavailable and it's open in the item modal, close it
+            if (
+              !updated.is_available &&
+              itemModal.value.open &&
+              itemModal.value.item?.id === updated.id
+            ) {
+              itemModal.value.open = false
+            }
+
+            // If item is now unavailable, remove it from the cart silently
+            // (customer will see their cart updated if they open it)
+            if (!updated.is_available) {
+              cart.value = cart.value.filter((l) => l.itemId !== updated.id)
+            }
+
+            break
+          }
+        }
+      },
+    )
+    .subscribe()
+}
+
 // ── Load menu ────────────────────────────────
 onMounted(async () => {
   const slug = route.params.slug
   tableId.value = route.params.tableId
 
-  // Load restaurant by slug
   const { data: rest, error: restError } = await supabase
     .from('restaurants')
     .select('id, name, logo_url, currency')
@@ -452,7 +498,6 @@ onMounted(async () => {
   }
   restaurant.value = rest
 
-  // Load table name
   const { data: table } = await supabase
     .from('tables')
     .select('name, is_active')
@@ -467,7 +512,6 @@ onMounted(async () => {
   }
   tableName.value = table.name
 
-  // Load categories + items
   const { data: cats } = await supabase
     .from('menu_categories')
     .select('*')
@@ -490,12 +534,15 @@ onMounted(async () => {
 
   loading.value = false
 
-  // Intersection observer for active category tab
+  // ← NEW: start listening for availability changes
+  subscribeToMenuAvailability(rest.id)
+
   setTimeout(() => setupObserver(), 300)
 })
 
 onUnmounted(() => {
   if (statusChannel) supabase.removeChannel(statusChannel)
+  if (menuChannel) supabase.removeChannel(menuChannel) // ← NEW: clean up
 })
 
 function setupObserver() {
@@ -557,7 +604,6 @@ async function placeOrder() {
     const { error: itemsError } = await supabase.from('order_items').insert(orderItemsPayload)
     if (itemsError) throw itemsError
 
-    // Build placed items for summary display
     placedItems.value = cart.value.map((line) => ({
       id: line.itemId,
       name: line.name,
@@ -569,7 +615,6 @@ async function placeOrder() {
     orderPlaced.value = true
     orderStatus.value = 'pending'
 
-    // Subscribe to realtime order status updates
     statusChannel = supabase
       .channel(`order-${order.id}`)
       .on(
@@ -1211,7 +1256,6 @@ async function placeOrder() {
   }
 }
 
-/* Item modal */
 .modal-item {
   padding-bottom: 24px;
 }
@@ -1279,7 +1323,6 @@ async function placeOrder() {
   margin-top: 4px;
 }
 
-/* Cart modal */
 .modal-cart {
   border-radius: 20px 20px 0 0;
   display: flex;
