@@ -12,6 +12,7 @@
       </button>
     </div>
 
+    <!-- Loading -->
     <div v-if="loading" class="loading-grid">
       <div v-for="n in 3" :key="n" class="skeleton-block"></div>
     </div>
@@ -20,32 +21,40 @@
       <!-- ── Section: Restaurant Profile ── -->
       <div class="section">
         <h2 class="section-title">Restaurant Profile</h2>
-        <p class="section-desc">This information is shown to customers on the ordering page.</p>
+        <p class="section-desc">Shown to customers on the ordering page.</p>
 
         <div class="section-body">
-          <!-- Logo Upload -->
+          <!-- Logo -->
           <div class="logo-row">
             <div class="logo-preview">
-              <img v-if="form.logoUrl" :src="form.logoUrl" alt="Logo" class="logo-img" />
+              <!-- Show existing logo if available, else placeholder -->
+              <img v-if="form.logoUrl" :src="form.logoUrl" alt="Restaurant Logo" class="logo-img" />
               <span v-else class="logo-placeholder">🍽️</span>
             </div>
             <div class="logo-actions">
               <p class="logo-label">Restaurant Logo</p>
-              <p class="logo-hint">PNG or JPG, max 2MB. Shown on the customer ordering page.</p>
-              <label class="btn-upload">
-                <input
-                  type="file"
-                  accept="image/png,image/jpeg,image/webp"
-                  style="display: none"
-                  @change="handleLogoUpload"
-                  :disabled="uploadingLogo"
-                />
-                <span v-if="uploadingLogo" class="spinner spinner--dark"></span>
-                {{ uploadingLogo ? 'Uploading...' : 'Upload Logo' }}
-              </label>
-              <button v-if="form.logoUrl" class="btn-remove-logo" @click="removeLogo">
-                Remove
-              </button>
+              <p class="logo-hint" v-if="form.logoUrl">
+                ✅ Logo uploaded — you can replace it below.
+              </p>
+              <p class="logo-hint" v-else>No logo yet. PNG or JPG, max 2MB.</p>
+              <div class="logo-btns">
+                <label class="btn-upload">
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    style="display: none"
+                    @change="handleLogoUpload"
+                    :disabled="uploadingLogo"
+                  />
+                  <span v-if="uploadingLogo" class="spinner spinner--dark"></span>
+                  {{
+                    uploadingLogo ? 'Uploading...' : form.logoUrl ? 'Replace Logo' : 'Upload Logo'
+                  }}
+                </label>
+                <button v-if="form.logoUrl" class="btn-remove-logo" @click="removeLogo">
+                  Remove
+                </button>
+              </div>
             </div>
           </div>
 
@@ -73,18 +82,7 @@
                   @input="markDirty"
                 />
               </div>
-              <p class="form-hint">Changing this will break existing QR codes.</p>
-            </div>
-
-            <div class="form-group form-group--full">
-              <label class="form-label">Description</label>
-              <textarea
-                v-model="form.description"
-                class="form-input form-textarea"
-                placeholder="A short description shown on the customer ordering page..."
-                rows="3"
-                @input="markDirty"
-              ></textarea>
+              <p class="form-hint">⚠️ Changing this will break existing QR codes.</p>
             </div>
 
             <div class="form-group form-group--full">
@@ -127,48 +125,117 @@
             </div>
           </div>
 
-          <!-- Currency Preview -->
           <div class="preview-box">
-            <span class="preview-label">Preview</span>
+            <span class="preview-label">Price Preview</span>
             <span class="preview-value">{{ currencyPreview }}</span>
           </div>
         </div>
       </div>
 
-      <!-- ── Section: Opening Hours ── -->
+      <!-- ── Section: Subscription & Billing ── -->
       <div class="section">
-        <h2 class="section-title">Opening Hours</h2>
-        <p class="section-desc">Optional. Displayed on the customer ordering page.</p>
+        <h2 class="section-title">Subscription & Billing</h2>
+        <p class="section-desc">Your current plan and billing status.</p>
 
         <div class="section-body">
-          <div class="hours-grid">
-            <div v-for="day in days" :key="day.key" class="hours-row">
-              <div class="hours-day">
-                <label class="toggle">
-                  <input type="checkbox" v-model="form.hours[day.key].open" @change="markDirty" />
-                  <span class="toggle-slider"></span>
-                </label>
-                <span class="day-name" :class="{ 'day--closed': !form.hours[day.key].open }">{{
-                  day.label
-                }}</span>
+          <!-- Plan Status Card -->
+          <div class="plan-card" :class="`plan-card--${planStatus}`">
+            <div class="plan-card-left">
+              <div class="plan-icon">{{ planIcon }}</div>
+              <div>
+                <p class="plan-name">{{ planDisplayName }}</p>
+                <p class="plan-meta">{{ planMeta }}</p>
               </div>
-              <template v-if="form.hours[day.key].open">
-                <input
-                  type="time"
-                  v-model="form.hours[day.key].from"
-                  class="form-input time-input"
-                  @change="markDirty"
-                />
-                <span class="hours-sep">to</span>
-                <input
-                  type="time"
-                  v-model="form.hours[day.key].to"
-                  class="form-input time-input"
-                  @change="markDirty"
-                />
-              </template>
-              <span v-else class="closed-label">Closed</span>
             </div>
+            <span class="plan-badge" :class="`badge--${planStatus}`">{{ planBadgeLabel }}</span>
+          </div>
+
+          <!-- Trial Countdown — shown when on trial -->
+          <div v-if="isOnTrial" class="trial-countdown">
+            <div class="countdown-header">
+              <span class="countdown-title">⏳ Trial Period</span>
+              <span class="countdown-expires"
+                >Expires {{ formatDate(restaurant.trial_ends_at) }}</span
+              >
+            </div>
+
+            <!-- Big day counter -->
+            <div class="countdown-days-row">
+              <div class="countdown-day-block">
+                <span class="countdown-number">{{ trialTimeLeft.days }}</span>
+                <span class="countdown-unit">days</span>
+              </div>
+              <span class="countdown-colon">:</span>
+              <div class="countdown-day-block">
+                <span class="countdown-number">{{ trialTimeLeft.hours }}</span>
+                <span class="countdown-unit">hours</span>
+              </div>
+              <span class="countdown-colon">:</span>
+              <div class="countdown-day-block">
+                <span class="countdown-number">{{ trialTimeLeft.minutes }}</span>
+                <span class="countdown-unit">mins</span>
+              </div>
+              <span class="countdown-colon">:</span>
+              <div class="countdown-day-block">
+                <span class="countdown-number">{{ trialTimeLeft.seconds }}</span>
+                <span class="countdown-unit">secs</span>
+              </div>
+            </div>
+
+            <!-- Progress bar -->
+            <div class="trial-progress-bar">
+              <div class="trial-progress-fill" :style="{ width: `${trialPercent}%` }"></div>
+            </div>
+            <div class="trial-progress-labels">
+              <span>Day 1</span>
+              <span>{{ trialTotalDays }} days used of 14</span>
+              <span>Day 14</span>
+            </div>
+          </div>
+
+          <!-- Expired notice -->
+          <div v-else-if="planStatus === 'expired'" class="expired-notice">
+            <span class="expired-icon">🔒</span>
+            <div>
+              <p class="expired-title">Trial ended on {{ formatDate(restaurant.trial_ends_at) }}</p>
+              <p class="expired-sub">Upgrade to restore full access to your restaurant.</p>
+            </div>
+          </div>
+
+          <!-- Billing Info rows -->
+          <div class="billing-info">
+            <div class="billing-row">
+              <span class="billing-key">Plan</span>
+              <span class="billing-val">{{ planDisplayName }}</span>
+            </div>
+            <div class="billing-row" v-if="restaurant.trial_ends_at">
+              <span class="billing-key">Trial Ends</span>
+              <span class="billing-val">{{ formatDate(restaurant.trial_ends_at) }}</span>
+            </div>
+            <div class="billing-row" v-if="restaurant.stripe_customer_id">
+              <span class="billing-key">Customer ID</span>
+              <span class="billing-val billing-val--mono">{{ restaurant.stripe_customer_id }}</span>
+            </div>
+            <div class="billing-row" v-if="restaurant.stripe_subscription_id">
+              <span class="billing-key">Subscription ID</span>
+              <span class="billing-val billing-val--mono">{{
+                restaurant.stripe_subscription_id
+              }}</span>
+            </div>
+          </div>
+
+          <!-- CTA Buttons -->
+          <div class="billing-actions">
+            <button v-if="!hasActiveSubscription" class="btn-upgrade" @click="goToCheckout">
+              ⚡ Upgrade to Pro
+            </button>
+            <button
+              v-if="hasActiveSubscription && restaurant.stripe_customer_id"
+              class="btn-portal"
+              @click="goToPortal"
+            >
+              Manage Billing →
+            </button>
           </div>
         </div>
       </div>
@@ -177,7 +244,7 @@
       <div v-if="saveError" class="alert alert--error">{{ saveError }}</div>
       <div v-if="saveSuccess" class="alert alert--success">{{ saveSuccess }}</div>
 
-      <!-- Bottom Save -->
+      <!-- Bottom Bar -->
       <div class="bottom-bar">
         <button class="btn-save" @click="saveSettings" :disabled="saving || !isDirty">
           <span v-if="saving" class="spinner"></span>
@@ -190,7 +257,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
 
@@ -202,40 +269,20 @@ const isDirty = ref(false)
 const saveError = ref('')
 const saveSuccess = ref('')
 
-// ─── Default Hours Structure ──────────────────────────────────────────────────
-const defaultHours = () => ({
-  mon: { open: true, from: '09:00', to: '22:00' },
-  tue: { open: true, from: '09:00', to: '22:00' },
-  wed: { open: true, from: '09:00', to: '22:00' },
-  thu: { open: true, from: '09:00', to: '22:00' },
-  fri: { open: true, from: '09:00', to: '23:00' },
-  sat: { open: true, from: '10:00', to: '23:00' },
-  sun: { open: false, from: '10:00', to: '21:00' },
-})
+// Raw restaurant row — used for read-only billing display
+const restaurant = ref({})
 
-const days = [
-  { key: 'mon', label: 'Monday' },
-  { key: 'tue', label: 'Tuesday' },
-  { key: 'wed', label: 'Wednesday' },
-  { key: 'thu', label: 'Thursday' },
-  { key: 'fri', label: 'Friday' },
-  { key: 'sat', label: 'Saturday' },
-  { key: 'sun', label: 'Sunday' },
-]
-
-// ─── Form ─────────────────────────────────────────────────────────────────────
+// Editable form fields only
 const form = ref({
   name: '',
   slug: '',
-  description: '',
   address: '',
   logoUrl: '',
   currency: 'USD',
   timezone: 'UTC',
-  hours: defaultHours(),
 })
 
-// Keep a snapshot to detect changes and allow discard
+// ─── Snapshot for dirty detection + discard ───────────────────────────────────
 let snapshot = ''
 function takeSnapshot() {
   snapshot = JSON.stringify(form.value)
@@ -243,6 +290,92 @@ function takeSnapshot() {
 function markDirty() {
   isDirty.value = JSON.stringify(form.value) !== snapshot
 }
+
+// ─── Live Countdown Timer ─────────────────────────────────────────────────────
+const now = ref(new Date())
+let timerInterval = null
+
+function startTimer() {
+  timerInterval = setInterval(() => {
+    now.value = new Date()
+  }, 1000)
+}
+
+const isOnTrial = computed(() => {
+  if (!restaurant.value.trial_ends_at) return false
+  return new Date(restaurant.value.trial_ends_at) > now.value
+})
+
+const hasActiveSubscription = computed(() => {
+  const plan = restaurant.value.plan
+  return plan && plan !== 'trial' && plan !== 'expired' && plan !== 'free' && plan !== null
+})
+
+// How many ms remain in trial
+const trialMsLeft = computed(() => {
+  if (!restaurant.value.trial_ends_at) return 0
+  return Math.max(0, new Date(restaurant.value.trial_ends_at) - now.value)
+})
+
+// Break ms into d/h/m/s for the countdown display
+const trialTimeLeft = computed(() => {
+  const total = trialMsLeft.value
+  const days = Math.floor(total / (1000 * 60 * 60 * 24))
+  const hours = Math.floor((total % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+  const minutes = Math.floor((total % (1000 * 60 * 60)) / (1000 * 60))
+  const seconds = Math.floor((total % (1000 * 60)) / 1000)
+  return {
+    days: String(days).padStart(2, '0'),
+    hours: String(hours).padStart(2, '0'),
+    minutes: String(minutes).padStart(2, '0'),
+    seconds: String(seconds).padStart(2, '0'),
+  }
+})
+
+// Days elapsed out of 14 for progress bar
+const trialTotalDays = computed(() => {
+  if (!restaurant.value.trial_ends_at || !restaurant.value.created_at) return 0
+  const elapsed = now.value - new Date(restaurant.value.created_at)
+  return Math.min(14, Math.floor(elapsed / (1000 * 60 * 60 * 24)))
+})
+
+const trialPercent = computed(() => {
+  return Math.min(100, Math.round((trialTotalDays.value / 14) * 100))
+})
+
+const planStatus = computed(() => {
+  if (hasActiveSubscription.value) return 'active'
+  if (isOnTrial.value) return 'trial'
+  return 'expired'
+})
+
+const planDisplayName = computed(() => {
+  const plan = restaurant.value.plan
+  if (!plan || plan === 'free') return 'Free'
+  if (plan === 'trial') return 'Trial'
+  if (plan === 'pro') return 'Pro'
+  if (plan === 'expired') return 'Expired'
+  return plan.charAt(0).toUpperCase() + plan.slice(1)
+})
+
+const planMeta = computed(() => {
+  if (hasActiveSubscription.value) return 'Full access — all features unlocked'
+  if (isOnTrial.value)
+    return `${trialTimeLeft.value.days}d ${trialTimeLeft.value.hours}h left in your trial`
+  return 'Your trial has ended — upgrade to continue'
+})
+
+const planIcon = computed(() => {
+  if (hasActiveSubscription.value) return '⭐'
+  if (isOnTrial.value) return '⏳'
+  return '🔒'
+})
+
+const planBadgeLabel = computed(() => {
+  if (hasActiveSubscription.value) return 'Active'
+  if (isOnTrial.value) return 'Trial'
+  return 'Expired'
+})
 
 // ─── Static Data ──────────────────────────────────────────────────────────────
 const currencies = [
@@ -299,6 +432,15 @@ const currencyPreview = computed(() => {
   }
 })
 
+function formatDate(iso) {
+  if (!iso) return '—'
+  return new Date(iso).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  })
+}
+
 // ─── Fetch ────────────────────────────────────────────────────────────────────
 async function fetchSettings() {
   loading.value = true
@@ -306,20 +448,21 @@ async function fetchSettings() {
 
   const { data, error } = await supabase
     .from('restaurants')
-    .select('name, slug, description, address, logo_url, currency, timezone, opening_hours')
+    .select(
+      'name, slug, address, logo_url, currency, timezone, plan, trial_ends_at, stripe_customer_id, stripe_subscription_id, created_at',
+    )
     .eq('id', restaurantId)
     .single()
 
   if (!error && data) {
+    restaurant.value = data
     form.value = {
       name: data.name || '',
       slug: data.slug || '',
-      description: data.description || '',
       address: data.address || '',
-      logoUrl: data.logo_url || '',
+      logoUrl: data.logo_url || '', // could be null/empty — logo section handles both cases
       currency: data.currency || 'USD',
       timezone: data.timezone || 'UTC',
-      hours: data.opening_hours || defaultHours(),
     }
   }
 
@@ -349,7 +492,7 @@ async function handleLogoUpload(event) {
     .upload(path, file, { upsert: true })
 
   if (uploadErr) {
-    saveError.value = 'Logo upload failed: ' + uploadErr.message
+    saveError.value = 'Upload failed: ' + uploadErr.message
     uploadingLogo.value = false
     return
   }
@@ -384,12 +527,10 @@ async function saveSettings() {
     .update({
       name: form.value.name.trim(),
       slug: form.value.slug.trim(),
-      description: form.value.description.trim() || null,
       address: form.value.address.trim() || null,
       logo_url: form.value.logoUrl || null,
       currency: form.value.currency,
       timezone: form.value.timezone,
-      opening_hours: form.value.hours,
     })
     .eq('id', restaurantId)
 
@@ -399,10 +540,7 @@ async function saveSettings() {
     saveSuccess.value = '✅ Settings saved successfully.'
     takeSnapshot()
     isDirty.value = false
-
-    // Refresh auth store profile so currency updates propagate app-wide
     await authStore.fetchProfile()
-
     setTimeout(() => {
       saveSuccess.value = ''
     }, 3000)
@@ -412,21 +550,35 @@ async function saveSettings() {
 }
 
 function discardChanges() {
-  const snap = JSON.parse(snapshot)
-  form.value = snap
+  form.value = JSON.parse(snapshot)
   isDirty.value = false
   saveError.value = ''
   saveSuccess.value = ''
 }
 
+// ─── Stripe Placeholders (Phase 3) ───────────────────────────────────────────
+function goToCheckout() {
+  alert('Stripe Checkout will be wired in Phase 3.')
+}
+function goToPortal() {
+  alert('Stripe Portal will be wired in Phase 3.')
+}
+
 // ─── Lifecycle ────────────────────────────────────────────────────────────────
-onMounted(fetchSettings)
+onMounted(async () => {
+  await fetchSettings()
+  startTimer()
+})
+
+onUnmounted(() => {
+  if (timerInterval) clearInterval(timerInterval)
+})
 </script>
 
 <style scoped>
 .settings-page {
   padding: 2rem;
-  max-width: 860px;
+  max-width: 820px;
   margin: 0 auto;
   font-family: 'DM Sans', sans-serif;
 }
@@ -459,7 +611,7 @@ onMounted(fetchSettings)
   gap: 1.5rem;
 }
 .skeleton-block {
-  height: 180px;
+  height: 200px;
   border-radius: 14px;
   background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
   background-size: 200% 100%;
@@ -509,9 +661,9 @@ onMounted(fetchSettings)
   border-bottom: 1px solid #f3f4f6;
 }
 .logo-preview {
-  width: 72px;
-  height: 72px;
-  border-radius: 12px;
+  width: 80px;
+  height: 80px;
+  border-radius: 14px;
   border: 1.5px solid #e5e7eb;
   background: #f9fafb;
   flex-shrink: 0;
@@ -526,7 +678,7 @@ onMounted(fetchSettings)
   object-fit: cover;
 }
 .logo-placeholder {
-  font-size: 2rem;
+  font-size: 2.25rem;
 }
 .logo-label {
   font-size: 0.85rem;
@@ -538,6 +690,11 @@ onMounted(fetchSettings)
   font-size: 0.75rem;
   color: #9ca3af;
   margin-bottom: 0.6rem;
+}
+.logo-btns {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
 }
 .btn-upload {
   display: inline-flex;
@@ -557,7 +714,6 @@ onMounted(fetchSettings)
   background: #e5e7eb;
 }
 .btn-remove-logo {
-  margin-left: 0.5rem;
   background: none;
   border: none;
   font-size: 0.78rem;
@@ -569,7 +725,7 @@ onMounted(fetchSettings)
   text-decoration: underline;
 }
 
-/* ── Form Grid ── */
+/* ── Form ── */
 .form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -591,6 +747,11 @@ onMounted(fetchSettings)
 .required {
   color: #e11d48;
 }
+.form-hint {
+  font-size: 0.72rem;
+  color: #f59e0b;
+  margin-top: 0.3rem;
+}
 .form-input {
   padding: 0.65rem 0.9rem;
   border: 1px solid #d1d5db;
@@ -606,17 +767,6 @@ onMounted(fetchSettings)
 .form-input:focus {
   border-color: #6366f1;
 }
-.form-textarea {
-  resize: vertical;
-  min-height: 80px;
-  font-family: inherit;
-}
-.form-hint {
-  font-size: 0.72rem;
-  color: #f59e0b;
-  margin-top: 0.3rem;
-}
-
 .input-with-prefix {
   display: flex;
   align-items: center;
@@ -645,7 +795,7 @@ onMounted(fetchSettings)
   border: 1px solid #bbf7d0;
   border-radius: 9px;
   padding: 0.6rem 1rem;
-  margin-top: 0.25rem;
+  margin-top: 0.75rem;
 }
 .preview-label {
   font-size: 0.72rem;
@@ -660,86 +810,240 @@ onMounted(fetchSettings)
   color: #111827;
 }
 
-/* ── Hours ── */
-.hours-grid {
+/* ── Plan Card ── */
+.plan-card {
   display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  border-radius: 12px;
+  border: 1.5px solid;
+  margin-bottom: 1.25rem;
 }
-.hours-row {
+.plan-card--active {
+  background: #f0fdf4;
+  border-color: #86efac;
+}
+.plan-card--trial {
+  background: #fffbeb;
+  border-color: #fde68a;
+}
+.plan-card--expired {
+  background: #fff1f2;
+  border-color: #fecdd3;
+}
+.plan-card-left {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.85rem;
 }
-.hours-day {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  width: 160px;
-  flex-shrink: 0;
+.plan-icon {
+  font-size: 1.75rem;
+  line-height: 1;
 }
-.day-name {
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: #374151;
+.plan-name {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #111827;
+  margin-bottom: 0.15rem;
 }
-.day--closed {
-  color: #9ca3af;
-}
-.closed-label {
+.plan-meta {
   font-size: 0.78rem;
-  color: #9ca3af;
+  color: #6b7280;
 }
-.hours-sep {
-  font-size: 0.78rem;
-  color: #9ca3af;
-  flex-shrink: 0;
+.plan-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.3rem 0.75rem;
+  border-radius: 999px;
 }
-.time-input {
-  width: 120px;
-  padding: 0.45rem 0.65rem;
-  font-size: 0.82rem;
-  flex-shrink: 0;
+.badge--active {
+  background: #d1fae5;
+  color: #059669;
+}
+.badge--trial {
+  background: #fef3c7;
+  color: #d97706;
+}
+.badge--expired {
+  background: #fee2e2;
+  color: #dc2626;
 }
 
-/* ── Toggle ── */
-.toggle {
-  position: relative;
-  display: inline-block;
-  width: 36px;
-  height: 20px;
+/* ── Trial Countdown ── */
+.trial-countdown {
+  background: #fffbeb;
+  border: 1.5px solid #fde68a;
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+.countdown-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+.countdown-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #92400e;
+}
+.countdown-expires {
+  font-size: 0.75rem;
+  color: #d97706;
+}
+
+.countdown-days-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+.countdown-day-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #fff;
+  border: 1px solid #fde68a;
+  border-radius: 10px;
+  padding: 0.6rem 1rem;
+  min-width: 64px;
+}
+.countdown-number {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #d97706;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.countdown-unit {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: #92400e;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-top: 0.2rem;
+}
+.countdown-colon {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #fbbf24;
+  margin-bottom: 1rem;
+}
+
+.trial-progress-bar {
+  height: 7px;
+  background: #fef3c7;
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 0.4rem;
+}
+.trial-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #fbbf24, #f59e0b);
+  border-radius: 999px;
+  transition: width 1s linear;
+}
+.trial-progress-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.68rem;
+  color: #d97706;
+}
+
+/* ── Expired Notice ── */
+.expired-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+  background: #fff1f2;
+  border: 1.5px solid #fecdd3;
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.25rem;
+}
+.expired-icon {
+  font-size: 1.5rem;
   flex-shrink: 0;
 }
-.toggle input {
-  opacity: 0;
-  width: 0;
-  height: 0;
+.expired-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #e11d48;
+  margin-bottom: 0.2rem;
 }
-.toggle-slider {
-  position: absolute;
-  inset: 0;
-  background: #d1d5db;
-  border-radius: 999px;
+.expired-sub {
+  font-size: 0.78rem;
+  color: #9ca3af;
+}
+
+/* ── Billing Info ── */
+.billing-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin-bottom: 1.25rem;
+}
+.billing-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.83rem;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid #f3f4f6;
+}
+.billing-row:last-child {
+  border-bottom: none;
+}
+.billing-key {
+  color: #6b7280;
+  font-weight: 500;
+}
+.billing-val {
+  color: #111827;
+  font-weight: 600;
+}
+.billing-val--mono {
+  font-family: monospace;
+  font-size: 0.75rem;
+  color: #9ca3af;
+}
+
+/* ── Billing Actions ── */
+.billing-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.btn-upgrade {
+  padding: 0.65rem 1.25rem;
+  background: #4f46e5;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background 0.15s;
 }
-.toggle-slider::before {
-  content: '';
-  position: absolute;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: #fff;
-  left: 3px;
-  top: 3px;
-  transition: transform 0.2s;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+.btn-upgrade:hover {
+  background: #4338ca;
 }
-.toggle input:checked + .toggle-slider {
-  background: #6366f1;
+.btn-portal {
+  padding: 0.65rem 1.25rem;
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
 }
-.toggle input:checked + .toggle-slider::before {
-  transform: translateX(16px);
+.btn-portal:hover {
+  background: #e5e7eb;
 }
 
 /* ── Alerts ── */
@@ -838,19 +1142,22 @@ onMounted(fetchSettings)
     flex-direction: column;
     align-items: flex-start;
   }
-  .hours-row {
-    flex-wrap: wrap;
-  }
-  .hours-day {
-    width: 100%;
-  }
-  .time-input {
-    width: 100px;
-  }
   .page-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 1rem;
+  }
+  .plan-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+  .countdown-day-block {
+    min-width: 52px;
+    padding: 0.5rem 0.6rem;
+  }
+  .countdown-number {
+    font-size: 1.35rem;
   }
 }
 </style>
