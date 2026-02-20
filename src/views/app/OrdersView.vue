@@ -1,653 +1,1013 @@
 <template>
-  <div class="order-page" :style="{ '--accent': '#c8733a' }">
-    <!-- ── Loading ──────────────────────────── -->
-    <div v-if="loading" class="full-center">
-      <div class="spinner" />
-      <p class="loading-text">Loading menu…</p>
-    </div>
-
-    <!-- ── Not found ────────────────────────── -->
-    <div v-else-if="notFound" class="full-center">
-      <div class="not-found-icon">🍽️</div>
-      <h2 class="not-found-title">Menu not found</h2>
-      <p class="not-found-sub">This QR code may be invalid or the restaurant is unavailable.</p>
-    </div>
-
-    <!-- ── Order placed (status tracker) ────── -->
-    <div v-else-if="orderPlaced" class="status-screen">
-      <div class="status-header">
-        <div class="restaurant-logo-sm">
-          <img v-if="restaurant.logo_url" :src="restaurant.logo_url" class="logo-img-sm" />
-          <span v-else class="logo-emoji">🍽️</span>
-        </div>
-        <div class="restaurant-name-sm">{{ restaurant.name }}</div>
-        <div class="table-badge-sm">{{ tableName }}</div>
+  <div class="orders-page">
+    <!-- Header -->
+    <div class="page-header">
+      <div>
+        <p class="header-sub">Live order management</p>
+        <h1 class="header-title">Orders</h1>
       </div>
 
-      <div class="status-card">
-        <div class="status-icon-wrap">
-          <div class="status-icon" :class="statusClass">{{ statusEmoji }}</div>
-        </div>
-        <h2 class="status-title">{{ statusTitle }}</h2>
-        <p class="status-desc">{{ statusDesc }}</p>
-
-        <!-- Progress steps -->
-        <div class="status-steps">
-          <div
-            class="step-item"
-            :class="{ done: orderStatus !== 'pending', active: orderStatus === 'pending' }"
-          >
-            <div class="step-circle">{{ orderStatus !== 'pending' ? '✓' : '1' }}</div>
-            <span>Order received</span>
-          </div>
-          <div
-            class="step-line"
-            :class="{ done: ['cooking', 'ready', 'paid'].includes(orderStatus) }"
-          />
-          <div
-            class="step-item"
-            :class="{
-              done: ['ready', 'paid'].includes(orderStatus),
-              active: orderStatus === 'cooking',
-            }"
-          >
-            <div class="step-circle">{{ ['ready', 'paid'].includes(orderStatus) ? '✓' : '2' }}</div>
-            <span>Being prepared</span>
-          </div>
-          <div class="step-line" :class="{ done: ['ready', 'paid'].includes(orderStatus) }" />
-          <div
-            class="step-item"
-            :class="{
-              done: ['ready', 'paid'].includes(orderStatus),
-              active: orderStatus === 'ready',
-            }"
-          >
-            <div class="step-circle">{{ ['ready', 'paid'].includes(orderStatus) ? '✓' : '3' }}</div>
-            <span>Ready!</span>
-          </div>
-        </div>
-
-        <!-- Order summary -->
-        <div class="order-summary">
-          <div class="summary-title">Your order</div>
-          <div class="summary-items">
-            <div v-for="item in placedItems" :key="item.id" class="summary-item">
-              <span class="summary-qty">×{{ item.quantity }}</span>
-              <span class="summary-name">{{ item.name }}</span>
-              <span class="summary-price"
-                >{{ currencySymbol }}{{ (item.unit_price * item.quantity).toFixed(2) }}</span
-              >
-            </div>
-          </div>
-          <div class="summary-total">
-            <span>Total</span>
-            <span>{{ currencySymbol }}{{ placedTotal.toFixed(2) }}</span>
-          </div>
-        </div>
-
-        <button class="btn-order-again" @click="resetOrder">Order more items</button>
-      </div>
+      <!-- Waiter: create order button -->
+      <button v-if="isWaiter" class="btn-primary" @click="openNewOrder">+ New Order</button>
     </div>
 
-    <!-- ── Menu page ─────────────────────────── -->
-    <template v-else>
-      <!-- Restaurant header -->
-      <div class="restaurant-header">
-        <div class="restaurant-brand">
-          <div class="restaurant-logo">
-            <img v-if="restaurant.logo_url" :src="restaurant.logo_url" class="logo-img" />
-            <span v-else class="logo-emoji-lg">🍽️</span>
+    <!-- Status Filter Tabs -->
+    <div class="filter-tabs">
+      <button
+        v-for="tab in visibleTabs"
+        :key="tab.value"
+        class="tab"
+        :class="{ active: activeTab === tab.value }"
+        @click="activeTab = tab.value"
+      >
+        {{ tab.label }}
+        <span v-if="countByStatus[tab.value]" class="tab-count">
+          {{ countByStatus[tab.value] }}
+        </span>
+      </button>
+    </div>
+
+    <!-- Loading -->
+    <div v-if="loading" class="loading-grid">
+      <div v-for="n in 4" :key="n" class="skeleton-card"></div>
+    </div>
+
+    <!-- Empty -->
+    <div v-else-if="filteredOrders.length === 0" class="empty-state">
+      <span class="empty-icon">🧾</span>
+      <p>No {{ activeTab === 'all' ? '' : activeTab }} orders right now</p>
+    </div>
+
+    <!-- Orders Grid -->
+    <div v-else class="orders-grid">
+      <div
+        v-for="order in filteredOrders"
+        :key="order.id"
+        class="order-card"
+        :class="`card--${order.status}`"
+      >
+        <!-- Card Header -->
+        <div class="card-header">
+          <div class="card-header-left">
+            <span class="card-table">{{ order.tables?.name || 'Table' }}</span>
+            <span class="card-elapsed">{{ timeElapsed(order.created_at) }}</span>
           </div>
-          <div>
-            <h1 class="restaurant-title">{{ restaurant.name }}</h1>
-            <div class="table-badge">📍 {{ tableName }}</div>
+          <span class="status-badge" :class="`status--${order.status}`">
+            {{ statusLabel(order.status) }}
+          </span>
+        </div>
+
+        <!-- Items -->
+        <div class="card-items">
+          <div v-for="item in order.order_items" :key="item.id" class="card-item">
+            <span class="item-qty">×{{ item.quantity }}</span>
+            <span class="item-name">{{ item.menu_items?.name }}</span>
+            <span class="item-price">{{ formatCurrency(item.unit_price * item.quantity) }}</span>
           </div>
         </div>
-      </div>
 
-      <!-- Category tabs -->
-      <div class="category-tabs-wrap">
-        <div class="category-tabs" ref="tabsEl">
+        <!-- Note -->
+        <div v-if="order.note" class="card-note">
+          <span class="note-icon">📝</span> {{ order.note }}
+        </div>
+
+        <!-- Total -->
+        <div class="card-total">
+          <span>Total</span>
+          <span class="total-amount">{{ formatCurrency(order.total_price) }}</span>
+        </div>
+
+        <!-- Actions -->
+        <div class="card-actions">
+          <!-- Cashier: mark as paid (only for ready orders) -->
           <button
-            v-for="cat in activeCategories"
-            :key="cat.id"
-            class="cat-tab"
-            :class="{ active: activeCatId === cat.id }"
-            @click="scrollToCategory(cat.id)"
+            v-if="isCashier && order.status === 'ready'"
+            class="btn-action btn-paid"
+            @click="markAsPaid(order)"
           >
-            {{ cat.name }}
+            ✅ Mark as Paid
           </button>
+
+          <!-- Admin sees paid button too -->
+          <button
+            v-if="isAdmin && order.status === 'ready'"
+            class="btn-action btn-paid"
+            @click="markAsPaid(order)"
+          >
+            ✅ Mark as Paid
+          </button>
+
+          <!-- Waiter: cancel pending orders only -->
+          <button
+            v-if="isWaiter && order.status === 'pending'"
+            class="btn-action btn-cancel-order"
+            @click="cancelOrder(order)"
+          >
+            Cancel Order
+          </button>
+
+          <!-- Read-only states -->
+          <p v-if="(isCashier || isAdmin) && order.status === 'pending'" class="card-waiting">
+            Waiting for kitchen to accept…
+          </p>
+          <p v-if="(isCashier || isAdmin) && order.status === 'cooking'" class="card-waiting">
+            Kitchen is cooking…
+          </p>
+          <p v-if="order.status === 'paid'" class="card-paid-label">✅ Paid</p>
         </div>
       </div>
+    </div>
 
-      <!-- Menu items -->
-      <div class="menu-content">
-        <div
-          v-for="cat in activeCategories"
-          :key="cat.id"
-          :id="`cat-${cat.id}`"
-          class="cat-section"
-        >
-          <h2 class="cat-title">{{ cat.name }}</h2>
-          <div class="items-list">
-            <div
-              v-for="item in cat.items"
-              :key="item.id"
-              class="menu-item-row"
-              :class="{ 'out-of-stock': !item.is_available }"
-              @click="item.is_available && openItemModal(item)"
-            >
-              <div class="item-info">
-                <div class="item-name-row">
-                  <span class="item-name">{{ item.name }}</span>
-                  <span v-if="!item.is_available" class="sold-out-tag">Sold out</span>
-                </div>
-                <div v-if="item.description" class="item-desc">{{ item.description }}</div>
-                <div class="item-price">
-                  {{ currencySymbol }}{{ Number(item.price).toFixed(2) }}
-                </div>
-              </div>
-              <div class="item-right">
-                <div class="item-thumb-wrap">
-                  <img
-                    v-if="item.image_url"
-                    :src="item.image_url"
-                    class="item-thumb"
-                    :alt="item.name"
-                  />
-                  <div v-else class="item-thumb-placeholder">🍽️</div>
-                  <button
-                    v-if="item.is_available"
-                    class="add-btn"
-                    :class="{ 'has-items': cartCount(item.id) > 0 }"
-                    @click.stop="addToCart(item)"
-                  >
-                    <span v-if="cartCount(item.id) > 0" class="add-btn-count">{{
-                      cartCount(item.id)
-                    }}</span>
-                    <span v-else>+</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Spacer for cart bar -->
-      <div style="height: 100px" />
-
-      <!-- ── Cart bar ───────────────────────── -->
-      <Transition name="cart-bar">
-        <div v-if="cartItemCount > 0" class="cart-bar" @click="openCart">
-          <div class="cart-bar-left">
-            <span class="cart-count-badge">{{ cartItemCount }}</span>
-            <span class="cart-bar-label">View order</span>
-          </div>
-          <span class="cart-bar-total">{{ currencySymbol }}{{ cartTotal.toFixed(2) }}</span>
-        </div>
-      </Transition>
-    </template>
-
-    <!-- ══ ITEM DETAIL MODAL ══════════════════ -->
-    <Teleport to="body">
-      <div v-if="itemModal.open" class="modal-backdrop" @click.self="itemModal.open = false">
-        <div class="modal modal-item">
-          <button class="modal-close-float" @click="itemModal.open = false">✕</button>
-
-          <div class="item-modal-image">
-            <img
-              v-if="itemModal.item?.image_url"
-              :src="itemModal.item.image_url"
-              class="item-modal-img"
-            />
-            <div v-else class="item-modal-img-placeholder">🍽️</div>
-          </div>
-
-          <div class="item-modal-body">
-            <h3 class="item-modal-name">{{ itemModal.item?.name }}</h3>
-            <p v-if="itemModal.item?.description" class="item-modal-desc">
-              {{ itemModal.item?.description }}
-            </p>
-            <div class="item-modal-price">
-              {{ currencySymbol }}{{ Number(itemModal.item?.price).toFixed(2) }}
-            </div>
-
-            <!-- Notes -->
-            <div class="field-group">
-              <label class="field-label"
-                >Special instructions <span class="optional">(optional)</span></label
-              >
-              <textarea
-                v-model="itemModal.notes"
-                class="field-input field-textarea"
-                placeholder="e.g. no onions, extra sauce…"
-                rows="2"
-              />
-            </div>
-
-            <!-- Quantity + Add -->
-            <div class="item-modal-footer">
-              <div class="qty-control">
-                <button class="qty-btn" @click="itemModal.qty = Math.max(1, itemModal.qty - 1)">
-                  −
-                </button>
-                <span class="qty-val">{{ itemModal.qty }}</span>
-                <button class="qty-btn" @click="itemModal.qty++">+</button>
-              </div>
-              <button class="btn-add-to-cart" @click="confirmAddToCart">
-                Add {{ itemModal.qty }} — {{ currencySymbol
-                }}{{ (Number(itemModal.item?.price) * itemModal.qty).toFixed(2) }}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </Teleport>
-
-    <!-- ══ CART MODAL ════════════════════════ -->
-    <Teleport to="body">
-      <div v-if="cartOpen" class="modal-backdrop" @click.self="cartOpen = false">
-        <div class="modal modal-cart">
+    <!-- ── New Order Modal (Waiter) ── -->
+    <Transition name="modal">
+      <div v-if="showNewOrder" class="modal-overlay" @click.self="closeNewOrder">
+        <div class="modal modal--lg">
           <div class="modal-header">
-            <h2 class="modal-title">Your Order</h2>
-            <button class="modal-close" @click="cartOpen = false">✕</button>
+            <h2 class="modal-title">New Order</h2>
+            <button class="modal-close" @click="closeNewOrder">✕</button>
           </div>
 
-          <div class="cart-body">
-            <div v-for="(line, idx) in cart" :key="idx" class="cart-line">
-              <div class="cart-line-info">
-                <div class="cart-line-name">{{ line.name }}</div>
-                <div v-if="line.notes" class="cart-line-notes">{{ line.notes }}</div>
-                <div class="cart-line-price">
-                  {{ currencySymbol }}{{ (line.price * line.qty).toFixed(2) }}
+          <div class="modal-body">
+            <!-- Table Select -->
+            <div class="form-group">
+              <label class="form-label">Table</label>
+              <select v-model="newOrder.tableId" class="form-input">
+                <option value="" disabled>Select a table...</option>
+                <option v-for="t in tables" :key="t.id" :value="t.id">{{ t.name }}</option>
+              </select>
+            </div>
+
+            <!-- Menu -->
+            <div v-if="menuCategories.length > 0">
+              <div v-for="category in menuCategories" :key="category.id" class="menu-category">
+                <p class="category-name">{{ category.name }}</p>
+                <div class="menu-items-grid">
+                  <div
+                    v-for="item in category.menu_items"
+                    :key="item.id"
+                    class="menu-item"
+                    :class="{
+                      'item--in-cart': cartQty(item.id) > 0,
+                      'item--unavailable': !item.is_available,
+                    }"
+                    @click="item.is_available && addToCart(item)"
+                  >
+                    <div class="menu-item-info">
+                      <p class="menu-item-name">{{ item.name }}</p>
+                      <p class="menu-item-price">{{ formatCurrency(item.price) }}</p>
+                    </div>
+                    <div class="menu-item-qty" v-if="cartQty(item.id) > 0">
+                      <button class="qty-btn" @click.stop="removeFromCart(item.id)">−</button>
+                      <span>{{ cartQty(item.id) }}</span>
+                      <button class="qty-btn" @click.stop="addToCart(item)">+</button>
+                    </div>
+                    <div v-else-if="!item.is_available" class="sold-out">Sold out</div>
+                    <div v-else class="add-hint">Tap to add</div>
+                  </div>
                 </div>
               </div>
-              <div class="cart-line-qty">
-                <button class="qty-btn sm" @click="decrementCart(idx)">−</button>
-                <span class="qty-val sm">{{ line.qty }}</span>
-                <button class="qty-btn sm" @click="line.qty++">+</button>
+            </div>
+
+            <!-- Note -->
+            <div class="form-group" style="margin-top: 1rem">
+              <label class="form-label">Order Note (optional)</label>
+              <input
+                v-model="newOrder.note"
+                type="text"
+                class="form-input"
+                placeholder="e.g. No onions on table 3"
+              />
+            </div>
+
+            <!-- Cart Summary -->
+            <div v-if="cartItems.length > 0" class="cart-summary">
+              <p class="cart-title">Order Summary</p>
+              <div v-for="ci in cartItems" :key="ci.id" class="cart-row">
+                <span>×{{ ci.quantity }} {{ ci.name }}</span>
+                <span>{{ formatCurrency(ci.price * ci.quantity) }}</span>
+              </div>
+              <div class="cart-total">
+                <span>Total</span>
+                <span>{{ formatCurrency(cartTotal) }}</span>
               </div>
             </div>
 
-            <!-- Order notes -->
-            <div class="field-group" style="margin-top: 16px">
-              <label class="field-label"
-                >Order notes <span class="optional">(optional)</span></label
-              >
-              <textarea
-                v-model="orderNotes"
-                class="field-input field-textarea"
-                placeholder="Any notes for the kitchen…"
-                rows="2"
-              />
-            </div>
+            <div v-if="newOrderError" class="alert alert--error">{{ newOrderError }}</div>
           </div>
 
-          <div class="cart-footer">
-            <div class="cart-total-row">
-              <span class="cart-total-label">Total</span>
-              <span class="cart-total-val">{{ currencySymbol }}{{ cartTotal.toFixed(2) }}</span>
-            </div>
-            <button class="btn-place-order" :disabled="placing" @click="placeOrder">
-              {{
-                placing
-                  ? 'Placing order…'
-                  : `Place Order · ${currencySymbol}${cartTotal.toFixed(2)}`
-              }}
+          <div class="modal-footer">
+            <button class="btn-cancel" @click="closeNewOrder" :disabled="submitting">Cancel</button>
+            <button
+              class="btn-submit"
+              @click="submitOrder"
+              :disabled="submitting || !newOrder.tableId || cartItems.length === 0"
+            >
+              <span v-if="submitting" class="spinner"></span>
+              {{ submitting ? 'Placing...' : `Place Order · ${formatCurrency(cartTotal)}` }}
             </button>
-            <div v-if="orderError" class="order-error">{{ orderError }}</div>
           </div>
         </div>
       </div>
-    </Teleport>
+    </Transition>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useRoute } from 'vue-router'
 import { supabase } from '@/lib/supabase'
+import { useAuthStore } from '@/stores/auth'
 
-const route = useRoute()
+const authStore = useAuthStore()
 
+// ─── Role Helpers ─────────────────────────────────────────────────────────────
+const userRole = computed(() => authStore.profile?.role)
+const isAdmin = computed(() => userRole.value === 'admin')
+const isCashier = computed(() => userRole.value === 'cashier')
+const isWaiter = computed(() => userRole.value === 'waiter')
+
+// ─── State ────────────────────────────────────────────────────────────────────
 const loading = ref(true)
-const notFound = ref(false)
-const restaurant = ref({})
-const categories = ref([])
-const tableName = ref('')
-const tableId = ref('')
-const orderPlaced = ref(false)
-const placedItems = ref([])
-const orderStatus = ref('pending')
-const orderNotes = ref('')
-const orderError = ref('')
-const placing = ref(false)
-const activeCatId = ref(null)
-const cartOpen = ref(false)
-const tabsEl = ref(null)
-let statusChannel = null
+const orders = ref([])
+const tables = ref([])
+const menuCategories = ref([])
 
-// ── Cart ─────────────────────────────────────
-const cart = ref([]) // [{ itemId, name, price, qty, notes }]
+const activeTab = ref('all')
 
-const cartItemCount = computed(() => cart.value.reduce((n, l) => n + l.qty, 0))
-const cartTotal = computed(() => cart.value.reduce((n, l) => n + l.price * l.qty, 0))
-const placedTotal = computed(() =>
-  placedItems.value.reduce((n, i) => n + i.unit_price * i.quantity, 0),
-)
+// Cashier sees all non-paid tabs; Waiter sees all; Admin sees all
+const allTabs = [
+  { label: 'All', value: 'all' },
+  { label: 'Pending', value: 'pending' },
+  { label: 'Cooking', value: 'cooking' },
+  { label: 'Ready', value: 'ready' },
+  { label: 'Paid', value: 'paid' },
+]
+const visibleTabs = computed(() => allTabs)
 
-const currencySymbol = computed(() => {
-  const map = { USD: '$', EUR: '€', GBP: '£', KHR: '៛', THB: '฿', SGD: 'S$', AUD: 'A$', JPY: '¥' }
-  return map[restaurant.value.currency] || '$'
+const countByStatus = computed(() => {
+  const counts = {}
+  for (const o of orders.value) {
+    counts[o.status] = (counts[o.status] || 0) + 1
+  }
+  return counts
 })
 
-const activeCategories = computed(() =>
-  categories.value.filter((c) => c.is_active && c.items?.length > 0),
-)
+const filteredOrders = computed(() => {
+  if (activeTab.value === 'all') return orders.value
+  return orders.value.filter((o) => o.status === activeTab.value)
+})
 
-function cartCount(itemId) {
-  return cart.value.filter((l) => l.itemId === itemId).reduce((n, l) => n + l.qty, 0)
-}
+// ─── New Order (Waiter) ───────────────────────────────────────────────────────
+const showNewOrder = ref(false)
+const submitting = ref(false)
+const newOrderError = ref('')
+const newOrder = ref({ tableId: '', note: '' })
+const cart = ref({}) // { [menuItemId]: { id, name, price, quantity } }
 
-// ── Item modal ───────────────────────────────
-const itemModal = ref({ open: false, item: null, qty: 1, notes: '' })
+const cartItems = computed(() => Object.values(cart.value).filter((i) => i.quantity > 0))
+const cartTotal = computed(() => cartItems.value.reduce((sum, i) => sum + i.price * i.quantity, 0))
 
-function openItemModal(item) {
-  itemModal.value = { open: true, item, qty: 1, notes: '' }
+function cartQty(itemId) {
+  return cart.value[itemId]?.quantity || 0
 }
 
 function addToCart(item) {
-  const existing = cart.value.find((l) => l.itemId === item.id && !l.notes)
-  if (existing) {
-    existing.qty++
-    return
+  if (!cart.value[item.id]) {
+    cart.value[item.id] = { id: item.id, name: item.name, price: item.price, quantity: 0 }
   }
-  cart.value.push({
-    itemId: item.id,
-    name: item.name,
-    price: Number(item.price),
-    qty: 1,
-    notes: '',
-  })
+  cart.value[item.id].quantity++
 }
 
-function confirmAddToCart() {
-  const { item, qty, notes } = itemModal.value
-  const existing = cart.value.find((l) => l.itemId === item.id && l.notes === notes)
-  if (existing) {
-    existing.qty += qty
-  } else {
-    cart.value.push({ itemId: item.id, name: item.name, price: Number(item.price), qty, notes })
-  }
-  itemModal.value.open = false
+function removeFromCart(itemId) {
+  if (!cart.value[itemId]) return
+  cart.value[itemId].quantity--
+  if (cart.value[itemId].quantity <= 0) delete cart.value[itemId]
 }
 
-function decrementCart(idx) {
-  if (cart.value[idx].qty <= 1) cart.value.splice(idx, 1)
-  else cart.value[idx].qty--
+function openNewOrder() {
+  newOrder.value = { tableId: '', note: '' }
+  cart.value = {}
+  newOrderError.value = ''
+  showNewOrder.value = true
 }
 
-function openCart() {
-  cartOpen.value = true
+function closeNewOrder() {
+  if (submitting.value) return
+  showNewOrder.value = false
 }
 
-// ── Status screen ────────────────────────────
-const statusEmoji = computed(() => {
-  if (orderStatus.value === 'pending') return '⏳'
-  if (orderStatus.value === 'cooking') return '👨‍🍳'
-  if (orderStatus.value === 'ready') return '✅'
-  if (orderStatus.value === 'rejected') return '❌'
-  return '✅'
-})
-const statusClass = computed(() => ({
-  'status-pending': orderStatus.value === 'pending',
-  'status-cooking': orderStatus.value === 'cooking',
-  'status-ready': orderStatus.value === 'ready' || orderStatus.value === 'paid',
-  'status-rejected': orderStatus.value === 'rejected',
-}))
-const statusTitle = computed(() => {
-  if (orderStatus.value === 'pending') return 'Order received!'
-  if (orderStatus.value === 'cooking') return 'Being prepared…'
-  if (orderStatus.value === 'ready') return 'Your order is ready!'
-  if (orderStatus.value === 'rejected') return 'Order not accepted'
-  return 'Order complete!'
-})
-const statusDesc = computed(() => {
-  if (orderStatus.value === 'pending')
-    return 'The kitchen has your order and will confirm it shortly.'
-  if (orderStatus.value === 'cooking') return 'Your food is being prepared. Sit back and relax!'
-  if (orderStatus.value === 'ready') return 'A staff member will bring it to your table shortly.'
-  if (orderStatus.value === 'rejected') return 'Please speak to a staff member for assistance.'
-  return 'Thank you for dining with us!'
-})
-
-function resetOrder() {
-  orderPlaced.value = false
-  cart.value = []
-  orderNotes.value = ''
-  placedItems.value = []
-  if (statusChannel) {
-    supabase.removeChannel(statusChannel)
-    statusChannel = null
-  }
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function formatCurrency(amount) {
+  const currency = authStore.profile?.restaurants?.currency || 'USD'
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount || 0)
 }
 
-// ── Load menu ────────────────────────────────
-onMounted(async () => {
-  const slug = route.params.slug
-  tableId.value = route.params.tableId
+function timeElapsed(createdAt) {
+  const diff = Math.floor((Date.now() - new Date(createdAt)) / 1000)
+  if (diff < 60) return `${diff}s ago`
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`
+  return `${Math.floor(diff / 3600)}h ago`
+}
 
-  // Load restaurant by slug
-  const { data: rest, error: restError } = await supabase
-    .from('restaurants')
-    .select('id, name, logo_url, currency')
-    .eq('slug', slug)
-    .single()
+function statusLabel(status) {
+  return { pending: 'Pending', cooking: 'Cooking', ready: 'Ready', paid: 'Paid' }[status] || status
+}
 
-  if (restError || !rest) {
-    notFound.value = true
-    loading.value = false
-    return
-  }
-  restaurant.value = rest
+// ─── Fetch Data ───────────────────────────────────────────────────────────────
+async function fetchOrders() {
+  const restaurantId = authStore.profile?.restaurant_id
+  const { data, error } = await supabase
+    .from('orders')
+    .select(
+      'id, status, notes, total_amount, created_at, tables(name), order_items(id, quantity, unit_price, menu_items(name))',
+    )
+    .eq('restaurant_id', restaurantId)
+    .order('created_at', { ascending: false })
 
-  // Load table name
-  const { data: table } = await supabase
-    .from('tables')
-    .select('name, is_active')
-    .eq('id', tableId.value)
-    .eq('restaurant_id', rest.id)
-    .single()
+  console.log('Fetched orders:', orders.value)
 
-  if (!table || !table.is_active) {
-    notFound.value = true
-    loading.value = false
-    return
-  }
-  tableName.value = table.name
-
-  // Load categories + items
-  const { data: cats } = await supabase
-    .from('menu_categories')
-    .select('*')
-    .eq('restaurant_id', rest.id)
-    .eq('is_active', true)
-    .order('sort_order')
-
-  const { data: items } = await supabase
-    .from('menu_items')
-    .select('*')
-    .eq('restaurant_id', rest.id)
-    .order('sort_order')
-
-  categories.value = (cats || []).map((c) => ({
-    ...c,
-    items: (items || []).filter((i) => i.category_id === c.id),
-  }))
-
-  if (categories.value.length > 0) activeCatId.value = categories.value[0].id
-
+  if (!error) orders.value = data || []
   loading.value = false
-
-  // Intersection observer for active category tab
-  setTimeout(() => setupObserver(), 300)
-})
-
-onUnmounted(() => {
-  if (statusChannel) supabase.removeChannel(statusChannel)
-})
-
-function setupObserver() {
-  const observer = new IntersectionObserver(
-    (entries) => {
-      entries.forEach((e) => {
-        if (e.isIntersecting) {
-          const id = e.target.id.replace('cat-', '')
-          activeCatId.value = id
-        }
-      })
-    },
-    { threshold: 0.3 },
-  )
-
-  activeCategories.value.forEach((cat) => {
-    const el = document.getElementById(`cat-${cat.id}`)
-    if (el) observer.observe(el)
-  })
 }
 
-function scrollToCategory(catId) {
-  activeCatId.value = catId
-  const el = document.getElementById(`cat-${catId}`)
-  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+async function fetchTables() {
+  const restaurantId = authStore.profile?.restaurant_id
+  const { data } = await supabase
+    .from('tables')
+    .select('id, name')
+    .eq('restaurant_id', restaurantId)
+    .order('name')
+  tables.value = data || []
+
+  console.log('Fetched tables:', tables.value)
 }
 
-// ── Place order ──────────────────────────────
-async function placeOrder() {
-  if (cart.value.length === 0) return
-  placing.value = true
-  orderError.value = ''
+async function fetchMenu() {
+  const restaurantId = authStore.profile?.restaurant_id
+  const { data } = await supabase
+    .from('menu_categories')
+    .select('id, name, menu_items(id, name, price, is_available)')
+    .eq('restaurant_id', restaurantId)
+    .eq('menu_items.is_available', true)
+    .order('name')
+  menuCategories.value = (data || []).filter((c) => c.menu_items?.length > 0)
+
+  console.log('Fetched menu:', menuCategories.value)
+}
+
+// ─── Actions ──────────────────────────────────────────────────────────────────
+async function markAsPaid(order) {
+  const { error } = await supabase.from('orders').update({ status: 'paid' }).eq('id', order.id)
+
+  if (!error) order.status = 'paid'
+}
+
+async function cancelOrder(order) {
+  const { error } = await supabase.from('orders').update({ status: 'cancelled' }).eq('id', order.id)
+
+  if (!error) orders.value = orders.value.filter((o) => o.id !== order.id)
+}
+
+async function submitOrder() {
+  newOrderError.value = ''
+  if (!newOrder.value.tableId || cartItems.value.length === 0) return
+
+  submitting.value = true
+  const restaurantId = authStore.profile?.restaurant_id
 
   try {
-    const total = cartTotal.value
-
-    const { data: order, error: orderError_ } = await supabase
+    // 1. Create order
+    const { data: orderData, error: orderErr } = await supabase
       .from('orders')
       .insert({
-        restaurant_id: restaurant.value.id,
-        table_id: tableId.value,
+        restaurant_id: restaurantId,
+        table_id: newOrder.value.tableId,
         status: 'pending',
-        total_amount: total,
-        notes: orderNotes.value || null,
+        note: newOrder.value.note || null,
+        total_price: cartTotal.value,
       })
       .select()
       .single()
 
-    if (orderError_) throw orderError_
+    if (orderErr) throw new Error(orderErr.message)
 
-    const orderItemsPayload = cart.value.map((line) => ({
-      order_id: order.id,
-      menu_item_id: line.itemId,
-      quantity: line.qty,
-      unit_price: line.price,
-      notes: line.notes || null,
+    // 2. Insert order items
+    const items = cartItems.value.map((i) => ({
+      order_id: orderData.id,
+      menu_item_id: i.id,
+      quantity: i.quantity,
+      unit_price: i.price,
     }))
 
-    const { error: itemsError } = await supabase.from('order_items').insert(orderItemsPayload)
-    if (itemsError) throw itemsError
+    const { error: itemsErr } = await supabase.from('order_items').insert(items)
+    if (itemsErr) throw new Error(itemsErr.message)
 
-    // Build placed items for summary display
-    placedItems.value = cart.value.map((line) => ({
-      id: line.itemId,
-      name: line.name,
-      unit_price: line.price,
-      quantity: line.qty,
-    }))
-
-    cartOpen.value = false
-    orderPlaced.value = true
-    orderStatus.value = 'pending'
-
-    // Subscribe to realtime order status updates
-    statusChannel = supabase
-      .channel(`order-${order.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'orders',
-          filter: `id=eq.${order.id}`,
-        },
-        (payload) => {
-          orderStatus.value = payload.new.status
-        },
-      )
-      .subscribe()
-  } catch (e) {
-    orderError.value = e.message || 'Failed to place order. Please try again.'
+    showNewOrder.value = false
+    await fetchOrders()
+  } catch (err) {
+    newOrderError.value = err.message || 'Failed to place order. Please try again.'
   } finally {
-    placing.value = false
+    submitting.value = false
   }
 }
+
+// ─── Realtime ─────────────────────────────────────────────────────────────────
+let realtimeChannel = null
+
+function subscribeRealtime() {
+  const restaurantId = authStore.profile?.restaurant_id
+  realtimeChannel = supabase
+    .channel('orders-view')
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'orders',
+        filter: `restaurant_id=eq.${restaurantId}`,
+      },
+      () => fetchOrders(),
+    )
+    .subscribe()
+}
+
+// ─── Lifecycle ────────────────────────────────────────────────────────────────
+onMounted(async () => {
+  await fetchOrders()
+  await fetchTables()
+  if (isWaiter.value || isAdmin.value) await fetchMenu()
+  subscribeRealtime()
+})
+
+onUnmounted(() => {
+  if (realtimeChannel) supabase.removeChannel(realtimeChannel)
+})
 </script>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=DM+Sans:wght@400;500;600&display=swap');
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
-.order-page {
-  min-height: 100vh;
-  background: #faf8f5;
-  font-family: 'DM Sans', sans-serif;
-  max-width: 640px;
+.orders-page {
+  padding: 2rem;
+  max-width: 1200px;
   margin: 0 auto;
-  position: relative;
+  font-family: 'DM Sans', sans-serif;
 }
 
-/* Loading / not found */
-.full-center {
-  min-height: 100vh;
+/* ── Header ── */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 1.5rem;
+}
+.header-sub {
+  font-size: 0.78rem;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 0.25rem;
+}
+.header-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+.btn-primary {
+  background: #111827;
+  color: #fff;
+  border: none;
+  padding: 0.65rem 1.25rem;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-primary:hover {
+  background: #374151;
+}
+
+/* ── Filter Tabs ── */
+.filter-tabs {
+  display: flex;
+  gap: 0.4rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+.tab {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 1rem;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.tab:hover {
+  border-color: #d1d5db;
+  color: #374151;
+}
+.tab.active {
+  background: #111827;
+  color: #fff;
+  border-color: #111827;
+}
+.tab-count {
+  background: #e5e7eb;
+  color: #374151;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+}
+.tab.active .tab-count {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+/* ── Skeleton ── */
+.loading-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+.skeleton-card {
+  height: 180px;
+  border-radius: 14px;
+  background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+}
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* ── Empty ── */
+.empty-state {
+  text-align: center;
+  padding: 4rem 1rem;
+  color: #9ca3af;
+}
+.empty-icon {
+  font-size: 2.5rem;
+  display: block;
+  margin-bottom: 0.75rem;
+}
+
+/* ── Orders Grid ── */
+.orders-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+/* ── Order Card ── */
+.order-card {
+  background: #fff;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 1.25rem;
   display: flex;
   flex-direction: column;
+  gap: 0.85rem;
+  transition: box-shadow 0.15s;
+}
+.order-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.07);
+}
+.card--pending {
+  border-color: #fde68a;
+}
+.card--cooking {
+  border-color: #fca5a5;
+}
+.card--ready {
+  border-color: #6ee7b7;
+}
+.card--paid {
+  border-color: #e5e7eb;
+  opacity: 0.7;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.card-header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+.card-table {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #111827;
+}
+.card-elapsed {
+  font-size: 0.72rem;
+  color: #9ca3af;
+}
+
+.status-badge {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+}
+.status--pending {
+  background: #fef3c7;
+  color: #d97706;
+}
+.status--cooking {
+  background: #fee2e2;
+  color: #dc2626;
+}
+.status--ready {
+  background: #d1fae5;
+  color: #059669;
+}
+.status--paid {
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.card-items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.card-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.83rem;
+}
+.item-qty {
+  font-weight: 700;
+  color: #6b7280;
+  min-width: 24px;
+}
+.item-name {
+  flex: 1;
+  color: #374151;
+}
+.item-price {
+  color: #6b7280;
+  font-size: 0.78rem;
+}
+
+.card-note {
+  background: #fafafa;
+  border: 1px solid #f3f4f6;
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.78rem;
+  color: #6b7280;
+}
+
+.card-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid #f3f4f6;
+  padding-top: 0.75rem;
+  font-size: 0.82rem;
+  color: #6b7280;
+}
+.total-amount {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #111827;
+}
+
+.card-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.btn-action {
+  width: 100%;
+  padding: 0.6rem;
+  border-radius: 9px;
+  border: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btn-paid {
+  background: #059669;
+  color: #fff;
+}
+.btn-paid:hover {
+  background: #047857;
+}
+.btn-cancel-order {
+  background: #fff1f2;
+  color: #e11d48;
+  border: 1px solid #fecdd3;
+}
+.btn-cancel-order:hover {
+  background: #ffe4e6;
+}
+.card-waiting {
+  font-size: 0.78rem;
+  color: #9ca3af;
+  text-align: center;
+  margin: 0;
+}
+.card-paid-label {
+  font-size: 0.82rem;
+  color: #059669;
+  font-weight: 600;
+  text-align: center;
+  margin: 0;
+}
+
+/* ── Modal ── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  padding: 24px;
-  text-align: center;
+  z-index: 100;
+  padding: 1rem;
 }
+.modal {
+  background: #fff;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 540px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+.modal--lg {
+  max-width: 600px;
+}
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 1.5rem 0;
+  flex-shrink: 0;
+}
+.modal-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 0.85rem;
+  color: #9ca3af;
+  cursor: pointer;
+}
+.modal-close:hover {
+  color: #111827;
+}
+.modal-body {
+  padding: 1.25rem 1.5rem;
+  overflow-y: auto;
+  flex: 1;
+}
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem 1.5rem;
+  flex-shrink: 0;
+  border-top: 1px solid #f3f4f6;
+}
+
+/* ── Form ── */
+.form-group {
+  margin-bottom: 1rem;
+}
+.form-label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 0.4rem;
+}
+.form-input {
+  width: 100%;
+  padding: 0.65rem 0.9rem;
+  border: 1px solid #d1d5db;
+  border-radius: 9px;
+  font-size: 0.85rem;
+  color: #111827;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+  background: #fff;
+}
+.form-input:focus {
+  border-color: #6366f1;
+}
+
+/* ── Menu ── */
+.menu-category {
+  margin-bottom: 1.25rem;
+}
+.category-name {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #9ca3af;
+  margin-bottom: 0.6rem;
+}
+.menu-items-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.65rem 0.85rem;
+  border-radius: 9px;
+  border: 1px solid #f3f4f6;
+  cursor: pointer;
+  transition: all 0.15s;
+  background: #fff;
+}
+.menu-item:hover:not(.item--unavailable) {
+  border-color: #c7d2fe;
+  background: #eef2ff;
+}
+.item--in-cart {
+  border-color: #6366f1 !important;
+  background: #eef2ff !important;
+}
+.item--unavailable {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.menu-item-info {
+  flex: 1;
+}
+.menu-item-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #111827;
+}
+.menu-item-price {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-top: 0.1rem;
+}
+.add-hint {
+  font-size: 0.72rem;
+  color: #9ca3af;
+}
+.sold-out {
+  font-size: 0.72rem;
+  color: #e11d48;
+  font-weight: 600;
+}
+.menu-item-qty {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #4338ca;
+}
+.qty-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #e0e7ff;
+  color: #4338ca;
+  border: none;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.12s;
+}
+.qty-btn:hover {
+  background: #c7d2fe;
+}
+
+/* ── Cart Summary ── */
+.cart-summary {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 1rem;
+  margin-top: 1rem;
+}
+.cart-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #374151;
+  margin-bottom: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.cart-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.83rem;
+  color: #374151;
+  margin-bottom: 0.35rem;
+}
+.cart-total {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #111827;
+  border-top: 1px solid #e5e7eb;
+  padding-top: 0.6rem;
+  margin-top: 0.6rem;
+}
+
+/* ── Alert ── */
+.alert {
+  padding: 0.75rem 1rem;
+  border-radius: 9px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  margin-top: 0.75rem;
+}
+.alert--error {
+  background: #fff1f2;
+  color: #e11d48;
+  border: 1px solid #fecdd3;
+}
+
+/* ── Buttons ── */
+.btn-cancel {
+  padding: 0.65rem 1.25rem;
+  background: #f3f4f6;
+  color: #374151;
+  border: none;
+  border-radius: 9px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.btn-cancel:hover:not(:disabled) {
+  background: #e5e7eb;
+}
+.btn-cancel:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.btn-submit {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.25rem;
+  background: #111827;
+  color: #fff;
+  border: none;
+  border-radius: 9px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.btn-submit:hover:not(:disabled) {
+  background: #374151;
+}
+.btn-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Spinner ── */
 .spinner {
-  width: 28px;
-  height: 28px;
-  border: 3px solid #e2ddd6;
-  border-top-color: #c8733a;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
-}
-.loading-text {
-  font-size: 14px;
-  color: #aaa;
-}
-.not-found-icon {
-  font-size: 52px;
-}
-.not-found-title {
-  font-family: 'Fraunces', serif;
-  font-size: 22px;
-  color: #1a1a1a;
-}
-.not-found-sub {
-  font-size: 14px;
-  color: #aaa;
-  max-width: 280px;
-  line-height: 1.6;
 }
 @keyframes spin {
   to {
@@ -655,859 +1015,27 @@ async function placeOrder() {
   }
 }
 
-/* Restaurant header */
-.restaurant-header {
-  padding: 24px 16px 16px;
-  background: white;
-  border-bottom: 1px solid #ede9e2;
+/* ── Modal Transition ── */
+.modal-enter-active,
+.modal-leave-active {
+  transition: opacity 0.2s ease;
 }
-.restaurant-brand {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-.restaurant-logo {
-  width: 52px;
-  height: 52px;
-  border-radius: 12px;
-  overflow: hidden;
-  background: #f5f3ef;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-.logo-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-.logo-emoji-lg {
-  font-size: 26px;
-}
-.restaurant-title {
-  font-family: 'Fraunces', serif;
-  font-size: 22px;
-  font-weight: 700;
-  color: #1a1a1a;
-  letter-spacing: -0.4px;
-}
-.table-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  margin-top: 4px;
-  font-size: 12px;
-  font-weight: 600;
-  color: #c8733a;
-  background: #fff8f0;
-  border: 1px solid #f5d5b3;
-  padding: 2px 10px;
-  border-radius: 99px;
-}
-
-/* Category tabs */
-.category-tabs-wrap {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  background: white;
-  border-bottom: 1px solid #ede9e2;
-}
-.category-tabs {
-  display: flex;
-  gap: 0;
-  overflow-x: auto;
-  scrollbar-width: none;
-  padding: 0 12px;
-}
-.category-tabs::-webkit-scrollbar {
-  display: none;
-}
-.cat-tab {
-  padding: 12px 16px;
-  white-space: nowrap;
-  font-size: 13.5px;
-  font-weight: 600;
-  color: #aaa;
-  background: none;
-  border: none;
-  border-bottom: 2.5px solid transparent;
-  cursor: pointer;
-  transition: all 0.15s;
-  font-family: 'DM Sans', sans-serif;
-}
-.cat-tab:hover {
-  color: #555;
-}
-.cat-tab.active {
-  color: #c8733a;
-  border-bottom-color: #c8733a;
-}
-
-/* Menu content */
-.menu-content {
-  padding: 0 16px 24px;
-}
-.cat-section {
-  padding-top: 28px;
-}
-.cat-title {
-  font-family: 'Fraunces', serif;
-  font-size: 20px;
-  font-weight: 700;
-  color: #1a1a1a;
-  margin-bottom: 14px;
-  letter-spacing: -0.3px;
-}
-
-.items-list {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.menu-item-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 14px 0;
-  border-bottom: 1px solid #f0ece5;
-  cursor: pointer;
-  transition: background 0.1s;
-  border-radius: 4px;
-}
-.menu-item-row:last-child {
-  border-bottom: none;
-}
-.menu-item-row:hover:not(.out-of-stock) {
-  background: rgba(200, 115, 58, 0.03);
-}
-.menu-item-row.out-of-stock {
-  opacity: 0.5;
-  cursor: default;
-}
-
-.item-info {
-  flex: 1;
-  min-width: 0;
-}
-.item-name-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-.item-name {
-  font-size: 15px;
-  font-weight: 600;
-  color: #1a1a1a;
-}
-.sold-out-tag {
-  font-size: 10px;
-  font-weight: 700;
-  color: #dc2626;
-  background: #fff5f5;
-  border: 1px solid #fecaca;
-  padding: 1px 7px;
-  border-radius: 99px;
-  letter-spacing: 0.04em;
-}
-.item-desc {
-  font-size: 12.5px;
-  color: #aaa;
-  line-height: 1.5;
-  margin-top: 3px;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-.item-price {
-  font-size: 14px;
-  font-weight: 700;
-  color: #c8733a;
-  margin-top: 6px;
-}
-
-.item-right {
-  flex-shrink: 0;
-}
-.item-thumb-wrap {
-  position: relative;
-}
-.item-thumb {
-  width: 80px;
-  height: 80px;
-  border-radius: 10px;
-  object-fit: cover;
-  display: block;
-}
-.item-thumb-placeholder {
-  width: 80px;
-  height: 80px;
-  border-radius: 10px;
-  background: #f0ece5;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24px;
-}
-
-.add-btn {
-  position: absolute;
-  bottom: -8px;
-  right: -8px;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: #1a1a1a;
-  color: white;
-  border: none;
-  font-size: 16px;
-  font-weight: 700;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  transition: all 0.15s;
-}
-.add-btn:hover {
-  background: #c8733a;
-  transform: scale(1.1);
-}
-.add-btn.has-items {
-  background: #c8733a;
-  width: 32px;
-  height: 32px;
-  font-size: 13px;
-  font-weight: 700;
-}
-.add-btn-count {
-  font-size: 13px;
-  font-weight: 700;
-}
-
-/* Cart bar */
-.cart-bar {
-  position: fixed;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: calc(100% - 32px);
-  max-width: 600px;
-  background: #1a1a1a;
-  color: white;
-  border-radius: 14px;
-  padding: 14px 20px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  cursor: pointer;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
-  z-index: 50;
-  transition: background 0.15s;
-}
-.cart-bar:hover {
-  background: #c8733a;
-}
-.cart-bar-left {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-.cart-count-badge {
-  width: 26px;
-  height: 26px;
-  border-radius: 8px;
-  background: #c8733a;
-  color: white;
-  font-size: 13px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.cart-bar:hover .cart-count-badge {
-  background: white;
-  color: #c8733a;
-}
-.cart-bar-label {
-  font-size: 14px;
-  font-weight: 600;
-}
-.cart-bar-total {
-  font-size: 14px;
-  font-weight: 700;
-}
-
-.cart-bar-enter-active,
-.cart-bar-leave-active {
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-.cart-bar-enter-from,
-.cart-bar-leave-to {
+.modal-enter-from,
+.modal-leave-to {
   opacity: 0;
-  transform: translateX(-50%) translateY(20px);
+}
+.modal-enter-from .modal,
+.modal-leave-to .modal {
+  transform: scale(0.96) translateY(8px);
 }
 
-/* Status screen */
-.status-screen {
-  min-height: 100vh;
-  background: #faf8f5;
-  padding: 0 16px 40px;
-}
-.status-header {
-  padding: 24px 0 16px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-}
-.restaurant-logo-sm {
-  width: 44px;
-  height: 44px;
-  border-radius: 10px;
-  overflow: hidden;
-  background: #f5f3ef;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.logo-img-sm {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-.logo-emoji {
-  font-size: 22px;
-}
-.restaurant-name-sm {
-  font-family: 'Fraunces', serif;
-  font-size: 18px;
-  font-weight: 700;
-  color: #1a1a1a;
-}
-.table-badge-sm {
-  font-size: 12px;
-  font-weight: 600;
-  color: #c8733a;
-  background: #fff8f0;
-  border: 1px solid #f5d5b3;
-  padding: 2px 10px;
-  border-radius: 99px;
-}
-
-.status-card {
-  background: white;
-  border-radius: 16px;
-  padding: 28px 24px;
-  border: 1.5px solid #ede9e2;
-}
-.status-icon-wrap {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 16px;
-}
-.status-icon {
-  font-size: 48px;
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.status-pending {
-  background: #fef9c3;
-}
-.status-cooking {
-  background: #fff7ed;
-}
-.status-ready {
-  background: #f0fdf4;
-}
-.status-rejected {
-  background: #fff5f5;
-}
-
-.status-title {
-  font-family: 'Fraunces', serif;
-  font-size: 22px;
-  font-weight: 700;
-  color: #1a1a1a;
-  text-align: center;
-  margin-bottom: 6px;
-}
-.status-desc {
-  font-size: 14px;
-  color: #888;
-  text-align: center;
-  line-height: 1.6;
-  margin-bottom: 24px;
-}
-
-/* Progress steps */
-.status-steps {
-  display: flex;
-  align-items: center;
-  margin-bottom: 28px;
-}
-.step-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  flex: 0;
-}
-.step-circle {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  border: 2px solid #e2ddd6;
-  background: white;
-  color: #ccc;
-  font-size: 12px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.3s;
-}
-.step-item.active .step-circle {
-  border-color: #c8733a;
-  color: #c8733a;
-  background: #fff8f0;
-}
-.step-item.done .step-circle {
-  border-color: #4ade80;
-  background: #f0fdf4;
-  color: #16a34a;
-}
-.step-item span:last-child {
-  font-size: 10px;
-  font-weight: 600;
-  color: #bbb;
-  white-space: nowrap;
-}
-.step-item.active span:last-child {
-  color: #c8733a;
-}
-.step-item.done span:last-child {
-  color: #16a34a;
-}
-.step-line {
-  flex: 1;
-  height: 2px;
-  background: #e2ddd6;
-  margin: 0 4px;
-  margin-bottom: 18px;
-  transition: background 0.3s;
-}
-.step-line.done {
-  background: #4ade80;
-}
-
-/* Order summary */
-.order-summary {
-  background: #fdfcfa;
-  border: 1.5px solid #ede9e2;
-  border-radius: 12px;
-  padding: 16px;
-  margin-bottom: 20px;
-}
-.summary-title {
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-  color: #bbb;
-  margin-bottom: 12px;
-}
-.summary-items {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-.summary-item {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 13.5px;
-}
-.summary-qty {
-  font-weight: 700;
-  color: #aaa;
-  width: 24px;
-  flex-shrink: 0;
-}
-.summary-name {
-  flex: 1;
-  color: #333;
-}
-.summary-price {
-  font-weight: 600;
-  color: #1a1a1a;
-}
-.summary-total {
-  display: flex;
-  justify-content: space-between;
-  padding-top: 10px;
-  border-top: 1px solid #ede9e2;
-  font-size: 15px;
-  font-weight: 700;
-  color: #1a1a1a;
-}
-
-.btn-order-again {
-  width: 100%;
-  padding: 12px;
-  background: transparent;
-  color: #c8733a;
-  border: 1.5px solid #c8733a;
-  border-radius: 10px;
-  font-size: 14px;
-  font-weight: 600;
-  font-family: 'DM Sans', sans-serif;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.btn-order-again:hover {
-  background: #c8733a;
-  color: white;
-}
-
-/* Modals */
-.modal-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  z-index: 200;
-  backdrop-filter: blur(2px);
-}
-.modal {
-  background: white;
-  border-radius: 20px 20px 0 0;
-  width: 100%;
-  max-width: 640px;
-  box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.15);
-  animation: slide-up 0.3s cubic-bezier(0.34, 1.2, 0.64, 1);
-  max-height: 92vh;
-  overflow-y: auto;
-}
-@keyframes slide-up {
-  from {
-    transform: translateY(100%);
-    opacity: 0;
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .orders-page {
+    padding: 1rem;
   }
-  to {
-    transform: translateY(0);
-    opacity: 1;
+  .orders-grid {
+    grid-template-columns: 1fr;
   }
-}
-
-/* Item modal */
-.modal-item {
-  padding-bottom: 24px;
-}
-.modal-close-float {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.3);
-  color: white;
-  border: none;
-  font-size: 12px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.item-modal-image {
-  position: relative;
-  height: 220px;
-  overflow: hidden;
-}
-.item-modal-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-.item-modal-img-placeholder {
-  width: 100%;
-  height: 100%;
-  background: #f5f3ef;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 52px;
-}
-.item-modal-body {
-  padding: 20px 20px 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-.item-modal-name {
-  font-family: 'Fraunces', serif;
-  font-size: 22px;
-  font-weight: 700;
-  color: #1a1a1a;
-}
-.item-modal-desc {
-  font-size: 14px;
-  color: #888;
-  line-height: 1.6;
-}
-.item-modal-price {
-  font-size: 18px;
-  font-weight: 700;
-  color: #c8733a;
-}
-.item-modal-footer {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-top: 4px;
-}
-
-/* Cart modal */
-.modal-cart {
-  border-radius: 20px 20px 0 0;
-  display: flex;
-  flex-direction: column;
-}
-.modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 20px 20px 16px;
-  border-bottom: 1px solid #f0ece5;
-  flex-shrink: 0;
-}
-.modal-title {
-  font-family: 'Fraunces', serif;
-  font-size: 20px;
-  font-weight: 700;
-  color: #1a1a1a;
-}
-.modal-close {
-  background: none;
-  border: none;
-  color: #aaa;
-  font-size: 16px;
-  cursor: pointer;
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.15s;
-}
-.modal-close:hover {
-  background: #f5f3ef;
-  color: #333;
-}
-
-.cart-body {
-  padding: 16px 20px;
-  flex: 1;
-  overflow-y: auto;
-}
-.cart-line {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 0;
-  border-bottom: 1px solid #f0ece5;
-}
-.cart-line:last-child {
-  border-bottom: none;
-}
-.cart-line-info {
-  flex: 1;
-  min-width: 0;
-}
-.cart-line-name {
-  font-size: 14px;
-  font-weight: 600;
-  color: #1a1a1a;
-}
-.cart-line-notes {
-  font-size: 12px;
-  color: #bbb;
-  margin-top: 2px;
-}
-.cart-line-price {
-  font-size: 13.5px;
-  font-weight: 700;
-  color: #c8733a;
-  margin-top: 3px;
-}
-.cart-line-qty {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-}
-
-.cart-footer {
-  padding: 16px 20px;
-  border-top: 1px solid #f0ece5;
-  background: #fdfcfa;
-  flex-shrink: 0;
-}
-.cart-total-row {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 14px;
-}
-.cart-total-label {
-  font-size: 15px;
-  font-weight: 600;
-  color: #1a1a1a;
-}
-.cart-total-val {
-  font-size: 15px;
-  font-weight: 700;
-  color: #1a1a1a;
-}
-
-.btn-place-order {
-  width: 100%;
-  padding: 14px;
-  background: #1a1a1a;
-  color: white;
-  border: none;
-  border-radius: 12px;
-  font-size: 15px;
-  font-weight: 700;
-  font-family: 'DM Sans', sans-serif;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-.btn-place-order:hover:not(:disabled) {
-  background: #c8733a;
-}
-.btn-place-order:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.order-error {
-  font-size: 13px;
-  color: #dc2626;
-  text-align: center;
-  margin-top: 10px;
-}
-
-/* Qty controls */
-.qty-control {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  background: #f5f3ef;
-  border-radius: 99px;
-  padding: 6px 14px;
-}
-.qty-btn {
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  border: none;
-  background: white;
-  color: #1a1a1a;
-  font-size: 18px;
-  font-weight: 700;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
-  transition: all 0.15s;
-  font-family: 'DM Sans', sans-serif;
-}
-.qty-btn:hover {
-  background: #c8733a;
-  color: white;
-}
-.qty-btn.sm {
-  width: 22px;
-  height: 22px;
-  font-size: 14px;
-}
-.qty-val {
-  font-size: 15px;
-  font-weight: 700;
-  color: #1a1a1a;
-  min-width: 16px;
-  text-align: center;
-}
-.qty-val.sm {
-  font-size: 14px;
-}
-
-.btn-add-to-cart {
-  flex: 1;
-  padding: 12px;
-  background: #1a1a1a;
-  color: white;
-  border: none;
-  border-radius: 12px;
-  font-size: 14px;
-  font-weight: 700;
-  font-family: 'DM Sans', sans-serif;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-.btn-add-to-cart:hover {
-  background: #c8733a;
-}
-
-/* Fields */
-.field-group {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.field-label {
-  font-size: 13px;
-  font-weight: 600;
-  color: #444;
-}
-.optional {
-  font-weight: 400;
-  color: #bbb;
-}
-.field-input {
-  width: 100%;
-  padding: 9px 13px;
-  border: 1.5px solid #e2ddd6;
-  border-radius: 8px;
-  font-size: 14px;
-  font-family: 'DM Sans', sans-serif;
-  color: #1a1a1a;
-  background: #fdfcfa;
-  outline: none;
-  transition:
-    border-color 0.2s,
-    box-shadow 0.2s;
-}
-.field-input:focus {
-  border-color: #c8733a;
-  box-shadow: 0 0 0 3px rgba(200, 115, 58, 0.1);
-}
-.field-textarea {
-  resize: vertical;
-  min-height: 60px;
 }
 </style>
