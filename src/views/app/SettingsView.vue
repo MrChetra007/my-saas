@@ -700,6 +700,40 @@ async function goToCheckout() {
   // Note: don't set checkoutLoading = false on success — page is redirecting
 }
 
+/*
+async function goToCheckout() {
+  if (!selectedPlan.value) return
+
+  // Verify session before calling Edge Function
+  const { data: sessionData } = await supabase.auth.getSession()
+  if (!sessionData.session) {
+    billingError.value = 'Your session has expired. Please log in again.'
+    return
+  }
+
+  billingError.value = ''
+  checkoutLoading.value = true
+
+  try {
+    const { data, error } = await supabase.functions.invoke('create-checkout-session', {
+      body: { plan: selectedPlan.value },
+    })
+
+    if (error) throw error
+
+    if (data?.url) {
+      window.location.href = data.url
+    } else {
+      throw new Error('No checkout URL returned.')
+    }
+  } catch (err) {
+    console.error('Checkout error:', err)
+    billingError.value = 'Could not start checkout. Please try again.'
+    checkoutLoading.value = false
+  }
+}
+  */
+
 // FIX: goToPortal() removed entirely.
 // Lemon Squeezy portal is a plain URL stored in restaurant.customer_portal_url.
 // The <a> tag in the template handles this directly — no Edge Function needed.

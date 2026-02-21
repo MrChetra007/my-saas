@@ -184,7 +184,7 @@
             <div class="pricing-name">Starter</div>
             <div class="pricing-price">
               <span class="price-currency">$</span>
-              <span class="price-num">29</span>
+              <span class="price-num">49</span>
               <span class="price-period">/month</span>
             </div>
             <p class="pricing-desc">
@@ -204,7 +204,7 @@
             <div class="pricing-name">Pro</div>
             <div class="pricing-price">
               <span class="price-currency">$</span>
-              <span class="price-num">59</span>
+              <span class="price-num">99</span>
               <span class="price-period">/month</span>
             </div>
             <p class="pricing-desc">
@@ -408,23 +408,27 @@ const roles = [
   },
 ]
 
+// FIX: corrected prices and features to match actual plans
 const starterFeatures = [
+  'Up to 15 tables',
   'Up to 3 staff accounts',
-  'Unlimited orders & tables',
-  'QR ordering page',
-  'Kitchen & cashier views',
+  'Unlimited orders',
+  'QR code ordering page',
+  'Kitchen, cashier & waiter views',
   'Menu management',
   'Email support',
 ]
 
 const proFeatures = [
-  'Unlimited staff accounts',
-  'Unlimited orders & tables',
-  'QR ordering page',
-  'Kitchen & cashier views',
+  'Unlimited tables',
+  'Up to 10 staff accounts',
+  'Unlimited orders',
+  'QR code ordering page',
+  'Kitchen, cashier & waiter views',
   'Menu management',
-  'Dashboard analytics',
-  'Priority support',
+  'Analytics & revenue charts',
+  'Promotions & discount codes',
+  'Priority email support',
 ]
 
 const faq = [

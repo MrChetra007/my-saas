@@ -78,7 +78,7 @@ serve(async (req) => {
     }
 
     const variantId = VARIANT_IDS[plan]
-    const appUrl = Deno.env.get('APP_URL') ?? 'https://yourapp.com'
+    const appUrl = Deno.env.get('APP_URL') ?? 'https://nonemploying-towery-chang.ngrok-free.dev'
 
     // --- Build the Lemon Squeezy checkout payload ---
     // Docs: https://docs.lemonsqueezy.com/api/checkouts/create-checkout
@@ -117,22 +117,22 @@ serve(async (req) => {
 
     // If this restaurant already has a Lemon Squeezy customer ID, attach it
     // so the new subscription links to the same customer record
-    if (restaurant.lemonsqueezy_customer_id) {
-      ;(checkoutPayload.data as Record<string, unknown>).attributes = {
-        ...((checkoutPayload.data as Record<string, unknown>).attributes as object),
-        checkout_data: {
-          ...((
-            (checkoutPayload.data as Record<string, unknown>).attributes as Record<string, unknown>
-          ).checkout_data as object),
-          // Pass existing customer ID to avoid duplicate customer records in LS
-          custom: {
-            restaurant_id: restaurant.id,
-            plan: plan,
-            existing_customer_id: restaurant.lemonsqueezy_customer_id,
-          },
-        },
-      }
-    }
+    // if (restaurant.lemonsqueezy_customer_id) {
+    //   ;(checkoutPayload.data as Record<string, unknown>).attributes = {
+    //     ...((checkoutPayload.data as Record<string, unknown>).attributes as object),
+    //     checkout_data: {
+    //       ...((
+    //         (checkoutPayload.data as Record<string, unknown>).attributes as Record<string, unknown>
+    //       ).checkout_data as object),
+    //       // Pass existing customer ID to avoid duplicate customer records in LS
+    //       custom: {
+    //         restaurant_id: restaurant.id,
+    //         plan: plan,
+    //         existing_customer_id: restaurant.lemonsqueezy_customer_id,
+    //       },
+    //     },
+    //   }
+    // }
 
     // --- Create the checkout via Lemon Squeezy API ---
     const lsResponse = await fetch('https://api.lemonsqueezy.com/v1/checkouts', {
