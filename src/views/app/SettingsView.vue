@@ -673,6 +673,8 @@ function discardChanges() {
 // itself via the auth token and handles redirect URLs via APP_URL env var.
 // Removed: restaurantId, successUrl, cancelUrl from body.
 async function goToCheckout() {
+  const { data } = await supabase.auth.getSession()
+  console.log(data.session)
   if (!selectedPlan.value) return
   billingError.value = ''
   checkoutLoading.value = true
