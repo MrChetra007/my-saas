@@ -72,6 +72,11 @@
           <span class="nav-label" v-show="!sidebarCollapsed">Staff</span>
           <span class="nav-tooltip" v-show="sidebarCollapsed">Staff</span>
         </RouterLink>
+        <RouterLink to="/app/promotions" class="nav-item" active-class="nav-active">
+          <span class="nav-icon">{{ icons.promotions }}</span>
+          <span class="nav-label" v-show="!sidebarCollapsed">Promotions</span>
+          <span class="nav-tooltip" v-show="sidebarCollapsed">Promotions</span>
+        </RouterLink>
 
         <div class="nav-section-label" v-show="!sidebarCollapsed">Account</div>
         <RouterLink to="/app/settings" class="nav-item" active-class="nav-active">
@@ -156,6 +161,7 @@ const icons = {
   settings: '⚙',
   history: '📜',
   analytics: '📊',
+  promotions: '🏷️',
 }
 
 const pageTitles = {

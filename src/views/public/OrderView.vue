@@ -79,6 +79,13 @@
               >
             </div>
           </div>
+          <!-- Discount line in status summary -->
+          <div v-if="placedDiscountAmount > 0" class="summary-discount-row">
+            <span>Discount</span>
+            <span class="summary-discount-val"
+              >−{{ currencySymbol }}{{ placedDiscountAmount.toFixed(2) }}</span
+            >
+          </div>
           <div class="summary-total">
             <span>Total</span>
             <span>{{ currencySymbol }}{{ placedTotal.toFixed(2) }}</span>
@@ -102,6 +109,17 @@
             <h1 class="restaurant-title">{{ restaurant.name }}</h1>
             <div class="table-badge">📍 {{ tableName }}</div>
           </div>
+        </div>
+
+        <!-- Auto promo announcement in header -->
+        <div v-if="autoPromo" class="header-promo-banner">
+          🎉 <strong>{{ autoPromo.name }}</strong> is active —
+          {{
+            autoPromo.type === 'percentage'
+              ? `${autoPromo.value}% off`
+              : `${currencySymbol}${autoPromo.value} off`
+          }}
+          your order!
         </div>
       </div>
 
@@ -184,7 +202,7 @@
             <span class="cart-count-badge">{{ cartItemCount }}</span>
             <span class="cart-bar-label">View order</span>
           </div>
-          <span class="cart-bar-total">{{ currencySymbol }}{{ cartTotal.toFixed(2) }}</span>
+          <span class="cart-bar-total">{{ currencySymbol }}{{ orderTotal.toFixed(2) }}</span>
         </div>
       </Transition>
     </template>
@@ -282,18 +300,96 @@
                 rows="2"
               />
             </div>
+
+            <!-- ── PROMO SECTION ─────────────────── -->
+            <!-- Auto promo banner -->
+            <div v-if="autoPromo && !appliedPromo" class="auto-promo-banner">
+              <span>🎉</span>
+              <div>
+                <strong>{{ autoPromo.name }}</strong> applied automatically —
+                <span class="auto-promo-value">
+                  {{
+                    autoPromo.type === 'percentage'
+                      ? `${autoPromo.value}% off`
+                      : `${currencySymbol}${autoPromo.value} off`
+                  }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Code input -->
+            <div v-if="!appliedPromo" class="promo-section">
+              <div class="promo-input-row">
+                <input
+                  v-model="promoInput"
+                  type="text"
+                  placeholder="Discount code"
+                  class="field-input promo-input"
+                  @keyup.enter="applyPromoCode"
+                  @input="promoInput = promoInput.toUpperCase()"
+                  :disabled="promoLoading"
+                />
+                <button
+                  class="promo-apply-btn"
+                  @click="applyPromoCode"
+                  :disabled="promoLoading || !promoInput.trim()"
+                >
+                  {{ promoLoading ? '…' : 'Apply' }}
+                </button>
+              </div>
+              <p v-if="promoError" class="promo-error">{{ promoError }}</p>
+            </div>
+
+            <!-- Applied code tag -->
+            <div v-if="appliedPromo" class="applied-promo-tag">
+              <span>✅</span>
+              <div class="applied-info">
+                <span class="applied-code">{{ appliedPromoCode }}</span>
+                <span class="applied-desc">
+                  {{
+                    appliedPromo.type === 'percentage'
+                      ? `${appliedPromo.value}% off`
+                      : `${currencySymbol}${appliedPromo.value} off`
+                  }}
+                  — saving {{ currencySymbol }}{{ discountAmount.toFixed(2) }}
+                </span>
+              </div>
+              <button class="remove-promo-btn" @click="removePromoCode">✕</button>
+            </div>
+            <!-- ── END PROMO SECTION ─────────────── -->
           </div>
 
           <div class="cart-footer">
-            <div class="cart-total-row">
-              <span class="cart-total-label">Total</span>
-              <span class="cart-total-val">{{ currencySymbol }}{{ cartTotal.toFixed(2) }}</span>
+            <!-- Totals breakdown -->
+            <div v-if="discountAmount > 0" class="cart-subtotal-row">
+              <span class="cart-total-label">Subtotal</span>
+              <span class="cart-total-val">{{ currencySymbol }}{{ cartSubtotal.toFixed(2) }}</span>
             </div>
+            <div v-if="discountAmount > 0" class="cart-discount-row">
+              <span class="cart-discount-label">
+                Discount
+                <span class="discount-pill">
+                  {{
+                    (appliedPromo || autoPromo).type === 'percentage'
+                      ? `${(appliedPromo || autoPromo).value}%`
+                      : 'Fixed'
+                  }}
+                </span>
+              </span>
+              <span class="cart-discount-val"
+                >−{{ currencySymbol }}{{ discountAmount.toFixed(2) }}</span
+              >
+            </div>
+            <div class="cart-total-row" :class="{ 'has-discount': discountAmount > 0 }">
+              <span class="cart-total-label">Total</span>
+              <span class="cart-total-val">{{ currencySymbol }}{{ orderTotal.toFixed(2) }}</span>
+            </div>
+
             <button class="btn-place-order" :disabled="placing" @click="placeOrder">
               {{
                 placing
                   ? 'Placing order…'
-                  : `Place Order · ${currencySymbol}${cartTotal.toFixed(2)}`
+                  : `Place Order · ${currencySymbol}${orderTotal.toFixed(2)}`
               }}
             </button>
             <div v-if="orderError" class="order-error">{{ orderError }}</div>
@@ -319,6 +415,7 @@ const tableName = ref('')
 const tableId = ref('')
 const orderPlaced = ref(false)
 const placedItems = ref([])
+const placedDiscountAmount = ref(0)
 const orderStatus = ref('pending')
 const orderNotes = ref('')
 const orderError = ref('')
@@ -327,17 +424,82 @@ const activeCatId = ref(null)
 const cartOpen = ref(false)
 const tabsEl = ref(null)
 let statusChannel = null
-let menuChannel = null // ← NEW: channel for real-time menu availability
+let menuChannel = null
 
 // ── Cart ─────────────────────────────────────
 const cart = ref([])
 
 const cartItemCount = computed(() => cart.value.reduce((n, l) => n + l.qty, 0))
-const cartTotal = computed(() => cart.value.reduce((n, l) => n + l.price * l.qty, 0))
-const placedTotal = computed(() =>
-  placedItems.value.reduce((n, i) => n + i.unit_price * i.quantity, 0),
+
+// Subtotal before discount
+const cartSubtotal = computed(() => cart.value.reduce((n, l) => n + l.price * l.qty, 0))
+
+// ── Promotions ───────────────────────────────
+const promoInput = ref('')
+const appliedPromoCode = ref('')
+const promoError = ref('')
+const promoLoading = ref(false)
+const appliedPromo = ref(null) // manually entered code promo
+const autoPromo = ref(null) // time-based auto promo
+
+const discountAmount = computed(() => {
+  const promo = appliedPromo.value || autoPromo.value
+  if (!promo || cartSubtotal.value === 0) return 0
+  if (promo.type === 'percentage') {
+    return Math.round(cartSubtotal.value * promo.value) / 100
+  }
+  return Math.min(promo.value, cartSubtotal.value)
+})
+
+// Final total shown to customer and sent to DB
+const orderTotal = computed(() => Math.max(0, cartSubtotal.value - discountAmount.value))
+
+// Legacy: placedTotal now reads from orderTotal snapshot stored at order time
+const placedTotal = computed(
+  () =>
+    placedItems.value.reduce((n, i) => n + i.unit_price * i.quantity, 0) -
+    placedDiscountAmount.value,
 )
 
+async function checkAutoPromotions() {
+  const { data } = await supabase.rpc('get_active_auto_promotions', {
+    p_restaurant_id: restaurant.value.id,
+  })
+  if (data && data.length > 0) {
+    autoPromo.value = data[0]
+  }
+}
+
+async function applyPromoCode() {
+  promoError.value = ''
+  if (!promoInput.value.trim()) return
+
+  promoLoading.value = true
+  const { data, error } = await supabase.rpc('validate_promotion', {
+    p_restaurant_id: restaurant.value.id,
+    p_code: promoInput.value.trim(),
+    p_order_total: cartSubtotal.value,
+  })
+  promoLoading.value = false
+
+  if (error || !data || data.length === 0) {
+    promoError.value = 'Invalid or expired code.'
+    return
+  }
+
+  appliedPromo.value = data[0]
+  appliedPromoCode.value = promoInput.value.trim().toUpperCase()
+  promoInput.value = ''
+  promoError.value = ''
+}
+
+function removePromoCode() {
+  appliedPromo.value = null
+  appliedPromoCode.value = ''
+  promoError.value = ''
+}
+
+// ── Currency ─────────────────────────────────
 const currencySymbol = computed(() => {
   const map = { USD: '$', EUR: '€', GBP: '£', KHR: '៛', THB: '฿', SGD: 'S$', AUD: 'A$', JPY: '¥' }
   return map[restaurant.value.currency] || '$'
@@ -428,6 +590,10 @@ function resetOrder() {
   cart.value = []
   orderNotes.value = ''
   placedItems.value = []
+  placedDiscountAmount.value = 0
+  appliedPromo.value = null
+  appliedPromoCode.value = ''
+  autoPromo.value = null
   if (statusChannel) {
     supabase.removeChannel(statusChannel)
     statusChannel = null
@@ -435,9 +601,6 @@ function resetOrder() {
 }
 
 // ── Real-time menu availability ──────────────
-// ← NEW: subscribe to menu_items UPDATE events for this restaurant.
-// When the admin toggles a sold-out item, the customer's menu updates
-// instantly without a page refresh.
 function subscribeToMenuAvailability(restaurantId) {
   menuChannel = supabase
     .channel(`menu-availability-${restaurantId}`)
@@ -451,13 +614,10 @@ function subscribeToMenuAvailability(restaurantId) {
       },
       (payload) => {
         const updated = payload.new
-        // Find the item across all categories and patch is_available in-place
         for (const cat of categories.value) {
           const item = cat.items?.find((i) => i.id === updated.id)
           if (item) {
             item.is_available = updated.is_available
-
-            // If item is now unavailable and it's open in the item modal, close it
             if (
               !updated.is_available &&
               itemModal.value.open &&
@@ -465,13 +625,9 @@ function subscribeToMenuAvailability(restaurantId) {
             ) {
               itemModal.value.open = false
             }
-
-            // If item is now unavailable, remove it from the cart silently
-            // (customer will see their cart updated if they open it)
             if (!updated.is_available) {
               cart.value = cart.value.filter((l) => l.itemId !== updated.id)
             }
-
             break
           }
         }
@@ -534,15 +690,17 @@ onMounted(async () => {
 
   loading.value = false
 
-  // ← NEW: start listening for availability changes
   subscribeToMenuAvailability(rest.id)
+
+  // Check for active auto-promotions (e.g. happy hour)
+  await checkAutoPromotions()
 
   setTimeout(() => setupObserver(), 300)
 })
 
 onUnmounted(() => {
   if (statusChannel) supabase.removeChannel(statusChannel)
-  if (menuChannel) supabase.removeChannel(menuChannel) // ← NEW: clean up
+  if (menuChannel) supabase.removeChannel(menuChannel)
 })
 
 function setupObserver() {
@@ -557,7 +715,6 @@ function setupObserver() {
     },
     { threshold: 0.3 },
   )
-
   activeCategories.value.forEach((cat) => {
     const el = document.getElementById(`cat-${cat.id}`)
     if (el) observer.observe(el)
@@ -577,21 +734,27 @@ async function placeOrder() {
   orderError.value = ''
 
   try {
-    const total = cartTotal.value
+    const usedPromo = appliedPromo.value || autoPromo.value
+    const finalDiscount = discountAmount.value
+    const finalTotal = orderTotal.value
 
-    const { data: order, error: orderError_ } = await supabase
+    const { data: order, error: orderErr } = await supabase
       .from('orders')
       .insert({
         restaurant_id: restaurant.value.id,
         table_id: tableId.value,
         status: 'pending',
-        total_amount: total,
+        total_amount: finalTotal,
         notes: orderNotes.value || null,
+        // ── promotion fields ──
+        promotion_id: usedPromo?.id || null,
+        discount_code: appliedPromo.value ? appliedPromoCode.value : null,
+        discount_amount: finalDiscount,
       })
       .select()
       .single()
 
-    if (orderError_) throw orderError_
+    if (orderErr) throw orderErr
 
     const orderItemsPayload = cart.value.map((line) => ({
       order_id: order.id,
@@ -604,12 +767,19 @@ async function placeOrder() {
     const { error: itemsError } = await supabase.from('order_items').insert(orderItemsPayload)
     if (itemsError) throw itemsError
 
+    // Increment promotion usage count
+    if (usedPromo) {
+      await supabase.rpc('apply_promotion_to_order', { p_promotion_id: usedPromo.id })
+    }
+
+    // Snapshot for status screen
     placedItems.value = cart.value.map((line) => ({
       id: line.itemId,
       name: line.name,
       unit_price: line.price,
       quantity: line.qty,
     }))
+    placedDiscountAmount.value = finalDiscount
 
     cartOpen.value = false
     orderPlaced.value = true
@@ -751,6 +921,21 @@ async function placeOrder() {
   border-radius: 99px;
 }
 
+/* Auto promo header banner */
+.header-promo-banner {
+  margin-top: 12px;
+  padding: 8px 12px;
+  background: #fff8ef;
+  border: 1px solid #f5d5b3;
+  border-radius: 10px;
+  font-size: 13px;
+  color: #92400e;
+  line-height: 1.5;
+}
+.header-promo-banner strong {
+  color: #c8733a;
+}
+
 /* Category tabs */
 .category-tabs-wrap {
   position: sticky;
@@ -805,13 +990,11 @@ async function placeOrder() {
   margin-bottom: 14px;
   letter-spacing: -0.3px;
 }
-
 .items-list {
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
-
 .menu-item-row {
   display: flex;
   align-items: center;
@@ -832,7 +1015,6 @@ async function placeOrder() {
   opacity: 0.5;
   cursor: default;
 }
-
 .item-info {
   flex: 1;
   min-width: 0;
@@ -874,7 +1056,6 @@ async function placeOrder() {
   color: #c8733a;
   margin-top: 6px;
 }
-
 .item-right {
   flex-shrink: 0;
 }
@@ -898,7 +1079,6 @@ async function placeOrder() {
   justify-content: center;
   font-size: 24px;
 }
-
 .add-btn {
   position: absolute;
   bottom: -8px;
@@ -986,7 +1166,6 @@ async function placeOrder() {
   font-size: 14px;
   font-weight: 700;
 }
-
 .cart-bar-enter-active,
 .cart-bar-leave-active {
   transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -1043,7 +1222,6 @@ async function placeOrder() {
   padding: 2px 10px;
   border-radius: 99px;
 }
-
 .status-card {
   background: white;
   border-radius: 16px;
@@ -1076,7 +1254,6 @@ async function placeOrder() {
 .status-rejected {
   background: #fff5f5;
 }
-
 .status-title {
   font-family: 'Fraunces', serif;
   font-size: 22px;
@@ -1196,6 +1373,17 @@ async function placeOrder() {
   font-weight: 600;
   color: #1a1a1a;
 }
+.summary-discount-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  font-size: 13.5px;
+  color: #16a34a;
+  border-top: 1px dashed #e2ddd6;
+}
+.summary-discount-val {
+  font-weight: 600;
+}
 .summary-total {
   display: flex;
   justify-content: space-between;
@@ -1205,7 +1393,6 @@ async function placeOrder() {
   font-weight: 700;
   color: #1a1a1a;
 }
-
 .btn-order-again {
   width: 100%;
   padding: 12px;
@@ -1255,7 +1442,6 @@ async function placeOrder() {
     opacity: 1;
   }
 }
-
 .modal-item {
   padding-bottom: 24px;
 }
@@ -1360,7 +1546,6 @@ async function placeOrder() {
   background: #f5f3ef;
   color: #333;
 }
-
 .cart-body {
   padding: 16px 20px;
   flex: 1;
@@ -1403,16 +1588,157 @@ async function placeOrder() {
   flex-shrink: 0;
 }
 
+/* ── Promo styles ── */
+.auto-promo-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 10px 14px;
+  background: #fff8ef;
+  border: 1px solid #f5d5b3;
+  border-radius: 10px;
+  font-size: 13px;
+  color: #92400e;
+  line-height: 1.5;
+}
+.auto-promo-value {
+  font-weight: 700;
+  color: #c8733a;
+}
+
+.promo-section {
+  margin-top: 14px;
+}
+.promo-input-row {
+  display: flex;
+  gap: 8px;
+}
+.promo-input {
+  flex: 1;
+  font-family: 'Courier New', monospace !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.promo-apply-btn {
+  background: #fff8ef;
+  border: 1.5px solid #f5d5b3;
+  border-radius: 8px;
+  color: #c8733a;
+  padding: 0 16px;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.promo-apply-btn:hover:not(:disabled) {
+  background: #c8733a;
+  color: white;
+  border-color: #c8733a;
+}
+.promo-apply-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.promo-error {
+  font-size: 12px;
+  color: #dc2626;
+  margin-top: 5px;
+}
+
+.applied-promo-tag {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+  padding: 10px 14px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 10px;
+}
+.applied-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+.applied-code {
+  font-family: 'Courier New', monospace;
+  font-weight: 700;
+  font-size: 13px;
+  color: #16a34a;
+  letter-spacing: 0.08em;
+}
+.applied-desc {
+  font-size: 12px;
+  color: #4ade80;
+  margin-top: 1px;
+}
+.remove-promo-btn {
+  background: none;
+  border: none;
+  color: #86efac;
+  cursor: pointer;
+  font-size: 13px;
+  padding: 2px;
+  line-height: 1;
+  transition: color 0.15s;
+  flex-shrink: 0;
+}
+.remove-promo-btn:hover {
+  color: #16a34a;
+}
+
+/* Cart footer totals */
 .cart-footer {
   padding: 16px 20px;
   border-top: 1px solid #f0ece5;
   background: #fdfcfa;
   flex-shrink: 0;
 }
+.cart-subtotal-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  font-size: 13.5px;
+  color: #aaa;
+}
+.cart-discount-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+  font-size: 13.5px;
+  color: #16a34a;
+}
+.cart-discount-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.discount-pill {
+  background: #dcfce7;
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #16a34a;
+}
+.cart-discount-val {
+  font-weight: 700;
+}
 .cart-total-row {
   display: flex;
   justify-content: space-between;
   margin-bottom: 14px;
+}
+.cart-total-row.has-discount {
+  padding-top: 10px;
+  border-top: 1px solid #f0ece5;
 }
 .cart-total-label {
   font-size: 15px;
@@ -1445,7 +1771,6 @@ async function placeOrder() {
   opacity: 0.5;
   cursor: not-allowed;
 }
-
 .order-error {
   font-size: 13px;
   color: #dc2626;
@@ -1498,7 +1823,6 @@ async function placeOrder() {
 .qty-val.sm {
   font-size: 14px;
 }
-
 .btn-add-to-cart {
   flex: 1;
   padding: 12px;

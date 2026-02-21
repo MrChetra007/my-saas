@@ -213,14 +213,17 @@
               <span class="billing-key">Trial Ends</span>
               <span class="billing-val">{{ formatDate(restaurant.trial_ends_at) }}</span>
             </div>
-            <div class="billing-row" v-if="restaurant.stripe_customer_id">
+            <!-- FIX: was stripe_customer_id / stripe_subscription_id -->
+            <div class="billing-row" v-if="restaurant.lemonsqueezy_customer_id">
               <span class="billing-key">Customer ID</span>
-              <span class="billing-val billing-val--mono">{{ restaurant.stripe_customer_id }}</span>
+              <span class="billing-val billing-val--mono">{{
+                restaurant.lemonsqueezy_customer_id
+              }}</span>
             </div>
-            <div class="billing-row" v-if="restaurant.stripe_subscription_id">
+            <div class="billing-row" v-if="restaurant.lemonsqueezy_subscription_id">
               <span class="billing-key">Subscription ID</span>
               <span class="billing-val billing-val--mono">{{
-                restaurant.stripe_subscription_id
+                restaurant.lemonsqueezy_subscription_id
               }}</span>
             </div>
           </div>
@@ -238,16 +241,16 @@
               <span v-else>⚡ Upgrade Plan</span>
             </button>
 
-            <!-- Manage billing — shown when subscribed and has Stripe customer -->
-            <button
-              v-if="hasActiveSubscription && restaurant.stripe_customer_id"
+            <!-- FIX: was checking restaurant.stripe_customer_id
+                 LS portal URL is stored directly in customer_portal_url — no Edge Function needed -->
+            <a
+              v-if="hasActiveSubscription && restaurant.customer_portal_url"
+              :href="restaurant.customer_portal_url"
+              target="_blank"
               class="btn-portal"
-              @click="goToPortal"
-              :disabled="portalLoading"
             >
-              <span v-if="portalLoading" class="spinner spinner--dark"></span>
-              <span v-else>Manage Billing →</span>
-            </button>
+              Manage Billing →
+            </a>
           </div>
 
           <!-- Billing error -->
@@ -279,7 +282,8 @@
             <h2 class="modal-title">Choose a Plan</h2>
             <button class="modal-close" @click="showPlanPicker = false">✕</button>
           </div>
-          <p class="modal-subtitle">You'll be taken to Stripe's secure checkout page.</p>
+          <!-- FIX: was "Stripe's secure checkout page" -->
+          <p class="modal-subtitle">You'll be taken to Lemon Squeezy's secure checkout page.</p>
 
           <div class="modal-plans">
             <!-- Starter -->
@@ -291,14 +295,18 @@
               <div class="modal-plan-top">
                 <div>
                   <div class="modal-plan-name">Starter</div>
-                  <div class="modal-plan-price">$29<span>/mo</span></div>
+                  <!-- FIX: was $29 -->
+                  <div class="modal-plan-price">$49<span>/mo</span></div>
                 </div>
                 <div class="modal-plan-check" v-if="selectedPlan === 'starter'">✓</div>
               </div>
+              <!-- FIX: updated features to match decided plan -->
               <ul class="modal-plan-features">
+                <li>Up to 15 tables</li>
                 <li>Up to 3 staff accounts</li>
-                <li>Unlimited orders & tables</li>
+                <li>Unlimited orders</li>
                 <li>Kitchen, cashier & waiter views</li>
+                <li>QR code ordering</li>
                 <li>Email support</li>
               </ul>
             </div>
@@ -313,16 +321,20 @@
               <div class="modal-plan-top">
                 <div>
                   <div class="modal-plan-name">Pro</div>
-                  <div class="modal-plan-price">$59<span>/mo</span></div>
+                  <!-- FIX: was $59 -->
+                  <div class="modal-plan-price">$99<span>/mo</span></div>
                 </div>
                 <div class="modal-plan-check" v-if="selectedPlan === 'pro'">✓</div>
               </div>
+              <!-- FIX: updated features — was "Unlimited staff accounts", missing promotions -->
               <ul class="modal-plan-features">
-                <li>Unlimited staff accounts</li>
-                <li>Unlimited orders & tables</li>
+                <li>Unlimited tables</li>
+                <li>Up to 10 staff accounts</li>
+                <li>Unlimited orders</li>
                 <li>Kitchen, cashier & waiter views</li>
-                <li>Dashboard analytics</li>
-                <li>Priority support</li>
+                <li>Analytics & revenue charts</li>
+                <li>Promotions & discount codes</li>
+                <li>Priority email support</li>
               </ul>
             </div>
           </div>
@@ -336,7 +348,8 @@
             <span v-else>Continue to Checkout →</span>
           </button>
 
-          <p class="modal-secure">🔒 Powered by Stripe. Cancel anytime.</p>
+          <!-- FIX: was "Powered by Stripe" -->
+          <p class="modal-secure">🔒 Powered by Lemon Squeezy. Cancel anytime.</p>
         </div>
       </div>
     </Teleport>
@@ -359,16 +372,16 @@ const isDirty = ref(false)
 const saveError = ref('')
 const saveSuccess = ref('')
 
-// Stripe loading states
 const checkoutLoading = ref(false)
-const portalLoading = ref(false)
 const billingError = ref('')
+
+// FIX: removed portalLoading — portal is now a plain <a> link, no loading state needed
 
 // Plan picker modal
 const showPlanPicker = ref(false)
 const selectedPlan = ref('pro') // default to Pro
 
-// Upgrade success banner (shown when returning from Stripe with ?upgraded=true)
+// Upgrade success banner (shown when returning from Lemon Squeezy with ?upgraded=true)
 const showUpgradedBanner = ref(false)
 
 // Raw restaurant row — used for read-only billing display
@@ -549,7 +562,7 @@ async function fetchSettings() {
   const { data, error } = await supabase
     .from('restaurants')
     .select(
-      'name, slug, address, logo_url, currency, timezone, plan, trial_ends_at, stripe_customer_id, stripe_subscription_id, created_at',
+      'name, slug, address, logo_url, currency, timezone, plan, trial_ends_at, lemonsqueezy_customer_id, lemonsqueezy_subscription_id, customer_portal_url, created_at',
     )
     .eq('id', restaurantId)
     .single()
@@ -655,7 +668,10 @@ function discardChanges() {
   saveSuccess.value = ''
 }
 
-// ─── Stripe: Checkout ─────────────────────────────────────────────────────────
+// ─── Lemon Squeezy: Checkout ──────────────────────────────────────────────────
+// FIX: body now only sends { plan } — Edge Function authenticates the user
+// itself via the auth token and handles redirect URLs via APP_URL env var.
+// Removed: restaurantId, successUrl, cancelUrl from body.
 async function goToCheckout() {
   if (!selectedPlan.value) return
   billingError.value = ''
@@ -663,12 +679,7 @@ async function goToCheckout() {
 
   try {
     const { data, error } = await supabase.functions.invoke('create-checkout-session', {
-      body: {
-        plan: selectedPlan.value,
-        restaurantId: authStore.profile.restaurant_id,
-        successUrl: `${window.location.origin}/app/settings?upgraded=true`,
-        cancelUrl: `${window.location.origin}/app/settings`,
-      },
+      body: { plan: selectedPlan.value },
     })
 
     if (error) throw error
@@ -687,39 +698,16 @@ async function goToCheckout() {
   // Note: don't set checkoutLoading = false on success — page is redirecting
 }
 
-// ─── Stripe: Customer Portal ──────────────────────────────────────────────────
-async function goToPortal() {
-  billingError.value = ''
-  portalLoading.value = true
-
-  try {
-    const { data, error } = await supabase.functions.invoke('create-portal-session', {
-      body: {
-        restaurantId: authStore.profile.restaurant_id,
-        returnUrl: `${window.location.origin}/app/settings`,
-      },
-    })
-
-    if (error) throw error
-
-    if (data?.url) {
-      window.location.href = data.url
-    } else {
-      throw new Error('No portal URL returned from Edge Function.')
-    }
-  } catch (err) {
-    console.error('Portal error:', err)
-    billingError.value = 'Could not open billing portal. Please try again or contact support.'
-    portalLoading.value = false
-  }
-}
+// FIX: goToPortal() removed entirely.
+// Lemon Squeezy portal is a plain URL stored in restaurant.customer_portal_url.
+// The <a> tag in the template handles this directly — no Edge Function needed.
 
 // ─── Lifecycle ────────────────────────────────────────────────────────────────
 onMounted(async () => {
   await fetchSettings()
   startTimer()
 
-  // Show success banner if returning from Stripe Checkout
+  // Show success banner if returning from Lemon Squeezy Checkout
   if (route.query.upgraded === 'true') {
     showUpgradedBanner.value = true
     // Refetch so plan/billing fields update immediately
@@ -1217,6 +1205,7 @@ onUnmounted(() => {
   display: flex;
   gap: 0.75rem;
   flex-wrap: wrap;
+  align-items: center;
 }
 .btn-upgrade {
   display: inline-flex;
@@ -1240,6 +1229,7 @@ onUnmounted(() => {
   opacity: 0.6;
   cursor: not-allowed;
 }
+/* FIX: btn-portal is now an <a> tag — styled identically but as a link */
 .btn-portal {
   display: inline-flex;
   align-items: center;
@@ -1253,14 +1243,11 @@ onUnmounted(() => {
   font-weight: 600;
   font-family: 'DM Sans', sans-serif;
   cursor: pointer;
+  text-decoration: none;
   transition: all 0.15s;
 }
-.btn-portal:hover:not(:disabled) {
+.btn-portal:hover {
   background: #e5e7eb;
-}
-.btn-portal:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
 }
 
 /* ── Alerts ── */
