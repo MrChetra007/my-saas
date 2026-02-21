@@ -2,13 +2,23 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
 
+// ── Role Home Helper ─────────────────────────────────
+export function roleHome(role) {
+  switch (role) {
+    case 'kitchen':
+      return '/kitchen'
+    case 'cashier':
+      return '/cashier'
+    case 'waiter':
+      return '/waiter'
+    default:
+      return '/app/dashboard' // admin
+  }
+}
+
 const routes = [
   // ── Public ──────────────────────────────────────
-  {
-    path: '/',
-    component: () => import('@/views/public/LandingView.vue'),
-    meta: { public: true },
-  },
+  { path: '/', component: () => import('@/views/public/LandingView.vue'), meta: { public: true } },
   {
     path: '/order/:slug/:tableId',
     component: () => import('@/views/public/OrderView.vue'),
@@ -16,22 +26,19 @@ const routes = [
   },
 
   // ── Auth ────────────────────────────────────────
-  {
-    path: '/login',
-    component: () => import('@/views/auth/LoginView.vue'),
-    meta: { public: true },
-  },
+  { path: '/login', component: () => import('@/views/auth/LoginView.vue'), meta: { public: true } },
   {
     path: '/signup',
     component: () => import('@/views/auth/SignupView.vue'),
     meta: { public: true },
   },
 
-  // ── Onboarding ──────────────────────────────────
+  // ── Onboarding (admin only) ──────────────────────
   {
     path: '/onboarding',
     name: 'onboarding',
     component: () => import('@/views/onboarding/OnboardingView.vue'),
+    meta: { requiresAuth: true, roles: ['admin'] },
   },
 
   // ── Trial Wall ──────────────────────────────────
@@ -42,96 +49,91 @@ const routes = [
     meta: { requiresAuth: true },
   },
 
-  // ── App (protected, nested under AppLayout) ─────
+  // ── Admin (everything stays the same) ───────────
   {
     path: '/app',
     component: () => import('@/layouts/AppLayout.vue'),
-    meta: { requiresAuth: true },
+    meta: { requiresAuth: true, roles: ['admin'] },
     redirect: '/app/dashboard',
     children: [
-      {
-        path: 'dashboard',
-        component: () => import('@/views/app/DashboardView.vue'),
-        meta: { requiresAuth: true, roles: ['admin'] },
-      },
-      {
-        path: 'menu',
-        component: () => import('@/views/app/MenuView.vue'),
-        meta: { requiresAuth: true, roles: ['admin'] },
-      },
-      {
-        path: 'tables',
-        component: () => import('@/views/app/TablesView.vue'),
-        meta: { requiresAuth: true, roles: ['admin'] },
-      },
-      {
-        path: 'orders',
-        component: () => import('@/views/app/OrdersView.vue'),
-        meta: { requiresAuth: true, roles: ['admin', 'cashier', 'waiter'] },
-      },
-      {
-        path: 'kitchen',
-        component: () => import('@/views/app/KitchenView.vue'),
-        meta: { requiresAuth: true, roles: ['admin', 'kitchen'] },
-      },
+      { path: 'dashboard', component: () => import('@/views/app/DashboardView.vue') },
+      { path: 'menu', component: () => import('@/views/app/MenuView.vue') },
+      { path: 'tables', component: () => import('@/views/app/TablesView.vue') },
+      { path: 'orders', component: () => import('@/views/app/OrdersView.vue') },
+      { path: 'kitchen', component: () => import('@/views/app/KitchenView.vue') },
       {
         path: 'order-history',
         name: 'OrderHistory',
         component: () => import('@/views/app/OrderHistoryView.vue'),
-        meta: { requiresAuth: true },
       },
-      {
-        path: 'staff',
-        component: () => import('@/views/app/StaffView.vue'),
-        meta: { requiresAuth: true, roles: ['admin'] },
-      },
+      { path: 'staff', component: () => import('@/views/app/StaffView.vue') },
       {
         path: 'analytics',
         name: 'Analytics',
         component: () => import('@/views/app/AnalyticsView.vue'),
-        meta: { requiresAuth: true },
       },
       {
         path: 'promotions',
         name: 'Promotions',
         component: () => import('@/views/app/PromotionsView.vue'),
-        meta: { requiresAuth: true, roles: ['admin', 'cashier'] },
       },
-      {
-        path: 'settings',
-        component: () => import('@/views/app/SettingsView.vue'),
-        meta: { requiresAuth: true, roles: ['admin'] },
-      },
+      { path: 'settings', component: () => import('@/views/app/SettingsView.vue') },
+    ],
+  },
+
+  // ── Kitchen ──────────────────────────────────────
+  {
+    path: '/kitchen',
+    component: () => import('@/layouts/KitchenLayout.vue'),
+    meta: { requiresAuth: true, roles: ['kitchen'] },
+    redirect: '/kitchen/orders',
+    children: [
+      { path: 'orders', component: () => import('@/views/kitchen/KitchenOrdersView.vue') },
+    ],
+  },
+
+  // ── Cashier ──────────────────────────────────────
+  {
+    path: '/cashier',
+    component: () => import('@/layouts/CashierLayout.vue'),
+    meta: { requiresAuth: true, roles: ['cashier'] },
+    redirect: '/cashier/orders',
+    children: [
+      { path: 'orders', component: () => import('@/views/cashier/CashierOrdersView.vue') },
+      { path: 'history', component: () => import('@/views/cashier/CashierHistoryView.vue') },
+    ],
+  },
+
+  // ── Waiter ───────────────────────────────────────
+  {
+    path: '/waiter',
+    component: () => import('@/layouts/WaiterLayout.vue'),
+    meta: { requiresAuth: true, roles: ['waiter'] },
+    redirect: '/waiter/new-order',
+    children: [
+      { path: 'new-order', component: () => import('@/views/waiter/WaiterNewOrderView.vue') },
+      { path: 'new-order', component: () => import('@/views/waiter/WaiterNewOrderView.vue') },
+      { path: 'tables', component: () => import('@/views/waiter/WaiterTablesView.vue') },
+      { path: 'orders', component: () => import('@/views/waiter/WaiterOrdersView.vue') },
     ],
   },
 
   // ── Fallback ─────────────────────────────────────
-  {
-    path: '/:pathMatch(.*)*',
-    redirect: '/',
-  },
+  { path: '/:pathMatch(.*)*', redirect: '/' },
 ]
 
-const router = createRouter({
-  history: createWebHistory(),
-  routes,
-})
+const router = createRouter({ history: createWebHistory(), routes })
 
-// ── Helpers ──────────────────────────────────────────
 function isTrialExpired(plan, trialEndsAt) {
-  if (plan === 'pro' || plan === 'starter' || plan === 'enterprise') return false
+  if (['pro', 'starter', 'enterprise'].includes(plan)) return false
   if (plan === 'expired') return true
-  // plan === 'trial' — check the timestamp
   if (!trialEndsAt) return true
   return new Date(trialEndsAt) < new Date()
 }
 
-// ── Route Guard ──────────────────────────────────────
 router.beforeEach(async (to) => {
-  // Public routes — always allow
   if (to.meta.public) return true
 
-  // Check session
   const {
     data: { session },
   } = await supabase.auth.getSession()
@@ -139,41 +141,32 @@ router.beforeEach(async (to) => {
 
   const authStore = useAuthStore()
   if (!authStore.profile) await authStore.fetchProfile()
+  if (!authStore.profile) return to.name !== 'onboarding' ? '/onboarding' : true
 
-  // No profile at all — bootstrap failed somehow
-  if (!authStore.profile) {
-    return to.name !== 'onboarding' ? '/onboarding' : true
-  }
+  const role = authStore.profile.role
 
-  // ── Onboarding check ────────────────────────────
-  const { data: restaurant } = await supabase
-    .from('restaurants')
-    .select('onboarding_completed, plan, trial_ends_at')
-    .eq('id', authStore.profile.restaurant_id)
-    .single()
+  // Block wrong roles from wrong paths
+  if (to.meta.roles && !to.meta.roles.includes(role)) return roleHome(role)
 
-  const onboarded = restaurant?.onboarding_completed === true
+  // Onboarding + trial checks only apply to admin
+  if (role === 'admin') {
+    const { data: restaurant } = await supabase
+      .from('restaurants')
+      .select('onboarding_completed, plan, trial_ends_at')
+      .eq('id', authStore.profile.restaurant_id)
+      .single()
 
-  // Not onboarded → force to onboarding
-  if (!onboarded && to.name !== 'onboarding') return '/onboarding'
+    const onboarded = restaurant?.onboarding_completed === true
+    if (!onboarded && to.name !== 'onboarding') return '/onboarding'
+    if (onboarded && to.name === 'onboarding') return '/app/dashboard'
 
-  // Already onboarded → don't allow revisiting onboarding
-  if (onboarded && to.name === 'onboarding') return '/app/dashboard'
-
-  // ── Trial check (only for /app/* routes) ────────
-  // Skip this check when already heading to the trial wall or settings
-  // (so expired users can still reach settings to subscribe)
-  const skipTrialCheck = to.name === 'trial-expired' || to.path === '/app/settings'
-
-  if (!skipTrialCheck && to.path.startsWith('/app')) {
-    const expired = isTrialExpired(restaurant?.plan, restaurant?.trial_ends_at)
-    if (expired) return '/trial-expired'
-  }
-
-  // If trial is NOT expired but user is on the trial wall — redirect to app
-  if (to.name === 'trial-expired') {
-    const expired = isTrialExpired(restaurant?.plan, restaurant?.trial_ends_at)
-    if (!expired) return '/app/dashboard'
+    const skipTrialCheck = to.name === 'trial-expired' || to.path === '/app/settings'
+    if (!skipTrialCheck && to.path.startsWith('/app')) {
+      if (isTrialExpired(restaurant?.plan, restaurant?.trial_ends_at)) return '/trial-expired'
+    }
+    if (to.name === 'trial-expired') {
+      if (!isTrialExpired(restaurant?.plan, restaurant?.trial_ends_at)) return '/app/dashboard'
+    }
   }
 
   return true
