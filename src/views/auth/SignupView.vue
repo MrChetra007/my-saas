@@ -181,6 +181,7 @@ async function handleSignup() {
       supabase.rpc('create_restaurant_and_profile', {
         p_user_id: authData.user.id,
         p_full_name: fullName.value,
+        p_email: email.value, // ✅ add this
         p_restaurant_name: restaurantName.value,
         p_slug: generateSlug(restaurantName.value),
       }),

@@ -27,7 +27,7 @@ async function verifySignature(rawBody: string, signature: string): Promise<bool
 }
 
 // ---------------------------------------------------------------------------
-// Helper: Map Lemon Squeezy plan name to your internal plan value
+// Helper: Map Lemon Squeezy variant name to your internal plan value
 // Adjust these strings to match your actual LS product/variant names
 // ---------------------------------------------------------------------------
 function mapPlanName(variantName: string): 'starter' | 'pro' | null {
@@ -74,10 +74,16 @@ serve(async (req) => {
   const restaurantId = customData?.['restaurant_id']
   if (
     !restaurantId &&
-    ['order_created', 'subscription_cancelled', 'subscription_payment_failed'].includes(eventName)
+    [
+      'order_created',
+      'subscription_created', // ✅ added
+      'subscription_updated', // ✅ added (was missing — could cause silent DB corruption)
+      'subscription_cancelled',
+      'subscription_payment_failed',
+    ].includes(eventName)
   ) {
     console.error('Missing restaurant_id in custom_data for event:', eventName)
-    // Return 200 so LS doesn't keep retrying — this would only happen for non-RestaurantOS checkouts
+    // Return 200 so LS doesn't keep retrying
     return new Response('OK', { status: 200 })
   }
 
@@ -89,8 +95,8 @@ serve(async (req) => {
 
   // ---------------------------------------------------------------------------
   // EVENT: order_created
-  // Fires when a customer completes checkout and payment succeeds.
-  // Equivalent to Stripe's checkout.session.completed
+  // Fires when checkout completes. Updates customer_id and plan.
+  // NOTE: subscription_id may be null here — subscription_created handles that.
   // ---------------------------------------------------------------------------
   if (eventName === 'order_created') {
     const orderData = (event.data as Record<string, unknown>)?.['attributes'] as Record<
@@ -100,11 +106,49 @@ serve(async (req) => {
     const firstOrderItem = (orderData?.['first_order_item'] ?? {}) as Record<string, unknown>
 
     const lsCustomerId = String(orderData?.['customer_id'] ?? '')
-    const lsSubscriptionId = String(orderData?.['subscription_id'] ?? '')
     const variantName = String(firstOrderItem?.['variant_name'] ?? '')
-    const customerPortalUrl = String(orderData?.['urls']?.['customer_portal'] ?? '') || null
 
     const plan = mapPlanName(variantName)
+    if (!plan) {
+      console.error('Could not map variant name to plan:', variantName)
+      return new Response('OK', { status: 200 })
+    }
+
+    // Only update plan + customer_id here.
+    // subscription_id and customer_portal_url are set by subscription_created below.
+    const { error } = await supabase
+      .from('restaurants')
+      .update({
+        plan,
+        lemonsqueezy_customer_id: lsCustomerId,
+      })
+      .eq('id', restaurantId)
+
+    if (error) {
+      console.error('DB update error on order_created:', error)
+      return new Response('Internal Server Error', { status: 500 })
+    }
+
+    console.log(`Restaurant ${restaurantId} upgraded to ${plan} (order_created)`)
+  }
+
+  // ---------------------------------------------------------------------------
+  // EVENT: subscription_created  ✅ NEW
+  // Fires right after order_created when a subscription is created.
+  // This is where subscription_id and customer_portal_url are reliably available.
+  // ---------------------------------------------------------------------------
+  else if (eventName === 'subscription_created') {
+    const subData = (event.data as Record<string, unknown>)?.['attributes'] as Record<
+      string,
+      unknown
+    >
+
+    const lsSubscriptionId = String((event.data as Record<string, unknown>)?.['id'] ?? '')
+    const customerPortalUrl =
+      String((subData?.['urls'] as Record<string, unknown>)?.['customer_portal'] ?? '') || null
+    const variantName = String(subData?.['variant_name'] ?? '')
+    const plan = mapPlanName(variantName)
+
     if (!plan) {
       console.error('Could not map variant name to plan:', variantName)
       return new Response('OK', { status: 200 })
@@ -114,24 +158,24 @@ serve(async (req) => {
       .from('restaurants')
       .update({
         plan,
-        lemonsqueezy_customer_id: lsCustomerId,
         lemonsqueezy_subscription_id: lsSubscriptionId,
         customer_portal_url: customerPortalUrl,
       })
       .eq('id', restaurantId)
 
     if (error) {
-      console.error('DB update error on order_created:', error)
+      console.error('DB update error on subscription_created:', error)
       return new Response('Internal Server Error', { status: 500 })
     }
 
-    console.log(`Restaurant ${restaurantId} upgraded to ${plan}`)
+    console.log(
+      `Restaurant ${restaurantId} subscription created → ${plan} (sub ID: ${lsSubscriptionId})`,
+    )
   }
 
   // ---------------------------------------------------------------------------
   // EVENT: subscription_updated
   // Fires when a subscription changes (upgrade, downgrade, renewal).
-  // Use this to keep the plan column in sync if you support plan switching.
   // ---------------------------------------------------------------------------
   else if (eventName === 'subscription_updated') {
     const subData = (event.data as Record<string, unknown>)?.['attributes'] as Record<
@@ -140,7 +184,6 @@ serve(async (req) => {
     >
     const status = String(subData?.['status'] ?? '')
 
-    // status can be: active, paused, past_due, unpaid, cancelled, expired
     if (status === 'active') {
       const variantName = String(subData?.['variant_name'] ?? '')
       const plan = mapPlanName(variantName)
@@ -149,15 +192,14 @@ serve(async (req) => {
         const { error } = await supabase.from('restaurants').update({ plan }).eq('id', restaurantId)
 
         if (error) console.error('DB update error on subscription_updated:', error)
-        else console.log(`Restaurant ${restaurantId} plan synced to ${plan}`)
+        else console.log(`Restaurant ${restaurantId} plan synced to ${plan} (subscription_updated)`)
       }
     }
   }
 
   // ---------------------------------------------------------------------------
   // EVENT: subscription_cancelled
-  // Fires when a subscription is cancelled (either immediately or at period end).
-  // Equivalent to Stripe's customer.subscription.deleted
+  // Fires when a subscription is cancelled.
   // ---------------------------------------------------------------------------
   else if (eventName === 'subscription_cancelled') {
     const { error } = await supabase
@@ -178,18 +220,13 @@ serve(async (req) => {
 
   // ---------------------------------------------------------------------------
   // EVENT: subscription_payment_failed
-  // Fires when a recurring payment fails (card declined, expired, etc.)
-  // Equivalent to Stripe's invoice.payment_failed
+  // Fires when a recurring payment fails. LS will retry automatically.
   // ---------------------------------------------------------------------------
   else if (eventName === 'subscription_payment_failed') {
-    // You can set to "expired" immediately or wait for LS to retry.
-    // Best practice: leave plan as-is on first failure, let LS retry.
-    // Only mark expired if the subscription itself is cancelled (handled above).
-    // But we do log it so you can monitor/alert.
     console.warn(`Payment failed for restaurant ${restaurantId}. LS will retry automatically.`)
 
     // Optional: update a payment_status column if you have one
-    // await supabase.from("restaurants").update({ payment_status: "past_due" }).eq("id", restaurantId);
+    // await supabase.from("restaurants").update({ payment_status: "past_due" }).eq("id", restaurantId)
   }
 
   // ---------------------------------------------------------------------------
