@@ -68,7 +68,7 @@
               />
             </div>
 
-            <!-- Restaurant name (pre-filled) -->
+            <!-- Restaurant name -->
             <div class="field-group">
               <label class="field-label">Restaurant Name</label>
               <input
@@ -167,9 +167,7 @@
               />
             </div>
 
-            <div class="divider">
-              <span>then add a dish</span>
-            </div>
+            <div class="divider"><span>then add a dish</span></div>
 
             <!-- Item name -->
             <div class="field-group">
@@ -259,7 +257,7 @@
           <div v-if="qrDataUrl" class="qr-preview-box">
             <div class="qr-label">Your QR Code</div>
             <img :src="qrDataUrl" class="qr-image" alt="QR Code" />
-            <p class="qr-url">{{ orderUrl }}</p>
+            <p class="qr-url">{{ currentOrderUrl }}</p>
             <button class="btn-download" @click="downloadQr">⬇ Download QR</button>
           </div>
 
@@ -297,7 +295,6 @@ const logoPreview = ref('')
 
 // ── Step 2 ──────────────────────────────────────────────
 const step2 = ref({ categoryName: '', itemName: '', itemDescription: '', itemPrice: '' })
-
 const categorySuggestions = ['Starters', 'Mains', 'Desserts', 'Drinks', 'Specials']
 
 const currencySymbol = computed(() => {
@@ -312,22 +309,26 @@ const qrDataUrl = ref('')
 const restaurantSlug = ref('')
 const newTableId = ref('')
 
-const orderUrl = computed(
+// ✅ FIX: computed from refs directly, not from window.location at definition time
+const currentOrderUrl = computed(
   () => `${window.location.origin}/order/${restaurantSlug.value}/${newTableId.value}`,
 )
 
-// Auto-generate QR preview as user types table name in step 3
-watch([() => step3.value.tableName, newTableId], async () => {
-  if (currentStep.value === 3 && restaurantSlug.value && newTableId.value) {
-    await generateQr()
-  }
-})
+// ✅ FIX: watch table name changes to regenerate QR preview — but only update
+// the visual, not the DB. DB save happens only in saveStep3.
+watch(
+  () => step3.value.tableName,
+  async () => {
+    if (currentStep.value === 3 && qrDataUrl.value) {
+      await generateQr()
+    }
+  },
+)
 
 // ── Logo ─────────────────────────────────────────────────
 function triggerLogoUpload() {
   logoInput.value?.click()
 }
-
 function handleLogoChange(e) {
   const file = e.target.files[0]
   if (!file) return
@@ -349,7 +350,6 @@ async function saveStep1() {
 
   loading.value = true
   try {
-    // Get current user & their restaurant
     const {
       data: { user },
     } = await supabase.auth.getUser()
@@ -358,26 +358,20 @@ async function saveStep1() {
       .select('restaurant_id')
       .eq('id', user.id)
       .single()
-
     const restaurantId = profile.restaurant_id
-
     let logo_url = null
 
-    // Upload logo if provided
     if (logoFile.value) {
       const ext = logoFile.value.name.split('.').pop()
       const path = `${restaurantId}/logo.${ext}`
       const { error: uploadError } = await supabase.storage
         .from('restaurant-assets')
         .upload(path, logoFile.value, { upsert: true })
-
       if (uploadError) throw uploadError
-
       const { data: urlData } = supabase.storage.from('restaurant-assets').getPublicUrl(path)
       logo_url = urlData.publicUrl
     }
 
-    // Update restaurant profile
     const { error: updateError } = await supabase
       .from('restaurants')
       .update({
@@ -391,7 +385,6 @@ async function saveStep1() {
       .eq('id', restaurantId)
 
     if (updateError) throw updateError
-
     currentStep.value = 2
   } catch (err) {
     error.value = err.message || 'Failed to save. Please try again.'
@@ -422,7 +415,6 @@ async function saveStep2() {
       .select('restaurant_id')
       .eq('id', user.id)
       .single()
-
     const restaurantId = profile.restaurant_id
 
     // Create category
@@ -431,7 +423,6 @@ async function saveStep2() {
       .insert({ restaurant_id: restaurantId, name: step2.value.categoryName.trim(), sort_order: 0 })
       .select()
       .single()
-
     if (catError) throw catError
 
     // Create menu item
@@ -443,21 +434,21 @@ async function saveStep2() {
       price: parseFloat(step2.value.itemPrice) || 0,
       sort_order: 0,
     })
-
     if (itemError) throw itemError
 
-    // Fetch slug for QR generation later
+    // Fetch slug for QR generation
     const { data: restaurant } = await supabase
       .from('restaurants')
       .select('slug')
       .eq('id', restaurantId)
       .single()
-
     restaurantSlug.value = restaurant.slug
-    currentStep.value = 3
 
-    // Pre-create the table row so we have an ID for QR
+    // ✅ FIX: Pre-create the table row to get an ID, THEN generate QR with
+    // the correct URL (slug + tableId both available at this point)
     await createTableRow(restaurantId)
+
+    currentStep.value = 3
   } catch (err) {
     error.value = err.message || 'Failed to save. Please try again.'
   } finally {
@@ -465,16 +456,24 @@ async function saveStep2() {
   }
 }
 
-// Creates the table row and sets newTableId (used for QR url)
+// ✅ FIX: Create table row, set newTableId, THEN generate QR and save qr_code_url back to DB
 async function createTableRow(restaurantId) {
+  // Insert the table first to get its ID
   const { data: table, error: tableError } = await supabase
     .from('tables')
     .insert({ restaurant_id: restaurantId, name: step3.value.tableName.trim() || 'Table 1' })
     .select()
     .single()
-
   if (tableError) throw tableError
+
+  // Now we have both slug and tableId — build the correct URL
   newTableId.value = table.id
+  const orderUrl = `${window.location.origin}/order/${restaurantSlug.value}/${table.id}`
+
+  // ✅ Save qr_code_url to the tables table
+  await supabase.from('tables').update({ qr_code_url: orderUrl }).eq('id', table.id)
+
+  // Generate QR image for visual preview
   await generateQr()
 }
 
@@ -489,14 +488,22 @@ async function saveStep3() {
   loading.value = true
   try {
     if (newTableId.value) {
+      // Update table name + regenerate qr_code_url with correct final name
+      // (name doesn't affect the URL since URL uses table ID, but update name anyway)
+      const orderUrl = `${window.location.origin}/order/${restaurantSlug.value}/${newTableId.value}`
+
       const { error: updateError } = await supabase
         .from('tables')
-        .update({ name: step3.value.tableName.trim() })
+        .update({
+          name: step3.value.tableName.trim(),
+          qr_code_url: orderUrl, // ✅ ensure qr_code_url is set even if createTableRow was skipped
+        })
         .eq('id', newTableId.value)
+
       if (updateError) throw updateError
     }
 
-    // ✅ Mark onboarding as done
+    // Mark onboarding complete
     const {
       data: { user },
     } = await supabase.auth.getUser()
@@ -505,7 +512,6 @@ async function saveStep3() {
       .select('restaurant_id')
       .eq('id', user.id)
       .single()
-
     await supabase
       .from('restaurants')
       .update({ onboarding_completed: true })
@@ -520,10 +526,12 @@ async function saveStep3() {
 }
 
 // ── QR Code ───────────────────────────────────────────────
+// Generates the QR image using the currentOrderUrl computed value
 async function generateQr() {
   if (!restaurantSlug.value || !newTableId.value) return
   try {
-    qrDataUrl.value = await QRCode.toDataURL(orderUrl.value, {
+    const url = `${window.location.origin}/order/${restaurantSlug.value}/${newTableId.value}`
+    qrDataUrl.value = await QRCode.toDataURL(url, {
       width: 240,
       margin: 2,
       color: { dark: '#1a1a1a', light: '#ffffff' },
@@ -540,7 +548,7 @@ function downloadQr() {
   link.click()
 }
 
-// Load existing restaurant name into step 1 on mount
+// Load existing restaurant data into step 1 on mount
 async function loadRestaurantData() {
   const {
     data: { user },
@@ -589,7 +597,6 @@ loadRestaurantData()
   padding: 40px 16px 80px;
   position: relative;
 }
-
 .bg-grid {
   position: fixed;
   inset: 0;
@@ -600,7 +607,6 @@ loadRestaurantData()
   pointer-events: none;
   z-index: 0;
 }
-
 .onboarding-wrapper {
   width: 100%;
   max-width: 520px;
@@ -680,7 +686,6 @@ loadRestaurantData()
     0 4px 24px rgba(0, 0, 0, 0.06),
     0 1px 4px rgba(0, 0, 0, 0.04);
 }
-
 .step-label {
   font-size: 11px;
   font-weight: 600;
@@ -742,7 +747,6 @@ loadRestaurantData()
   font-weight: 400;
   color: #aaa;
 }
-
 .field-input {
   width: 100%;
   padding: 10px 14px;
@@ -962,7 +966,6 @@ loadRestaurantData()
   opacity: 0.5;
   cursor: not-allowed;
 }
-
 .btn-row {
   display: flex;
   gap: 10px;

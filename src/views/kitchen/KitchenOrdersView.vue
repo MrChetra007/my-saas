@@ -1,6 +1,6 @@
 <template>
   <div class="kitchen-orders">
-    <!-- Tabs -->
+    <!-- Tabs + mute toggle -->
     <div class="tabs">
       <button
         v-for="tab in tabs"
@@ -11,6 +11,12 @@
       >
         {{ tab.label }}
         <span class="tab-count" v-if="tabCount(tab.key) > 0">{{ tabCount(tab.key) }}</span>
+      </button>
+
+      <!-- Mute toggle -->
+      <button class="btn-mute" @click="muted = !muted" :title="muted ? 'Unmute' : 'Mute'">
+        {{ muted ? '🔇' : '🔔' }}
+        <span class="mute-label">{{ muted ? 'Muted' : 'Sound on' }}</span>
       </button>
     </div>
 
@@ -60,8 +66,57 @@ import { useAuthStore } from '@/stores/auth'
 const authStore = useAuthStore()
 const orders = ref([])
 const activeTab = ref('pending')
+const muted = ref(false)
 let channel = null
 
+// ── Audio Ping ────────────────────────────────────────────────────────────────
+// Uses Web Audio API — no file needed, generates the sound programmatically.
+// We keep one AudioContext alive for the session (browsers block new ones until
+// a user gesture has occurred, which the mute button click satisfies).
+let audioCtx = null
+
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)()
+  return audioCtx
+}
+
+function playPing() {
+  if (muted.value) return
+  try {
+    const ctx = getAudioCtx()
+
+    // Two-tone ding: a short high note followed by a slightly lower one
+    const tones = [
+      { freq: 880, start: 0, duration: 0.15 },
+      { freq: 660, start: 0.18, duration: 0.25 },
+    ]
+
+    tones.forEach(({ freq, start, duration }) => {
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+
+      osc.connect(gain)
+      gain.connect(ctx.destination)
+
+      osc.type = 'sine'
+      osc.frequency.value = freq
+
+      // Fade in then out to avoid harsh clicks
+      const t = ctx.currentTime + start
+      gain.gain.setValueAtTime(0, t)
+      gain.gain.linearRampToValueAtTime(0.4, t + 0.02)
+      gain.gain.linearRampToValueAtTime(0, t + duration)
+
+      osc.start(t)
+      osc.stop(t + duration)
+    })
+  } catch (e) {
+    // Silently ignore — audio is a nice-to-have
+    console.warn('Audio ping failed:', e)
+  }
+}
+
+// ── Data ──────────────────────────────────────────────────────────────────────
 const tabs = [
   { key: 'pending', label: '🔔 Pending' },
   { key: 'cooking', label: '🔥 Cooking' },
@@ -89,6 +144,17 @@ async function fetchOrders() {
   if (data) orders.value = data
 }
 
+// Called by the realtime subscription on every change
+function handleRealtimeChange(payload) {
+  // Only ping when a NEW pending order arrives
+  if (payload.eventType === 'INSERT' && payload.new?.status === 'pending') {
+    playPing()
+    // Auto-switch to pending tab so kitchen sees it immediately
+    activeTab.value = 'pending'
+  }
+  fetchOrders()
+}
+
 async function accept(id) {
   await supabase.from('orders').update({ status: 'cooking' }).eq('id', id)
 }
@@ -103,10 +169,14 @@ onMounted(async () => {
   await fetchOrders()
   channel = supabase
     .channel('kitchen-orders')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, fetchOrders)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, handleRealtimeChange)
     .subscribe()
 })
-onUnmounted(() => channel && supabase.removeChannel(channel))
+
+onUnmounted(() => {
+  channel && supabase.removeChannel(channel)
+  audioCtx && audioCtx.close()
+})
 </script>
 
 <style scoped>
@@ -117,8 +187,10 @@ onUnmounted(() => channel && supabase.removeChannel(channel))
   background: #111827;
   color: #f9fafb;
 }
+
 .tabs {
   display: flex;
+  align-items: center;
   gap: 0.5rem;
   padding: 1rem 1.5rem;
   background: #1f2937;
@@ -156,6 +228,32 @@ onUnmounted(() => channel && supabase.removeChannel(channel))
   padding: 0.1rem 0.5rem;
   font-size: 0.75rem;
 }
+
+/* Mute toggle — pushed to the right */
+.btn-mute {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 0.9rem;
+  background: #374151;
+  border: 1.5px solid #4b5563;
+  border-radius: 10px;
+  color: #9ca3af;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+.btn-mute:hover {
+  background: #4b5563;
+  color: #f9fafb;
+}
+.mute-label {
+  font-size: 0.78rem;
+}
+
 .orders-grid {
   flex: 1;
   overflow-y: auto;
@@ -172,6 +270,7 @@ onUnmounted(() => channel && supabase.removeChannel(channel))
   padding: 4rem;
   font-size: 1rem;
 }
+
 .order-card {
   background: #1f2937;
   border: 1.5px solid #374151;
@@ -195,6 +294,7 @@ onUnmounted(() => channel && supabase.removeChannel(channel))
   font-size: 0.78rem;
   color: #6b7280;
 }
+
 .order-items {
   list-style: none;
   display: flex;
@@ -221,6 +321,7 @@ onUnmounted(() => channel && supabase.removeChannel(channel))
   color: #6b7280;
   font-style: italic;
 }
+
 .order-actions {
   display: flex;
   gap: 0.5rem;

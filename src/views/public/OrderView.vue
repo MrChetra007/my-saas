@@ -404,6 +404,8 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { supabase } from '@/lib/supabase'
+// Add this import at the top of your script
+import { v4 as uuidv4 } from 'uuid'
 
 const route = useRoute()
 
@@ -737,24 +739,24 @@ async function placeOrder() {
     const usedPromo = appliedPromo.value || autoPromo.value
     const finalDiscount = discountAmount.value
     const finalTotal = orderTotal.value
+    // ✅ Generate ID before insert — no fetch needed
+    const orderId = uuidv4()
 
-    const { data: order, error: orderErr } = await supabase
-      .from('orders')
-      .insert({
-        restaurant_id: restaurant.value.id,
-        table_id: tableId.value,
-        status: 'pending',
-        total_amount: finalTotal,
-        notes: orderNotes.value || null,
-        // ── promotion fields ──
-        promotion_id: usedPromo?.id || null,
-        discount_code: appliedPromo.value ? appliedPromoCode.value : null,
-        discount_amount: finalDiscount,
-      })
-      .select()
-      .single()
+    const { error: orderErr } = await supabase.from('orders').insert({
+      id: orderId,
+      restaurant_id: restaurant.value.id,
+      table_id: tableId.value,
+      status: 'pending',
+      total_amount: finalTotal,
+      notes: orderNotes.value || null,
+      promotion_id: usedPromo?.id || null,
+      discount_code: appliedPromo.value ? appliedPromoCode.value : null,
+      discount_amount: finalDiscount,
+    })
 
     if (orderErr) throw orderErr
+
+    const order = { id: orderId }
 
     const orderItemsPayload = cart.value.map((line) => ({
       order_id: order.id,
