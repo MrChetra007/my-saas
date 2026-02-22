@@ -127,10 +127,10 @@ const routes = [
 const router = createRouter({ history: createWebHistory(), routes })
 
 function isTrialExpired(plan, trialEndsAt) {
-  if (['pro', 'starter', 'enterprise'].includes(plan)) return false
+  if (['pro', 'starter', 'pro'].includes(plan)) return false
   if (plan === 'expired') return true
   if (!trialEndsAt) return true
-  return new Date(trialEndsAt) < new Date()
+  return new Date(trialEndsAt) < new Date() // to > for testing, change to < for production
 }
 
 router.beforeEach(async (to) => {

@@ -7,7 +7,7 @@
         <p class="page-subtitle">Manage discount codes and automatic offers</p>
       </div>
       <button class="btn-primary" @click="openModal()">
-        <span class="btn-icon">＋</span>
+        <Plus :size="18" class="btn-icon" />
         <span class="btn-text">New Promotion</span>
       </button>
     </div>
@@ -16,7 +16,7 @@
     <div class="stats-bar">
       <div class="stat-card">
         <div class="stat-icon" style="background: rgba(74, 222, 128, 0.15)">
-          <span>●</span>
+          <Circle :size="20" :color="'#4ade80'" fill="#4ade80" />
         </div>
         <div class="stat-info">
           <span class="stat-value">{{ activePromos.length }}</span>
@@ -25,7 +25,7 @@
       </div>
       <div class="stat-card">
         <div class="stat-icon" style="background: rgba(200, 115, 58, 0.15)">
-          <span>🏷️</span>
+          <Tag :size="20" :color="'#c8733a'" />
         </div>
         <div class="stat-info">
           <span class="stat-value">{{ promotions.length }}</span>
@@ -34,7 +34,7 @@
       </div>
       <div class="stat-card">
         <div class="stat-icon" style="background: rgba(59, 130, 246, 0.15)">
-          <span>📊</span>
+          <BarChart3 :size="20" :color="'#3b82f6'" />
         </div>
         <div class="stat-info">
           <span class="stat-value">{{ totalUsage }}</span>
@@ -51,7 +51,7 @@
 
     <!-- Empty State -->
     <div v-else-if="promotions.length === 0" class="empty-state">
-      <div class="empty-icon">🏷️</div>
+      <Tag :size="56" class="empty-icon" />
       <h3 class="empty-title">No promotions yet</h3>
       <p class="empty-subtitle">Create your first discount code or happy hour offer</p>
       <button class="btn-primary" @click="openModal()">Create Promotion</button>
@@ -68,7 +68,7 @@
         <!-- Card Header -->
         <div class="promo-card-header">
           <div class="promo-badge" :class="promo.code ? 'badge-code' : 'badge-auto'">
-            <span class="badge-icon">{{ promo.code ? '🎟' : '⏰' }}</span>
+            <component :is="promo.code ? Ticket : Clock" :size="14" class="badge-icon" />
             <span>{{ promo.code ? 'Code' : 'Auto' }}</span>
           </div>
           <label class="toggle">
@@ -88,7 +88,8 @@
               :class="{ copied: copiedCode === promo.code }"
               :title="copiedCode === promo.code ? 'Copied!' : 'Copy code'"
             >
-              {{ copiedCode === promo.code ? '✓' : '⧉' }}
+              <Check v-if="copiedCode === promo.code" :size="14" />
+              <Copy v-else :size="14" />
             </button>
           </div>
           <div v-else class="promo-auto-label">
@@ -113,14 +114,7 @@
 
         <!-- Time Window -->
         <div v-if="promo.starts_at && promo.ends_at" class="promo-time">
-          <svg class="time-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
+          <Clock :size="16" class="time-icon" />
           <span>{{ formatTime(promo.starts_at) }} – {{ formatTime(promo.ends_at) }}</span>
         </div>
 
@@ -146,25 +140,11 @@
         <!-- Actions -->
         <div class="promo-actions">
           <button class="btn-ghost" @click="openModal(promo)">
-            <svg class="btn-icon-svg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-              />
-            </svg>
+            <Pencil :size="16" class="btn-icon-svg" />
             Edit
           </button>
           <button class="btn-danger-ghost" @click="confirmDelete(promo)">
-            <svg class="btn-icon-svg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-              />
-            </svg>
+            <Trash2 :size="16" class="btn-icon-svg" />
             Delete
           </button>
         </div>
@@ -182,7 +162,9 @@
                 {{ editingPromo ? 'Update your promotion details' : 'Create a new discount offer' }}
               </p>
             </div>
-            <button class="modal-close" @click="closeModal">✕</button>
+            <button class="modal-close" @click="closeModal">
+              <X :size="20" />
+            </button>
           </div>
 
           <div class="modal-body">
@@ -200,7 +182,7 @@
                   :class="['type-btn', form.isAuto ? '' : 'active']"
                   @click="form.isAuto = false"
                 >
-                  <span class="type-emoji">🎟</span>
+                  <Ticket :size="24" class="type-icon" />
                   <span class="type-title">Discount Code</span>
                   <span class="type-hint">Customer enters at checkout</span>
                 </button>
@@ -208,7 +190,7 @@
                   :class="['type-btn', form.isAuto ? 'active' : '']"
                   @click="form.isAuto = true"
                 >
-                  <span class="type-emoji">⏰</span>
+                  <Clock :size="24" class="type-icon" />
                   <span class="type-title">Auto Discount</span>
                   <span class="type-hint">Applies by time window</span>
                 </button>
@@ -228,14 +210,7 @@
                   maxlength="20"
                 />
                 <button class="generate-btn" @click="generateCode" type="button">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                    />
-                  </svg>
+                  <RefreshCw :size="16" />
                   Generate
                 </button>
               </div>
@@ -292,14 +267,7 @@
                   <input v-model="form.starts_at" type="time" />
                 </div>
                 <div class="time-separator">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M14 5l7 7m0 0l-7 7m7-7H3"
-                    />
-                  </svg>
+                  <ArrowRight :size="16" />
                 </div>
                 <div class="time-field">
                   <span class="time-label">End</span>
@@ -342,7 +310,7 @@
           <div class="modal-footer">
             <button class="btn-ghost" @click="closeModal">Cancel</button>
             <button class="btn-primary" @click="savePromo" :disabled="saving">
-              <span v-if="saving" class="spinner-sm"></span>
+              <Loader2 v-if="saving" :size="16" class="spinner-sm" />
               <span v-else>{{ editingPromo ? 'Save Changes' : 'Create Promotion' }}</span>
             </button>
           </div>
@@ -359,7 +327,7 @@
           </div>
           <div class="modal-body">
             <div class="delete-warning">
-              <div class="warning-icon">⚠️</div>
+              <AlertTriangle :size="48" class="warning-icon" />
               <p>
                 Are you sure you want to delete <strong>{{ deleteTarget.name }}</strong
                 >?
@@ -372,7 +340,7 @@
           <div class="modal-footer">
             <button class="btn-ghost" @click="deleteTarget = null">Cancel</button>
             <button class="btn-danger" @click="deletePromo" :disabled="saving">
-              <span v-if="saving" class="spinner-sm"></span>
+              <Loader2 v-if="saving" :size="16" class="spinner-sm" />
               <span v-else>Delete Permanently</span>
             </button>
           </div>
@@ -386,6 +354,23 @@
 import { ref, computed, onMounted } from 'vue'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
+import {
+  Plus,
+  Circle,
+  Tag,
+  BarChart3,
+  Ticket,
+  Clock,
+  Check,
+  Copy,
+  Pencil,
+  Trash2,
+  X,
+  RefreshCw,
+  ArrowRight,
+  Loader2,
+  AlertTriangle,
+} from 'lucide-vue-next'
 
 const authStore = useAuthStore()
 const restaurantId = computed(() => authStore.profile?.restaurant_id)
@@ -666,9 +651,7 @@ onMounted(fetchPromotions)
 }
 
 .btn-icon {
-  font-size: 18px;
-  line-height: 1;
-  font-weight: 400;
+  flex-shrink: 0;
 }
 
 /* ── Stats Bar ── */
@@ -704,7 +687,6 @@ onMounted(fetchPromotions)
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 20px;
   flex-shrink: 0;
 }
 
@@ -755,13 +737,7 @@ onMounted(fetchPromotions)
 }
 
 .spinner-sm {
-  width: 16px;
-  height: 16px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-top-color: #ffffff;
-  border-radius: 50%;
   animation: spin 0.6s linear infinite;
-  display: inline-block;
 }
 
 /* ── Empty State ── */
@@ -774,7 +750,6 @@ onMounted(fetchPromotions)
 }
 
 .empty-icon {
-  font-size: 56px;
   margin-bottom: 20px;
   opacity: 0.6;
 }
@@ -853,7 +828,7 @@ onMounted(fetchPromotions)
 }
 
 .badge-icon {
-  font-size: 14px;
+  flex-shrink: 0;
 }
 
 .badge-code {
@@ -953,7 +928,6 @@ onMounted(fetchPromotions)
   border-radius: 6px;
   color: #c8733a;
   cursor: pointer;
-  font-size: 14px;
   width: 28px;
   height: 28px;
   display: flex;
@@ -961,7 +935,6 @@ onMounted(fetchPromotions)
   justify-content: center;
   transition: all 0.2s ease;
   padding: 0;
-  line-height: 1;
 }
 
 .copy-btn:hover {
@@ -1039,9 +1012,8 @@ onMounted(fetchPromotions)
 }
 
 .time-icon {
-  width: 16px;
-  height: 16px;
   color: rgba(255, 255, 255, 0.35);
+  flex-shrink: 0;
 }
 
 /* ── Usage ── */
@@ -1139,8 +1111,7 @@ onMounted(fetchPromotions)
 }
 
 .btn-icon-svg {
-  width: 16px;
-  height: 16px;
+  flex-shrink: 0;
 }
 
 .btn-danger-ghost {
@@ -1235,7 +1206,6 @@ onMounted(fetchPromotions)
   width: 36px;
   height: 36px;
   border-radius: 10px;
-  font-size: 18px;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -1371,9 +1341,8 @@ input::placeholder {
   background: rgba(200, 115, 58, 0.1);
 }
 
-.type-emoji {
-  font-size: 24px;
-  line-height: 1;
+.type-icon {
+  stroke-width: 2;
 }
 
 .type-title {
@@ -1525,8 +1494,8 @@ input::placeholder {
 }
 
 .warning-icon {
-  font-size: 48px;
   margin-bottom: 16px;
+  color: #facc15;
 }
 
 .delete-warning p {

@@ -29,7 +29,7 @@
       <div class="kpi-grid">
         <div v-for="kpi in kpiCards" :key="kpi.label" class="kpi-card">
           <div class="kpi-icon" :style="{ background: kpi.iconBg }">
-            <span>{{ kpi.icon }}</span>
+            <component :is="kpi.icon" :size="24" :color="kpi.iconColor" />
           </div>
           <div class="kpi-content">
             <p class="kpi-label">{{ kpi.label }}</p>
@@ -105,7 +105,7 @@
         <div class="chart-card">
           <h2 class="chart-title">Top Selling Items</h2>
           <div v-if="topItems.length === 0" class="empty-state">
-            <span class="empty-icon">📊</span>
+            <BarChart3 :size="40" class="empty-icon" />
             <p>No sales data yet</p>
           </div>
           <div v-else class="top-items-list">
@@ -157,6 +157,7 @@
 import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
+import { DollarSign, ClipboardList, CheckCircle, TrendingUp, BarChart3 } from 'lucide-vue-next'
 import {
   Chart,
   LineController,
@@ -275,30 +276,34 @@ const kpiCards = computed(() => {
     {
       label: 'Total Revenue',
       value: formatCurrency(totalRevenue.value),
-      icon: '💰',
+      icon: DollarSign,
       iconBg: 'rgba(200, 115, 58, 0.15)',
+      iconColor: '#c8733a',
       trend: trend > 0 ? `+${trend}%` : `${trend}%`,
       trendDir: trend >= 0 ? 'up' : 'down',
     },
     {
       label: 'Total Orders',
       value: orders.value.length.toLocaleString(),
-      icon: '📋',
+      icon: ClipboardList,
       iconBg: 'rgba(59, 130, 246, 0.15)',
+      iconColor: '#3b82f6',
       sub: `${paidOrders.value.length} completed`,
     },
     {
       label: 'Paid Orders',
       value: paidOrders.value.length.toLocaleString(),
-      icon: '✓',
+      icon: CheckCircle,
       iconBg: 'rgba(74, 222, 128, 0.15)',
+      iconColor: '#4ade80',
       sub: `${((paidOrders.value.length / (orders.value.length || 1)) * 100).toFixed(0)}% completion rate`,
     },
     {
       label: 'Avg Order Value',
       value: formatCurrency(avgOrder),
-      icon: '📈',
+      icon: TrendingUp,
       iconBg: 'rgba(139, 92, 246, 0.15)',
+      iconColor: '#8b5cf6',
       trend: '+12%',
       trendDir: 'up',
     },
@@ -819,7 +824,6 @@ function formatCurrency(amount) {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
   flex-shrink: 0;
 }
 
@@ -1166,7 +1170,6 @@ function formatCurrency(amount) {
 }
 
 .empty-icon {
-  font-size: 40px;
   opacity: 0.5;
 }
 

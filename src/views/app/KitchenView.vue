@@ -17,33 +17,8 @@
           @click="audioEnabled = !audioEnabled"
           :title="audioEnabled ? 'Mute new order alerts' : 'Enable new order alerts'"
         >
-          <svg
-            v-if="audioEnabled"
-            class="icon-svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path d="M18.364 5.636l-3.536 3.536m0 0a5 5 0 11-7.072 7.072 5 5 0 017.072-7.072z" />
-            <path d="M9 19v-8a5 5 0 0110 0v8m-5-8v8" />
-          </svg>
-          <svg
-            v-else
-            class="icon-svg"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path
-              d="M18.364 5.636l-3.536 3.536m0 0a5 5 0 11-7.072 7.072 5 5 0 017.072-7.072zM3 3l18 18"
-            />
-          </svg>
+          <Volume2 v-if="audioEnabled" :size="20" />
+          <VolumeX v-else :size="20" />
         </button>
       </div>
     </div>
@@ -57,22 +32,7 @@
         :class="{ active: activeTab === tab.key }"
         @click="activeTab = tab.key"
       >
-        <svg
-          class="stat-icon"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        >
-          <path v-if="tab.key === 'pending'" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-          <path
-            v-else-if="tab.key === 'cooking'"
-            d="M15 17H9m6 0a3 3 0 100-6H9a3 3 0 100 6m6 0a3 3 0 100 6H9a3 3 0 100-6"
-          />
-          <path v-else d="M5 13l4 4L19 7" />
-        </svg>
+        <component :is="tab.icon" :size="28" class="stat-icon" />
         <div class="stat-content">
           <div class="stat-label">{{ tab.label }}</div>
           <div class="stat-count">{{ tab.count }}</div>
@@ -88,32 +48,7 @@
       </div>
 
       <div v-else-if="visibleOrders.length === 0" class="empty-state">
-        <svg
-          class="empty-icon"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="1.5"
-        >
-          <path
-            v-if="activeTab === 'pending'"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"
-          />
-          <path
-            v-else-if="activeTab === 'cooking'"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591l-4.581 4.581a1.875 1.875 0 00-.659 1.591v.714M12 3.104v5.714a2.25 2.25 0 01-.659 1.591l-4.581 4.581a1.875 1.875 0 00-.659 1.591v.714M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-          />
-          <path
-            v-else
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-          />
-        </svg>
+        <component :is="emptyStateIcon" :size="64" class="empty-icon" />
         <h3>{{ emptyTitle }}</h3>
         <p class="empty-text">{{ emptyMessage }}</p>
       </div>
@@ -150,19 +85,7 @@
           </div>
 
           <div v-if="order.notes" class="order-notes">
-            <svg
-              class="note-icon"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"
-              />
-            </svg>
+            <MessageSquare :size="18" class="note-icon" />
             {{ order.notes }}
           </div>
 
@@ -194,7 +117,9 @@
         <div class="modal">
           <div class="modal-header">
             <h2 class="modal-title">Reject Order</h2>
-            <button class="modal-close-btn" @click="rejectModal.open = false">×</button>
+            <button class="modal-close-btn" @click="rejectModal.open = false">
+              <X :size="24" />
+            </button>
           </div>
           <div class="modal-body">
             <p class="reject-info">Select or enter a reason (visible to customer).</p>
@@ -237,6 +162,18 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
+import {
+  Volume2,
+  VolumeX,
+  Clock,
+  Flame,
+  CheckCircle,
+  AlertCircle,
+  ChefHat,
+  CheckCircle2,
+  MessageSquare,
+  X,
+} from 'lucide-vue-next'
 
 const authStore = useAuthStore()
 
@@ -261,16 +198,19 @@ const tabs = computed(() => [
     key: 'pending',
     label: 'Pending',
     count: orders.value.filter((o) => o.status === 'pending').length,
+    icon: Clock,
   },
   {
     key: 'cooking',
     label: 'Cooking',
     count: orders.value.filter((o) => o.status === 'cooking').length,
+    icon: Flame,
   },
   {
     key: 'done',
     label: 'Done',
     count: orders.value.filter((o) => ['ready', 'paid', 'rejected'].includes(o.status)).length,
+    icon: CheckCircle,
   },
 ])
 
@@ -287,6 +227,12 @@ const visibleOrders = computed(() => {
         (a, b) => new Date(b.updated_at || b.created_at) - new Date(a.updated_at || a.created_at),
       )
     : filtered.sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+})
+
+const emptyStateIcon = computed(() => {
+  if (activeTab.value === 'pending') return AlertCircle
+  if (activeTab.value === 'cooking') return ChefHat
+  return CheckCircle2
 })
 
 const emptyTitle = computed(() => {
@@ -580,12 +526,6 @@ function enrichOrder(raw) {
   border-color: var(--color-accent-border);
 }
 
-.icon-svg {
-  width: 20px;
-  height: 20px;
-  stroke-width: 2;
-}
-
 /* Stat Cards */
 .stat-cards {
   display: grid;
@@ -619,8 +559,6 @@ function enrichOrder(raw) {
 }
 
 .stat-icon {
-  width: 28px;
-  height: 28px;
   stroke-width: 2;
   color: var(--color-text-secondary);
   flex-shrink: 0;
@@ -670,8 +608,6 @@ function enrichOrder(raw) {
 }
 
 .empty-icon {
-  width: 64px;
-  height: 64px;
   stroke-width: 1.5;
   color: var(--color-text-faint);
 }
@@ -794,8 +730,6 @@ function enrichOrder(raw) {
 }
 
 .note-icon {
-  width: 18px;
-  height: 18px;
   flex-shrink: 0;
   color: var(--color-accent);
 }
@@ -874,7 +808,7 @@ function enrichOrder(raw) {
   color: #ef4444;
 }
 
-/* Modal styles (unchanged from your theme) */
+/* Modal styles */
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -914,7 +848,6 @@ function enrichOrder(raw) {
 .modal-close-btn {
   background: none;
   border: none;
-  font-size: 24px;
   color: var(--color-text-muted);
   cursor: pointer;
   width: 36px;
