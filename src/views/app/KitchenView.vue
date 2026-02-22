@@ -1,154 +1,229 @@
 <template>
   <div class="kitchen-page">
-    <!-- ── Header ─────────────────────────── -->
+    <!-- Header -->
     <div class="kitchen-header">
       <div class="header-left">
-        <h1 class="kitchen-title">Kitchen</h1>
-        <div class="live-dot-wrap">
-          <span class="live-dot" :class="{ connected: isConnected }" />
-          <span class="live-label">{{ isConnected ? 'Live' : 'Reconnecting…' }}</span>
+        <h1 class="page-title">Kitchen Display</h1>
+        <div class="connection-status">
+          <span class="status-dot" :class="{ connected: isConnected }" />
+          <span class="status-text">{{ isConnected ? 'Live' : 'Reconnecting…' }}</span>
         </div>
       </div>
+
       <div class="header-right">
-        <div class="date-label">{{ todayLabel }}</div>
+        <span class="date-label">{{ todayLabel }}</span>
         <button
-          class="audio-btn"
-          @click="toggleAudio"
-          :title="audioEnabled ? 'Mute pings' : 'Enable pings'"
+          class="icon-btn audio-toggle"
+          @click="audioEnabled = !audioEnabled"
+          :title="audioEnabled ? 'Mute new order alerts' : 'Enable new order alerts'"
         >
-          {{ audioEnabled ? '🔔' : '🔕' }}
+          <svg
+            v-if="audioEnabled"
+            class="icon-svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M18.364 5.636l-3.536 3.536m0 0a5 5 0 11-7.072 7.072 5 5 0 017.072-7.072z" />
+            <path d="M9 19v-8a5 5 0 0110 0v8m-5-8v8" />
+          </svg>
+          <svg
+            v-else
+            class="icon-svg"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path
+              d="M18.364 5.636l-3.536 3.536m0 0a5 5 0 11-7.072 7.072 5 5 0 017.072-7.072zM3 3l18 18"
+            />
+          </svg>
         </button>
       </div>
     </div>
 
-    <!-- ── Tabs ───────────────────────────── -->
-    <div class="tabs-bar">
-      <button
+    <!-- Stat Cards / Tabs -->
+    <div class="stat-cards">
+      <div
         v-for="tab in tabs"
         :key="tab.key"
-        class="tab-btn"
+        class="stat-card"
         :class="{ active: activeTab === tab.key }"
         @click="activeTab = tab.key"
       >
-        {{ tab.label }}
-        <span v-if="tab.count > 0" class="tab-count" :class="{ urgent: tab.key === 'pending' }">
-          {{ tab.count }}
-        </span>
-      </button>
+        <svg
+          class="stat-icon"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path v-if="tab.key === 'pending'" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          <path
+            v-else-if="tab.key === 'cooking'"
+            d="M15 17H9m6 0a3 3 0 100-6H9a3 3 0 100 6m6 0a3 3 0 100 6H9a3 3 0 100-6"
+          />
+          <path v-else d="M5 13l4 4L19 7" />
+        </svg>
+        <div class="stat-content">
+          <div class="stat-label">{{ tab.label }}</div>
+          <div class="stat-count">{{ tab.count }}</div>
+        </div>
+      </div>
     </div>
 
-    <!-- ── Content ────────────────────────── -->
+    <!-- Orders Area -->
     <div class="orders-area">
-      <!-- Loading -->
-      <div v-if="loading" class="state-center">
+      <div v-if="loading" class="loading-state">
         <div class="spinner" />
         <span>Loading orders…</span>
       </div>
 
-      <!-- Empty per tab -->
-      <div v-else-if="visibleOrders.length === 0" class="state-center">
-        <div class="empty-icon">
-          {{ activeTab === 'pending' ? '⏳' : activeTab === 'cooking' ? '👨‍🍳' : '✅' }}
-        </div>
-        <p class="empty-text">{{ emptyText }}</p>
+      <div v-else-if="visibleOrders.length === 0" class="empty-state">
+        <svg
+          class="empty-icon"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+        >
+          <path
+            v-if="activeTab === 'pending'"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"
+          />
+          <path
+            v-else-if="activeTab === 'cooking'"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591l-4.581 4.581a1.875 1.875 0 00-.659 1.591v.714M12 3.104v5.714a2.25 2.25 0 01-.659 1.591l-4.581 4.581a1.875 1.875 0 00-.659 1.591v.714M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+          <path
+            v-else
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+        </svg>
+        <h3>{{ emptyTitle }}</h3>
+        <p class="empty-text">{{ emptyMessage }}</p>
       </div>
 
-      <!-- Orders grid -->
       <div v-else class="orders-grid">
         <div
           v-for="order in visibleOrders"
           :key="order.id"
           class="order-card"
-          :class="[`status-${order.status}`, { 'is-new': order._isNew }]"
+          :class="{
+            'status-pending': order.status === 'pending',
+            'status-cooking': order.status === 'cooking',
+            'status-ready': order.status === 'ready',
+            'status-rejected': order.status === 'rejected',
+            'is-new': order._isNew,
+          }"
         >
-          <!-- Card header -->
           <div class="card-header">
-            <div class="card-header-left">
-              <span class="table-name">{{ order._tableName }}</span>
-              <span class="order-num">#{{ order.id.slice(-4).toUpperCase() }}</span>
+            <div class="header-left">
+              <span class="table-badge">{{ order._tableName }}</span>
+              <span class="order-id">#{{ order.id.slice(-6).toUpperCase() }}</span>
             </div>
-            <div class="card-header-right">
-              <span class="elapsed" :class="{ overdue: elapsedMinutes(order) >= 15 }">
-                {{ elapsedLabel(order) }}
-              </span>
-            </div>
+            <span class="timer" :class="{ overdue: elapsedMinutes(order) >= 15 }">
+              {{ elapsedLabel(order) }}
+            </span>
           </div>
 
-          <!-- Items -->
           <div class="card-items">
-            <div v-for="item in order._items" :key="item.id" class="card-item">
+            <div v-for="item in order._items" :key="item.id" class="order-item">
               <span class="item-qty">×{{ item.quantity }}</span>
               <span class="item-name">{{ item._name }}</span>
-              <span v-if="item.notes" class="item-note">{{ item.notes }}</span>
+              <span v-if="item.notes" class="item-note">({{ item.notes }})</span>
             </div>
           </div>
 
-          <!-- Order notes -->
-          <div v-if="order.notes" class="card-notes">📝 {{ order.notes }}</div>
+          <div v-if="order.notes" class="order-notes">
+            <svg
+              class="note-icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"
+              />
+            </svg>
+            {{ order.notes }}
+          </div>
 
-          <!-- Actions -->
           <div class="card-actions">
-            <!-- Pending: Accept + Reject -->
             <template v-if="order.status === 'pending'">
-              <button class="btn-reject" @click="openReject(order)">Reject</button>
-              <button class="btn-accept" @click="updateStatus(order, 'cooking')">Accept →</button>
+              <button class="btn-reject" @click="openRejectModal(order)">Reject</button>
+              <button class="btn-accept" @click="acceptOrder(order)">Accept → Cooking</button>
             </template>
 
-            <!-- Cooking: Mark Ready -->
             <template v-else-if="order.status === 'cooking'">
-              <div class="cooking-indicator">
-                <span class="cooking-dot" />
-                Cooking…
-              </div>
-              <button class="btn-ready" @click="updateStatus(order, 'ready')">Mark Ready ✓</button>
+              <button class="btn-ready" @click="markReady(order)">Mark Ready</button>
             </template>
 
-            <!-- Ready -->
             <template v-else-if="order.status === 'ready'">
-              <div class="ready-badge">✅ Ready for pickup</div>
+              <div class="status-indicator ready">Ready for pickup</div>
+            </template>
+
+            <template v-else-if="order.status === 'rejected'">
+              <div class="status-indicator rejected">Rejected</div>
             </template>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- ══ REJECT MODAL ═══════════════════ -->
+    <!-- Reject Modal -->
     <Teleport to="body">
       <div v-if="rejectModal.open" class="modal-backdrop" @click.self="rejectModal.open = false">
         <div class="modal">
           <div class="modal-header">
-            <h2 class="modal-title">Reject Order?</h2>
-            <button class="modal-close" @click="rejectModal.open = false">✕</button>
+            <h2 class="modal-title">Reject Order</h2>
+            <button class="modal-close-btn" @click="rejectModal.open = false">×</button>
           </div>
           <div class="modal-body">
-            <p class="reject-sub">Let the customer know why their order was rejected.</p>
+            <p class="reject-info">Select or enter a reason (visible to customer).</p>
+
             <div class="reason-chips">
               <button
                 v-for="r in rejectReasons"
                 :key="r"
-                class="reason-chip"
+                class="chip"
                 :class="{ active: rejectModal.reason === r }"
                 @click="rejectModal.reason = r"
-                type="button"
               >
                 {{ r }}
               </button>
             </div>
-            <div class="field-group">
-              <label class="field-label"
-                >Custom reason <span class="optional">(optional)</span></label
-              >
+
+            <div class="form-group">
+              <label class="form-label">Custom reason (optional)</label>
               <input
                 v-model="rejectModal.reason"
+                class="form-input"
                 type="text"
-                class="field-input"
-                placeholder="e.g. Item temporarily unavailable…"
+                placeholder="e.g. Temporarily out of stock…"
               />
             </div>
           </div>
           <div class="modal-footer">
             <button class="btn-ghost" @click="rejectModal.open = false">Cancel</button>
-            <button class="btn-danger" :disabled="rejectModal.saving" @click="doReject">
+            <button class="btn-danger" :disabled="rejectModal.saving" @click="rejectOrder">
               {{ rejectModal.saving ? 'Rejecting…' : 'Reject Order' }}
             </button>
           </div>
@@ -167,14 +242,15 @@ const authStore = useAuthStore()
 
 const loading = ref(true)
 const isConnected = ref(false)
-const activeTab = ref('pending')
 const audioEnabled = ref(true)
-const orders = ref([]) // all today's orders
-const menuItemMap = ref({}) // itemId → name
-const tableMap = ref({}) // tableId → name
-let realtimeChannel = null
-let tickInterval = null
-const tick = ref(0) // forces elapsed time to recompute every 30s
+const activeTab = ref('pending')
+const orders = ref([])
+const menuItemMap = ref({})
+const tableMap = ref({})
+const tick = ref(0)
+
+let channel = null
+let tickTimer = null
 
 const todayLabel = computed(() =>
   new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }),
@@ -200,138 +276,151 @@ const tabs = computed(() => [
 
 const visibleOrders = computed(() => {
   void tick.value
-  if (activeTab.value === 'pending')
-    return orders.value.filter((o) => o.status === 'pending').sort(byTime)
-  if (activeTab.value === 'cooking')
-    return orders.value.filter((o) => o.status === 'cooking').sort(byTime)
-  return orders.value
-    .filter((o) => ['ready', 'paid', 'rejected'].includes(o.status))
-    .sort(byTimeDesc)
+  let filtered = orders.value.filter((o) => {
+    if (activeTab.value === 'pending') return o.status === 'pending'
+    if (activeTab.value === 'cooking') return o.status === 'cooking'
+    return ['ready', 'paid', 'rejected'].includes(o.status)
+  })
+
+  return activeTab.value === 'done'
+    ? filtered.sort(
+        (a, b) => new Date(b.updated_at || b.created_at) - new Date(a.updated_at || a.created_at),
+      )
+    : filtered.sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
 })
 
-const emptyText = computed(() => {
-  if (activeTab.value === 'pending') return 'No pending orders — all clear!'
-  if (activeTab.value === 'cooking') return 'Nothing cooking right now.'
-  return 'No completed orders yet today.'
+const emptyTitle = computed(() => {
+  if (activeTab.value === 'pending') return 'No pending orders'
+  if (activeTab.value === 'cooking') return 'No orders in progress'
+  return 'No completed orders today'
 })
 
-function byTime(a, b) {
-  return new Date(a.created_at) - new Date(b.created_at)
-}
-function byTimeDesc(a, b) {
-  return new Date(b.created_at) - new Date(a.created_at)
-}
+const emptyMessage = computed(() => {
+  if (activeTab.value === 'pending') return 'New orders will appear here automatically.'
+  if (activeTab.value === 'cooking') return 'Accept orders to start preparing them.'
+  return 'Finished or rejected orders will show here.'
+})
 
-function elapsedMinutes(order) {
-  return Math.floor((Date.now() - new Date(order.created_at)) / 60000)
-}
-function elapsedLabel(order) {
-  const m = elapsedMinutes(order)
-  if (m < 1) return 'Just now'
-  if (m === 1) return '1 min ago'
-  return `${m} min ago`
-}
+const rejectModal = ref({
+  open: false,
+  order: null,
+  reason: '',
+  saving: false,
+})
 
-// ── Audio ping ───────────────────────────────
-function toggleAudio() {
-  audioEnabled.value = !audioEnabled.value
-}
-
-function playPing() {
-  if (!audioEnabled.value) return
-  try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)()
-    const osc = ctx.createOscillator()
-    const gain = ctx.createGain()
-    osc.connect(gain)
-    gain.connect(ctx.destination)
-    osc.frequency.setValueAtTime(880, ctx.currentTime)
-    osc.frequency.setValueAtTime(660, ctx.currentTime + 0.1)
-    gain.gain.setValueAtTime(0.3, ctx.currentTime)
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.5)
-    osc.start()
-    osc.stop(ctx.currentTime + 0.5)
-  } catch (e) {
-    /* browser may block without user gesture */
-  }
-}
-
-// ── Reject modal ─────────────────────────────
-const rejectModal = ref({ open: false, order: null, reason: '', saving: false })
 const rejectReasons = [
-  'Kitchen is closing',
   'Item out of stock',
-  'Too busy right now',
+  'Kitchen too busy',
+  'Ingredient unavailable',
   'Duplicate order',
+  'Customer requested cancel',
 ]
 
-function openReject(order) {
+// ── Helpers ────────────────────────────────────────────────
+
+function elapsedMinutes(order) {
+  return Math.floor((Date.now() - new Date(order.created_at).getTime()) / 60000)
+}
+
+function elapsedLabel(order) {
+  const m = elapsedMinutes(order)
+  if (m < 1) return 'just now'
+  if (m === 1) return '1 min'
+  return `${m} min`
+}
+
+function playNewOrderSound() {
+  if (!audioEnabled.value) return
+  try {
+    const audio = new Audio('/sounds/notification.mp3') // add your own short sound file
+    audio.volume = 0.35
+    audio.play().catch(() => {})
+  } catch {}
+}
+
+// ── Actions ────────────────────────────────────────────────
+
+async function acceptOrder(order) {
+  await updateOrderStatus(order.id, 'cooking')
+}
+
+async function markReady(order) {
+  await updateOrderStatus(order.id, 'ready')
+}
+
+function openRejectModal(order) {
   rejectModal.value = { open: true, order, reason: '', saving: false }
 }
 
-async function doReject() {
+async function rejectOrder() {
   const m = rejectModal.value
   m.saving = true
-  await updateStatus(m.order, 'rejected', m.reason)
-  rejectModal.value.open = false
+  await updateOrderStatus(m.order.id, 'rejected', m.reason.trim() || null)
+  m.open = false
   m.saving = false
 }
 
-// ── Status update ─────────────────────────────
-async function updateStatus(order, status, reason = null) {
-  const update = { status, updated_at: new Date().toISOString() }
-  if (reason) update.rejection_reason = reason
+async function updateOrderStatus(orderId, status, rejectionReason = null) {
+  const payload = {
+    status,
+    updated_at: new Date().toISOString(),
+  }
+  if (rejectionReason) payload.rejection_reason = rejectionReason
 
-  const { error } = await supabase.from('orders').update(update).eq('id', order.id)
+  const { error } = await supabase.from('orders').update(payload).eq('id', orderId)
+
   if (!error) {
-    const o = orders.value.find((o) => o.id === order.id)
-    if (o) {
-      o.status = status
-      if (reason) o.rejection_reason = reason
+    const order = orders.value.find((o) => o.id === orderId)
+    if (order) {
+      order.status = status
+      if (rejectionReason) order.rejection_reason = rejectionReason
     }
   }
 }
 
-// ── Load ─────────────────────────────────────
+// ── Lifecycle & Realtime ───────────────────────────────────
+
 onMounted(async () => {
   if (!authStore.profile) await authStore.fetchProfile()
   const restaurantId = authStore.profile?.restaurant_id
   if (!restaurantId) return
 
-  // Load tables
+  // Load reference data
   const { data: tables } = await supabase
     .from('tables')
     .select('id, name')
     .eq('restaurant_id', restaurantId)
+
   tables?.forEach((t) => {
     tableMap.value[t.id] = t.name
   })
 
-  // Load menu items
   const { data: items } = await supabase
     .from('menu_items')
     .select('id, name')
     .eq('restaurant_id', restaurantId)
+
   items?.forEach((i) => {
     menuItemMap.value[i.id] = i.name
   })
 
   // Load today's orders
-  const startOfDay = new Date()
-  startOfDay.setHours(0, 0, 0, 0)
-  const { data: rawOrders } = await supabase
+  const todayStart = new Date()
+  todayStart.setHours(0, 0, 0, 0)
+
+  const { data: raw } = await supabase
     .from('orders')
     .select('*, order_items(*)')
     .eq('restaurant_id', restaurantId)
-    .gte('created_at', startOfDay.toISOString())
+    .gte('created_at', todayStart.toISOString())
     .order('created_at', { ascending: false })
 
-  orders.value = (rawOrders || []).map((o) => enrichOrder(o))
+  orders.value = (raw || []).map(enrichOrder)
   loading.value = false
 
-  // Realtime subscription
-  realtimeChannel = supabase
-    .channel(`kitchen-${restaurantId}`)
+  // Realtime
+  channel = supabase
+    .channel(`kitchen-orders-${restaurantId}`)
     .on(
       'postgres_changes',
       {
@@ -341,26 +430,24 @@ onMounted(async () => {
         filter: `restaurant_id=eq.${restaurantId}`,
       },
       async (payload) => {
-        // Fetch order_items for the new order
-        const { data: orderItems } = await supabase
+        const { data: items } = await supabase
           .from('order_items')
           .select('*')
           .eq('order_id', payload.new.id)
 
         const enriched = enrichOrder({
           ...payload.new,
-          order_items: orderItems || [],
+          order_items: items || [],
           _isNew: true,
         })
-        orders.value.unshift(enriched)
-        activeTab.value = 'pending'
-        playPing()
 
-        // Remove "new" highlight after 3s
+        orders.value.unshift(enriched)
+        playNewOrderSound()
+
         setTimeout(() => {
           const o = orders.value.find((o) => o.id === enriched.id)
           if (o) o._isNew = false
-        }, 3000)
+        }, 4000)
       },
     )
     .on(
@@ -372,59 +459,48 @@ onMounted(async () => {
         filter: `restaurant_id=eq.${restaurantId}`,
       },
       (payload) => {
-        const o = orders.value.find((o) => o.id === payload.new.id)
-        if (o)
-          Object.assign(o, {
-            status: payload.new.status,
-            rejection_reason: payload.new.rejection_reason,
-          })
+        const idx = orders.value.findIndex((o) => o.id === payload.new.id)
+        if (idx !== -1) {
+          Object.assign(orders.value[idx], payload.new)
+        }
       },
     )
     .subscribe((status) => {
       isConnected.value = status === 'SUBSCRIBED'
     })
 
-  // Tick every 30s to update elapsed times
-  tickInterval = setInterval(() => {
+  // Timer refresh
+  tickTimer = setInterval(() => {
     tick.value++
-  }, 30000)
+  }, 20000)
 })
 
 onUnmounted(() => {
-  if (realtimeChannel) supabase.removeChannel(realtimeChannel)
-  if (tickInterval) clearInterval(tickInterval)
+  if (channel) supabase.removeChannel(channel)
+  if (tickTimer) clearInterval(tickTimer)
 })
 
 function enrichOrder(raw) {
   return {
     ...raw,
-    _isNew: raw._isNew || false,
-    _tableName: tableMap.value[raw.table_id] || 'Unknown table',
-    _items: (raw.order_items || []).map((i) => ({
-      ...i,
-      _name: menuItemMap.value[i.menu_item_id] || 'Item',
+    _tableName: tableMap.value[raw.table_id] || `Table ?`,
+    _items: (raw.order_items || []).map((item) => ({
+      ...item,
+      _name: menuItemMap.value[item.menu_item_id] || 'Unknown item',
     })),
+    _isNew: false,
   }
 }
 </script>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:wght@700&family=DM+Sans:wght@400;500;600;700&display=swap');
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
 .kitchen-page {
-  font-family: 'DM Sans', sans-serif;
-  background: #111;
-  min-height: 100vh;
-  color: #f0ece5;
   display: flex;
   flex-direction: column;
+  min-height: 100vh;
+  background: var(--color-bg-base);
+  color: var(--color-text-primary);
+  font-family: var(--font-body);
 }
 
 /* Header */
@@ -432,567 +508,561 @@ function enrichOrder(raw) {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px 24px 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
-  background: #161616;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--color-border-subtle);
+  background: var(--color-bg-surface);
   flex-shrink: 0;
 }
+
 .header-left {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 16px;
 }
-.kitchen-title {
-  font-family: 'Fraunces', serif;
-  font-size: 24px;
+
+.page-title {
+  font-family: var(--font-display);
+  font-size: 26px;
   font-weight: 700;
-  color: #f5f0e8;
+  margin: 0;
 }
-.live-dot-wrap {
+
+.connection-status {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--color-text-secondary);
 }
-.live-dot {
-  width: 8px;
-  height: 8px;
+
+.status-dot {
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
-  background: #555;
-  transition: background 0.3s;
+  background: var(--color-text-muted);
+  transition: all 0.3s;
 }
-.live-dot.connected {
+
+.status-dot.connected {
   background: #4ade80;
-  box-shadow: 0 0 6px rgba(74, 222, 128, 0.6);
-  animation: pulse 2s infinite;
-}
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-}
-.live-label {
-  font-size: 12px;
-  font-weight: 600;
-  color: #666;
+  box-shadow: 0 0 10px rgba(74, 222, 128, 0.5);
+  animation: pulse-dot 2s infinite;
 }
 
 .header-right {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
 }
+
 .date-label {
   font-size: 13px;
-  color: #555;
-}
-.audio-btn {
-  background: none;
-  border: none;
-  font-size: 20px;
-  cursor: pointer;
-  padding: 4px;
-  border-radius: 6px;
-  transition: background 0.15s;
-}
-.audio-btn:hover {
-  background: rgba(255, 255, 255, 0.07);
+  color: var(--color-text-muted);
 }
 
-/* Tabs */
-.tabs-bar {
-  display: flex;
-  gap: 4px;
-  padding: 12px 24px;
-  background: #161616;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
-  flex-shrink: 0;
-}
-.tab-btn {
+.icon-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-subtle);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all 0.14s;
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 20px;
-  border-radius: 8px;
-  border: none;
-  font-size: 14px;
-  font-weight: 600;
-  color: #555;
-  background: transparent;
-  cursor: pointer;
-  font-family: 'DM Sans', sans-serif;
-  transition: all 0.15s;
-}
-.tab-btn:hover {
-  color: #aaa;
-  background: rgba(255, 255, 255, 0.05);
-}
-.tab-btn.active {
-  background: rgba(255, 255, 255, 0.08);
-  color: #f0ece5;
-}
-.tab-count {
-  padding: 2px 8px;
-  border-radius: 99px;
-  font-size: 11px;
-  font-weight: 700;
-  background: rgba(255, 255, 255, 0.1);
-  color: #aaa;
-}
-.tab-count.urgent {
-  background: #c8733a;
-  color: white;
-  animation: urgentPulse 1.5s ease-in-out infinite;
-}
-@keyframes urgentPulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.6;
-  }
+  justify-content: center;
 }
 
-/* Orders area */
+.icon-btn:hover {
+  background: var(--color-accent-muted);
+  color: var(--color-accent);
+  border-color: var(--color-accent-border);
+}
+
+.icon-svg {
+  width: 20px;
+  height: 20px;
+  stroke-width: 2;
+}
+
+/* Stat Cards */
+.stat-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  padding: 16px 24px;
+  background: var(--color-bg-surface);
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.stat-card {
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-panel);
+  padding: 16px 18px;
+  cursor: pointer;
+  transition: all 0.16s ease;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-float);
+}
+
+.stat-card.active {
+  background: var(--color-accent-muted);
+  border-color: var(--color-accent-border-strong);
+}
+
+.stat-icon {
+  width: 28px;
+  height: 28px;
+  stroke-width: 2;
+  color: var(--color-text-secondary);
+  flex-shrink: 0;
+}
+
+.stat-content {
+  flex: 1;
+}
+
+.stat-label {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
+.stat-count {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+/* Orders Area */
 .orders-area {
   flex: 1;
-  padding: 20px 24px;
+  padding: 24px;
   overflow-y: auto;
 }
 
-.state-center {
+.loading-state,
+.empty-state {
+  min-height: 60vh;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 14px;
-  padding: 80px 20px;
-  color: #444;
-}
-.spinner {
-  width: 24px;
-  height: 24px;
-  border: 2px solid #333;
-  border-top-color: #c8733a;
-  border-radius: 50%;
-  animation: spin 0.7s linear infinite;
-}
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-.empty-icon {
-  font-size: 42px;
-}
-.empty-text {
-  font-size: 15px;
-  color: #444;
+  gap: 16px;
+  color: var(--color-text-muted);
 }
 
-/* Orders grid */
+.spinner {
+  width: 36px;
+  height: 36px;
+  border: 4px solid var(--color-border-subtle);
+  border-top-color: var(--color-accent);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.empty-icon {
+  width: 64px;
+  height: 64px;
+  stroke-width: 1.5;
+  color: var(--color-text-faint);
+}
+
+.empty-text {
+  color: var(--color-text-secondary);
+  text-align: center;
+  max-width: 360px;
+}
+
+/* Orders Grid & Cards */
 .orders-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 16px;
-  align-items: start;
 }
 
 .order-card {
-  background: #1e1e1e;
-  border: 1.5px solid #2a2a2a;
-  border-radius: 14px;
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-panel);
   overflow: hidden;
-  transition: all 0.2s;
+  box-shadow: var(--shadow-card);
+  transition: all 0.18s;
 }
+
 .order-card.is-new {
-  border-color: #c8733a;
-  box-shadow: 0 0 0 3px rgba(200, 115, 58, 0.2);
-  animation: newOrder 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: new-order-glow 4s ease-out;
+  border-color: var(--color-accent);
 }
-@keyframes newOrder {
-  from {
-    transform: scale(0.95);
-    opacity: 0;
+
+@keyframes new-order-glow {
+  0% {
+    box-shadow: 0 0 25px var(--color-accent-muted);
   }
-  to {
-    transform: scale(1);
-    opacity: 1;
+  100% {
+    box-shadow: var(--shadow-card);
   }
 }
 
-.order-card.status-pending {
-  border-color: rgba(200, 115, 58, 0.3);
-}
-.order-card.status-cooking {
-  border-color: rgba(251, 191, 36, 0.3);
-}
-.order-card.status-ready {
-  border-color: rgba(74, 222, 128, 0.3);
-}
-.order-card.status-rejected {
-  opacity: 0.5;
-}
-
-/* Card header */
 .card-header {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  padding: 14px 16px 10px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  align-items: center;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--color-border-subtle);
 }
-.card-header-left {
+
+.header-left {
   display: flex;
   align-items: center;
   gap: 10px;
 }
-.table-name {
-  font-size: 17px;
+
+.table-badge {
+  background: var(--color-bg-elevated);
+  color: var(--color-text-primary);
   font-weight: 700;
-  color: #f0ece5;
-}
-.order-num {
-  font-size: 12px;
-  font-weight: 600;
-  color: #555;
-  background: #2a2a2a;
-  padding: 2px 8px;
-  border-radius: 6px;
-}
-.elapsed {
-  font-size: 12px;
-  font-weight: 600;
-  color: #555;
-}
-.elapsed.overdue {
-  color: #ef4444;
-  animation: urgentPulse 1.5s ease-in-out infinite;
+  font-size: 15px;
+  padding: 4px 12px;
+  border-radius: 8px;
 }
 
-/* Card items */
+.order-id {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.timer {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.timer.overdue {
+  color: #ef4444;
+  font-weight: 700;
+}
+
 .card-items {
   padding: 12px 16px;
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: 6px;
 }
-.card-item {
+
+.order-item {
   display: flex;
   align-items: baseline;
   gap: 8px;
-}
-.item-qty {
-  font-size: 13px;
-  font-weight: 700;
-  color: #c8733a;
-  width: 24px;
-  flex-shrink: 0;
-}
-.item-name {
   font-size: 15px;
-  font-weight: 600;
-  color: #e0dbd3;
 }
+
+.item-qty {
+  color: var(--color-accent);
+  font-weight: 700;
+  min-width: 24px;
+}
+
+.item-name {
+  flex: 1;
+  color: var(--color-text-primary);
+}
+
 .item-note {
-  font-size: 11.5px;
-  color: #666;
-  font-style: italic;
+  color: var(--color-text-muted);
+  font-size: 13px;
 }
 
-/* Card notes */
-.card-notes {
-  margin: 0 16px 8px;
+.order-notes {
+  margin: 0 16px 12px;
   padding: 8px 12px;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--color-accent-muted);
   border-radius: 8px;
-  font-size: 12.5px;
-  color: #666;
-  border-left: 2px solid #444;
-}
-
-/* Card actions */
-.card-actions {
+  font-size: 13px;
+  color: var(--color-text-secondary);
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 12px 16px;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-  background: rgba(0, 0, 0, 0.2);
 }
 
-.btn-reject {
-  padding: 8px 16px;
-  border-radius: 8px;
-  border: 1.5px solid #444;
-  background: transparent;
-  color: #888;
-  font-size: 13px;
-  font-weight: 600;
-  font-family: 'DM Sans', sans-serif;
-  cursor: pointer;
-  transition: all 0.15s;
+.note-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  color: var(--color-accent);
 }
-.btn-reject:hover {
-  border-color: #ef4444;
-  color: #ef4444;
-  background: rgba(239, 68, 68, 0.07);
+
+.card-actions {
+  padding: 12px 16px;
+  border-top: 1px solid var(--color-border-subtle);
+  background: var(--color-bg-elevated);
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.btn-accept,
+.btn-ready {
+  flex: 1;
+  padding: 10px 16px;
+  font-weight: 600;
+  border-radius: var(--radius-pill);
+  border: none;
+  cursor: pointer;
+  transition: all 0.14s;
 }
 
 .btn-accept {
-  flex: 1;
-  padding: 9px;
-  background: #c8733a;
+  background: var(--color-accent);
   color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 700;
-  font-family: 'DM Sans', sans-serif;
-  cursor: pointer;
-  transition: background 0.15s;
 }
+
 .btn-accept:hover {
-  background: #d98348;
+  background: var(--color-accent-hover);
 }
 
 .btn-ready {
-  flex: 1;
-  padding: 9px;
-  background: rgba(74, 222, 128, 0.12);
+  background: rgba(74, 222, 128, 0.15);
   color: #4ade80;
-  border: 1.5px solid rgba(74, 222, 128, 0.25);
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 700;
-  font-family: 'DM Sans', sans-serif;
-  cursor: pointer;
-  transition: all 0.15s;
+  border: 1px solid rgba(74, 222, 128, 0.3);
 }
+
 .btn-ready:hover {
-  background: rgba(74, 222, 128, 0.2);
+  background: rgba(74, 222, 128, 0.25);
 }
 
-.cooking-indicator {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  font-weight: 600;
-  color: #fbbf24;
-}
-.cooking-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #fbbf24;
-  animation: pulse 1.5s infinite;
+.btn-reject {
+  padding: 10px 16px;
+  background: transparent;
+  border: 1px solid var(--color-border-medium);
+  color: var(--color-text-secondary);
+  border-radius: var(--radius-pill);
+  font-weight: 500;
+  cursor: pointer;
 }
 
-.ready-badge {
+.btn-reject:hover {
+  border-color: #ef4444;
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.08);
+}
+
+.status-indicator {
   flex: 1;
   text-align: center;
-  font-size: 13.5px;
-  font-weight: 700;
+  font-weight: 600;
+  font-size: 14px;
+  padding: 10px;
+  border-radius: var(--radius-pill);
+}
+
+.ready {
+  background: rgba(74, 222, 128, 0.15);
   color: #4ade80;
 }
 
-/* Reject modal */
+.rejected {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+}
+
+/* Modal styles (unchanged from your theme) */
 .modal-backdrop {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  padding: 16px;
-  backdrop-filter: blur(4px);
+  padding: 20px;
 }
+
 .modal {
-  background: #1e1e1e;
-  border: 1px solid #2a2a2a;
-  border-radius: 16px;
+  background: var(--color-bg-surface);
+  border-radius: var(--radius-panel);
   width: 100%;
-  max-width: 420px;
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5);
-  animation: modal-in 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  max-width: 460px;
+  border: 1px solid var(--color-border-subtle);
+  box-shadow: var(--shadow-float);
   overflow: hidden;
 }
-@keyframes modal-in {
-  from {
-    opacity: 0;
-    transform: scale(0.95) translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1) translateY(0);
-  }
-}
+
 .modal-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--color-border-subtle);
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  padding: 20px 24px 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  align-items: center;
 }
+
 .modal-title {
-  font-family: 'Fraunces', serif;
-  font-size: 19px;
+  font-family: var(--font-display);
+  font-size: 22px;
   font-weight: 700;
-  color: #f0ece5;
 }
-.modal-close {
+
+.modal-close-btn {
   background: none;
   border: none;
-  color: #555;
-  font-size: 16px;
+  font-size: 24px;
+  color: var(--color-text-muted);
   cursor: pointer;
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.15s;
 }
-.modal-close:hover {
-  background: rgba(255, 255, 255, 0.07);
-  color: #aaa;
+
+.modal-close-btn:hover {
+  background: var(--color-bg-elevated);
+  color: var(--color-text-primary);
 }
+
 .modal-body {
-  padding: 20px 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
+  padding: 24px;
 }
-.reject-sub {
-  font-size: 13.5px;
-  color: #666;
-  line-height: 1.5;
+
+.reject-info {
+  color: var(--color-text-secondary);
+  margin-bottom: 16px;
 }
 
 .reason-chips {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px;
+  margin-bottom: 20px;
 }
-.reason-chip {
-  padding: 5px 12px;
-  border-radius: 99px;
-  border: 1.5px solid #333;
-  font-size: 12px;
-  font-weight: 500;
-  color: #666;
-  background: #1a1a1a;
+
+.chip {
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--color-border-subtle);
+  background: var(--color-bg-elevated);
+  color: var(--color-text-secondary);
+  font-size: 13px;
   cursor: pointer;
-  transition: all 0.15s;
-  font-family: 'DM Sans', sans-serif;
+  transition: all 0.14s;
 }
-.reason-chip:hover {
-  border-color: #c8733a;
-  color: #c8733a;
+
+.chip:hover {
+  border-color: var(--color-accent-border);
+  color: var(--color-accent);
 }
-.reason-chip.active {
-  border-color: #c8733a;
-  background: rgba(200, 115, 58, 0.12);
-  color: #e8935a;
+
+.chip.active {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: white;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  margin-bottom: 8px;
+}
+
+.form-input {
+  width: 100%;
+  padding: 12px 14px;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-medium);
+  border-radius: 8px;
+  color: var(--color-text-primary);
+  font-size: 15px;
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px var(--color-accent-muted);
 }
 
 .modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--color-border-subtle);
+  background: var(--color-bg-elevated);
   display: flex;
   justify-content: flex-end;
-  gap: 10px;
-  padding: 16px 24px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-  background: rgba(0, 0, 0, 0.2);
+  gap: 12px;
 }
+
 .btn-ghost {
-  padding: 9px 18px;
   background: transparent;
-  color: #666;
-  border: 1.5px solid #333;
-  border-radius: 8px;
-  font-size: 13.5px;
-  font-weight: 600;
-  font-family: 'DM Sans', sans-serif;
+  border: 1px solid var(--color-border-medium);
+  color: var(--color-text-secondary);
+  padding: 10px 18px;
+  border-radius: var(--radius-pill);
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.15s;
 }
+
 .btn-ghost:hover {
-  border-color: #555;
-  color: #aaa;
+  border-color: var(--color-accent);
+  color: var(--color-accent);
 }
+
 .btn-danger {
-  padding: 9px 18px;
-  background: #dc2626;
+  background: #ef4444;
   color: white;
   border: none;
-  border-radius: 8px;
-  font-size: 13.5px;
+  padding: 10px 18px;
+  border-radius: var(--radius-pill);
   font-weight: 600;
-  font-family: 'DM Sans', sans-serif;
   cursor: pointer;
-  transition: background 0.15s;
 }
+
 .btn-danger:hover:not(:disabled) {
-  background: #b91c1c;
-}
-.btn-danger:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+  background: #dc2626;
 }
 
-/* Fields */
-.field-group {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.field-label {
-  font-size: 13px;
-  font-weight: 600;
-  color: #888;
-}
-.optional {
-  font-weight: 400;
-  color: #444;
-}
-.field-input {
-  width: 100%;
-  padding: 9px 13px;
-  border: 1.5px solid #2a2a2a;
-  border-radius: 8px;
-  font-size: 14px;
-  font-family: 'DM Sans', sans-serif;
-  color: #f0ece5;
-  background: #161616;
-  outline: none;
-  transition:
-    border-color 0.2s,
-    box-shadow 0.2s;
-}
-.field-input:focus {
-  border-color: #c8733a;
-  box-shadow: 0 0 0 3px rgba(200, 115, 58, 0.1);
-}
-
-@media (max-width: 600px) {
+/* Responsive */
+@media (max-width: 768px) {
   .kitchen-header {
-    padding: 14px 16px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
   }
-  .orders-area {
-    padding: 16px;
+
+  .header-right {
+    width: 100%;
+    justify-content: space-between;
   }
-  .tabs-bar {
-    padding: 10px 16px;
+
+  .stat-cards {
+    grid-template-columns: 1fr;
   }
+
   .orders-grid {
     grid-template-columns: 1fr;
+  }
+
+  .card-actions {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .btn-accept,
+  .btn-ready {
+    width: 100%;
   }
 }
 </style>
