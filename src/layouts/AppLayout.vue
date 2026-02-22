@@ -4,11 +4,23 @@
     <aside class="sidebar" :class="{ collapsed: sidebarCollapsed, 'mobile-open': mobileOpen }">
       <!-- Logo -->
       <div class="sidebar-logo">
-        <span class="logo-icon">🍽️</span>
+        <div class="logo-mark">
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" />
+            <circle cx="12" cy="12" r="4" />
+          </svg>
+        </div>
         <span class="logo-text" v-show="!sidebarCollapsed">RestaurantOS</span>
       </div>
 
-      <!-- Restaurant name badge -->
+      <!-- Restaurant badge -->
       <div class="restaurant-badge" v-show="!sidebarCollapsed">
         <div class="badge-avatar">{{ restaurantInitial }}</div>
         <div class="badge-info">
@@ -23,21 +35,59 @@
       <!-- Nav -->
       <nav class="sidebar-nav">
         <div class="nav-section-label" v-show="!sidebarCollapsed">Overview</div>
+
         <RouterLink to="/app/dashboard" class="nav-item" active-class="nav-active">
-          <span class="nav-icon">{{ icons.dashboard }}</span>
+          <span class="nav-icon"
+            ><svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+            >
+              <rect x="3" y="3" width="7" height="7" rx="1.5" />
+              <rect x="14" y="3" width="7" height="7" rx="1.5" />
+              <rect x="3" y="14" width="7" height="7" rx="1.5" />
+              <rect x="14" y="14" width="7" height="7" rx="1.5" /></svg
+          ></span>
           <span class="nav-label" v-show="!sidebarCollapsed">Dashboard</span>
           <span class="nav-tooltip" v-show="sidebarCollapsed">Dashboard</span>
         </RouterLink>
 
         <RouterLink to="/app/analytics" class="nav-item" active-class="nav-active">
-          <span class="nav-icon">{{ icons.analytics }}</span>
+          <span class="nav-icon"
+            ><svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+            >
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg
+          ></span>
           <span class="nav-label" v-show="!sidebarCollapsed">Analytics</span>
           <span class="nav-tooltip" v-show="sidebarCollapsed">Analytics</span>
         </RouterLink>
 
         <div class="nav-section-label" v-show="!sidebarCollapsed">Operations</div>
+
         <RouterLink to="/app/orders" class="nav-item" active-class="nav-active">
-          <span class="nav-icon">{{ icons.orders }}</span>
+          <span class="nav-icon"
+            ><svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+            >
+              <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
+              <rect x="9" y="3" width="6" height="4" rx="1" />
+              <line x1="9" y1="12" x2="15" y2="12" />
+              <line x1="9" y1="16" x2="13" y2="16" /></svg
+          ></span>
           <span class="nav-label" v-show="!sidebarCollapsed">Orders</span>
           <span class="nav-tooltip" v-show="sidebarCollapsed">Orders</span>
           <span class="nav-badge" v-if="pendingCount > 0" v-show="!sidebarCollapsed">{{
@@ -45,55 +95,186 @@
           }}</span>
           <span class="nav-badge-dot" v-if="pendingCount > 0" v-show="sidebarCollapsed" />
         </RouterLink>
+
         <RouterLink to="/app/order-history" class="nav-item" active-class="nav-active">
-          <span class="nav-icon">{{ icons.history }}</span>
+          <span class="nav-icon"
+            ><svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" /></svg
+          ></span>
           <span class="nav-label" v-show="!sidebarCollapsed">Order History</span>
           <span class="nav-tooltip" v-show="sidebarCollapsed">Order History</span>
         </RouterLink>
+
         <RouterLink to="/app/kitchen" class="nav-item" active-class="nav-active">
-          <span class="nav-icon">{{ icons.kitchen }}</span>
+          <span class="nav-icon"
+            ><svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+            >
+              <path d="M12 2a4 4 0 0 1 4 4v1H8V6a4 4 0 0 1 4-4z" />
+              <rect x="4" y="7" width="16" height="2" rx="1" />
+              <path d="M5 9v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9" />
+              <line x1="9" y1="13" x2="9" y2="17" />
+              <line x1="12" y1="13" x2="12" y2="17" />
+              <line x1="15" y1="13" x2="15" y2="17" /></svg
+          ></span>
           <span class="nav-label" v-show="!sidebarCollapsed">Kitchen</span>
           <span class="nav-tooltip" v-show="sidebarCollapsed">Kitchen</span>
         </RouterLink>
 
         <div class="nav-section-label" v-show="!sidebarCollapsed">Setup</div>
+
         <RouterLink to="/app/menu" class="nav-item" active-class="nav-active">
-          <span class="nav-icon">{{ icons.menu }}</span>
+          <span class="nav-icon"
+            ><svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+            >
+              <path d="M3 6h18M3 12h18M3 18h12" /></svg
+          ></span>
           <span class="nav-label" v-show="!sidebarCollapsed">Menu</span>
           <span class="nav-tooltip" v-show="sidebarCollapsed">Menu</span>
         </RouterLink>
+
         <RouterLink to="/app/tables" class="nav-item" active-class="nav-active">
-          <span class="nav-icon">{{ icons.tables }}</span>
+          <span class="nav-icon"
+            ><svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+            >
+              <rect x="3" y="10" width="18" height="4" rx="1" />
+              <line x1="6" y1="14" x2="6" y2="20" />
+              <line x1="18" y1="14" x2="18" y2="20" />
+              <line x1="12" y1="3" x2="12" y2="10" /></svg
+          ></span>
           <span class="nav-label" v-show="!sidebarCollapsed">Tables & QR</span>
           <span class="nav-tooltip" v-show="sidebarCollapsed">Tables</span>
         </RouterLink>
+
         <RouterLink to="/app/staff" class="nav-item" active-class="nav-active">
-          <span class="nav-icon">{{ icons.staff }}</span>
+          <span class="nav-icon"
+            ><svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+            >
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+              <path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg
+          ></span>
           <span class="nav-label" v-show="!sidebarCollapsed">Staff</span>
           <span class="nav-tooltip" v-show="sidebarCollapsed">Staff</span>
         </RouterLink>
+
         <RouterLink to="/app/promotions" class="nav-item" active-class="nav-active">
-          <span class="nav-icon">{{ icons.promotions }}</span>
+          <span class="nav-icon"
+            ><svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+            >
+              <path
+                d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"
+              />
+              <circle cx="7" cy="7" r="1.5" fill="currentColor" /></svg
+          ></span>
           <span class="nav-label" v-show="!sidebarCollapsed">Promotions</span>
           <span class="nav-tooltip" v-show="sidebarCollapsed">Promotions</span>
         </RouterLink>
 
         <div class="nav-section-label" v-show="!sidebarCollapsed">Account</div>
+
         <RouterLink to="/app/settings" class="nav-item" active-class="nav-active">
-          <span class="nav-icon">{{ icons.settings }}</span>
+          <span class="nav-icon"
+            ><svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+            >
+              <circle cx="12" cy="12" r="3" />
+              <path
+                d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"
+              /></svg
+          ></span>
           <span class="nav-label" v-show="!sidebarCollapsed">Settings</span>
           <span class="nav-tooltip" v-show="sidebarCollapsed">Settings</span>
         </RouterLink>
       </nav>
 
       <!-- Collapse toggle -->
-      <button class="collapse-btn" @click="sidebarCollapsed = !sidebarCollapsed">
-        <span>{{ sidebarCollapsed ? '→' : '←' }}</span>
+      <button
+        class="collapse-btn"
+        @click="sidebarCollapsed = !sidebarCollapsed"
+        :title="sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'"
+      >
+        <svg
+          v-if="!sidebarCollapsed"
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+        >
+          <polyline points="15 18 9 12 15 6" />
+        </svg>
+        <svg
+          v-else
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+        >
+          <polyline points="9 18 15 12 9 6" />
+        </svg>
       </button>
 
       <!-- Sign out -->
       <button class="signout-btn" @click="signOut">
-        <span class="nav-icon">⎋</span>
+        <svg
+          width="15"
+          height="15"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.8"
+        >
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+          <polyline points="16 17 21 12 16 7" />
+          <line x1="21" y1="12" x2="9" y2="12" />
+        </svg>
         <span v-show="!sidebarCollapsed">Sign out</span>
       </button>
     </aside>
@@ -105,25 +286,49 @@
     <div class="main-area" :class="{ expanded: sidebarCollapsed }">
       <!-- Topbar -->
       <header class="topbar">
-        <!-- Mobile menu button -->
-        <button class="mobile-menu-btn" @click="mobileOpen = !mobileOpen">☰</button>
+        <button class="mobile-menu-btn" @click="mobileOpen = !mobileOpen" aria-label="Open menu">
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <line x1="3" y1="6" x2="21" y2="6" />
+            <line x1="3" y1="12" x2="21" y2="12" />
+            <line x1="3" y1="18" x2="21" y2="18" />
+          </svg>
+        </button>
 
-        <!-- Page title (slot or route name) -->
         <div class="topbar-title">
           <span class="page-title">{{ currentPageTitle }}</span>
         </div>
 
         <div class="topbar-right">
-          <!-- Pending orders indicator -->
-          <div class="pending-pill" v-if="pendingCount > 0" @click="$router.push('/app/orders')">
+          <!-- Pending orders pill -->
+          <button class="pending-pill" v-if="pendingCount > 0" @click="$router.push('/app/orders')">
             <span class="pill-dot" />
             {{ pendingCount }} pending
-          </div>
+          </button>
+
+          <!-- Notifications (placeholder) -->
+          <button class="icon-btn" aria-label="Notifications">
+            <svg
+              width="17"
+              height="17"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+            >
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+            </svg>
+          </button>
 
           <!-- User avatar -->
-          <div class="user-avatar" :title="userName">
-            {{ userInitial }}
-          </div>
+          <div class="user-avatar" :title="userName">{{ userInitial }}</div>
         </div>
       </header>
 
@@ -151,33 +356,20 @@ const pendingCount = ref(0)
 const restaurantName = ref('')
 const restaurantPlan = ref('trial')
 
-const icons = {
-  dashboard: '▦',
-  orders: '🧾',
-  kitchen: '👨‍🍳',
-  menu: '📋',
-  tables: '⬡',
-  staff: '👥',
-  settings: '⚙',
-  history: '📜',
-  analytics: '📊',
-  promotions: '🏷️',
-}
-
 const pageTitles = {
   '/app/dashboard': 'Dashboard',
   '/app/orders': 'Orders',
   '/app/kitchen': 'Kitchen View',
   '/app/menu': 'Menu Management',
   '/app/tables': 'Tables & QR Codes',
-  'app/order-history': 'Order History',
-  'app/analytics': 'Analytics',
+  '/app/order-history': 'Order History',
+  '/app/analytics': 'Analytics',
   '/app/staff': 'Staff',
   '/app/settings': 'Settings',
+  '/app/promotions': 'Promotions',
 }
 
 const currentPageTitle = computed(() => pageTitles[route.path] || 'RestaurantOS')
-
 const userName = computed(() => authStore.profile?.full_name || 'User')
 const userInitial = computed(() => userName.value.charAt(0).toUpperCase())
 const restaurantInitial = computed(() => restaurantName.value.charAt(0).toUpperCase() || 'R')
@@ -186,7 +378,6 @@ const planLabel = computed(() => {
   return map[restaurantPlan.value] || 'Trial'
 })
 
-// Load restaurant info
 async function loadRestaurant() {
   if (!authStore.profile?.restaurant_id) return
   const { data } = await supabase
@@ -200,7 +391,6 @@ async function loadRestaurant() {
   }
 }
 
-// Subscribe to pending orders count
 let ordersChannel = null
 async function loadPendingCount() {
   if (!authStore.profile?.restaurant_id) return
@@ -257,23 +447,23 @@ onUnmounted(() => {
   padding: 0;
 }
 
-/* ── Shell ────────────────────────────────────── */
+/* ── Shell ── */
 .app-shell {
   display: flex;
   height: 100vh;
   overflow: hidden;
-  background: #f5f3ef;
-  font-family: 'DM Sans', sans-serif;
+  background: var(--bg-deep, #111);
+  font-family: var(--font-body, 'DM Sans', sans-serif);
 }
 
-/* ── Sidebar ──────────────────────────────────── */
+/* ── Sidebar ── */
 .sidebar {
-  width: 240px;
-  min-width: 240px;
-  background: #1c1917;
+  width: 228px;
+  min-width: 228px;
+  background: var(--bg-panel, #161616);
+  border-right: 1px solid var(--border, rgba(255, 255, 255, 0.07));
   display: flex;
   flex-direction: column;
-  padding: 0;
   transition:
     width 0.25s cubic-bezier(0.4, 0, 0.2, 1),
     min-width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
@@ -281,10 +471,9 @@ onUnmounted(() => {
   z-index: 50;
   overflow: hidden;
 }
-
 .sidebar.collapsed {
-  width: 64px;
-  min-width: 64px;
+  width: 60px;
+  min-width: 60px;
 }
 
 /* Logo */
@@ -292,18 +481,27 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 20px 18px 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 20px 16px 16px;
+  border-bottom: 1px solid var(--border, rgba(255, 255, 255, 0.07));
+  flex-shrink: 0;
 }
-.logo-icon {
-  font-size: 20px;
+.logo-mark {
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-sm, 6px);
+  background: var(--accent-20, rgba(200, 115, 58, 0.2));
+  border: 1px solid var(--accent-30, rgba(200, 115, 58, 0.3));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent, #c8733a);
   flex-shrink: 0;
 }
 .logo-text {
-  font-family: 'Fraunces', serif;
-  font-size: 17px;
+  font-family: var(--font-display, 'Fraunces', serif);
+  font-size: 16px;
   font-weight: 700;
-  color: #faf8f5;
+  color: var(--text-primary, #f0ece5);
   white-space: nowrap;
   letter-spacing: -0.3px;
 }
@@ -313,62 +511,69 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 12px 16px;
-  margin: 12px 10px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  padding: 10px 12px;
+  margin: 10px 8px;
+  background: var(--bg-card, #1e1e1e);
+  border-radius: var(--radius, 10px);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.07));
+  flex-shrink: 0;
 }
 .restaurant-badge-mini {
   display: flex;
   justify-content: center;
   padding: 10px 0;
-  margin: 12px 10px;
+  margin: 10px 8px;
+  flex-shrink: 0;
 }
 .badge-avatar {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  background: #c8733a;
-  color: white;
-  font-size: 13px;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-sm, 6px);
+  background: var(--accent, #c8733a);
+  color: #fff;
+  font-size: 12px;
   font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  font-family: var(--font-body, 'DM Sans', sans-serif);
 }
 .badge-info {
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 2px;
   overflow: hidden;
+  min-width: 0;
 }
 .badge-name {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
-  color: #faf8f5;
+  color: var(--text-primary, #f0ece5);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-family: var(--font-body, 'DM Sans', sans-serif);
 }
 .badge-plan {
   font-size: 10px;
-  color: #c8733a;
+  color: var(--accent, #c8733a);
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.07em;
+  font-family: var(--font-body, 'DM Sans', sans-serif);
 }
 
 /* Nav */
 .sidebar-nav {
   flex: 1;
-  padding: 4px 10px;
+  padding: 4px 8px;
   overflow-y: auto;
   overflow-x: hidden;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
+  scrollbar-width: none;
 }
 .sidebar-nav::-webkit-scrollbar {
   display: none;
@@ -379,86 +584,95 @@ onUnmounted(() => {
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.25);
-  padding: 14px 8px 4px;
+  color: var(--text-subtle, #555);
+  padding: 14px 10px 5px;
   white-space: nowrap;
+  font-family: var(--font-body, 'DM Sans', sans-serif);
 }
 
 .nav-item {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 9px 10px;
-  border-radius: 8px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm, 6px);
   text-decoration: none;
-  color: rgba(255, 255, 255, 0.55);
-  font-size: 13.5px;
+  color: var(--text-muted, #666);
+  font-size: 13px;
   font-weight: 500;
-  transition: all 0.15s;
+  font-family: var(--font-body, 'DM Sans', sans-serif);
+  transition:
+    background 0.12s,
+    color 0.12s;
   position: relative;
   white-space: nowrap;
   cursor: pointer;
 }
 .nav-item:hover {
-  background: rgba(255, 255, 255, 0.07);
-  color: rgba(255, 255, 255, 0.9);
+  background: var(--bg-hover, #252525);
+  color: var(--text-secondary, #888);
 }
 .nav-item.nav-active {
-  background: rgba(200, 115, 58, 0.15);
-  color: #e8925a;
+  background: var(--accent-10, rgba(200, 115, 58, 0.1));
+  color: var(--accent-400, #db8a60);
 }
 .nav-item.nav-active .nav-icon {
-  opacity: 1;
+  color: var(--accent, #c8733a);
 }
 
 .nav-icon {
-  font-size: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
-  opacity: 0.7;
   width: 20px;
-  text-align: center;
+  height: 20px;
+  color: inherit;
 }
 .nav-label {
   flex: 1;
 }
 
-/* Badge for pending count */
+/* Pending badge */
 .nav-badge {
-  background: #c8733a;
-  color: white;
+  background: var(--accent, #c8733a);
+  color: #fff;
   font-size: 10px;
   font-weight: 700;
-  padding: 1px 6px;
-  border-radius: 99px;
+  padding: 2px 6px;
+  border-radius: var(--radius-full, 9999px);
   min-width: 18px;
   text-align: center;
+  font-family: var(--font-body, 'DM Sans', sans-serif);
+  line-height: 1.4;
 }
 .nav-badge-dot {
-  width: 7px;
-  height: 7px;
-  background: #c8733a;
+  width: 6px;
+  height: 6px;
+  background: var(--accent, #c8733a);
   border-radius: 50%;
   position: absolute;
-  top: 8px;
-  right: 8px;
+  top: 7px;
+  right: 7px;
 }
 
-/* Tooltip on collapsed */
+/* Tooltip when collapsed */
 .nav-tooltip {
   display: none;
   position: absolute;
-  left: 100%;
+  left: calc(100% + 10px);
   top: 50%;
   transform: translateY(-50%);
-  margin-left: 10px;
-  background: #1c1917;
-  color: #faf8f5;
+  background: var(--bg-card, #1e1e1e);
+  color: var(--text-primary, #f0ece5);
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 500;
+  font-family: var(--font-body, 'DM Sans', sans-serif);
   padding: 5px 10px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm, 6px);
   white-space: nowrap;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--border-strong, #2a2a2a);
+  box-shadow: var(--shadow-card, 0 10px 30px rgba(0, 0, 0, 0.35));
   z-index: 100;
   pointer-events: none;
 }
@@ -466,24 +680,26 @@ onUnmounted(() => {
   display: block;
 }
 
-/* Collapse button */
+/* Collapse toggle */
 .collapse-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 8px 10px;
+  margin: 6px 8px;
   padding: 8px;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 8px;
-  color: rgba(255, 255, 255, 0.4);
-  font-size: 12px;
+  background: var(--bg-card, #1e1e1e);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.07));
+  border-radius: var(--radius-sm, 6px);
+  color: var(--text-muted, #666);
   cursor: pointer;
-  transition: all 0.15s;
+  transition:
+    background 0.12s,
+    color 0.12s;
+  flex-shrink: 0;
 }
 .collapse-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
+  background: var(--bg-hover, #252525);
+  color: var(--text-secondary, #888);
 }
 
 /* Sign out */
@@ -491,71 +707,88 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin: 4px 10px 16px;
-  padding: 9px 10px;
+  margin: 4px 8px 14px;
+  padding: 8px 10px;
   background: transparent;
   border: none;
-  border-radius: 8px;
-  color: rgba(255, 255, 255, 0.35);
+  border-radius: var(--radius-sm, 6px);
+  color: var(--text-subtle, #555);
   font-size: 13px;
   font-weight: 500;
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-body, 'DM Sans', sans-serif);
   cursor: pointer;
-  transition: all 0.15s;
+  transition:
+    background 0.12s,
+    color 0.12s;
   white-space: nowrap;
   text-align: left;
+  flex-shrink: 0;
 }
 .signout-btn:hover {
-  background: rgba(239, 68, 68, 0.1);
-  color: #f87171;
+  background: rgba(239, 68, 68, 0.08);
+  color: var(--danger, #ef4444);
 }
 
-/* ── Main area ────────────────────────────────── */
+/* ── Main area ── */
 .main-area {
   flex: 1;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  min-width: 0;
 }
 
-/* ── Topbar ───────────────────────────────────── */
+/* ── Topbar ── */
 .topbar {
-  height: 58px;
-  min-height: 58px;
-  background: #ffffff;
-  border-bottom: 1px solid #ede9e3;
+  height: 56px;
+  min-height: 56px;
+  background: var(--bg-panel, #161616);
+  border-bottom: 1px solid var(--border, rgba(255, 255, 255, 0.07));
   display: flex;
   align-items: center;
-  padding: 0 24px;
-  gap: 16px;
+  padding: 0 20px;
+  gap: 12px;
+  flex-shrink: 0;
 }
 
 .mobile-menu-btn {
   display: none;
+  align-items: center;
+  justify-content: center;
   background: none;
   border: none;
-  font-size: 18px;
+  color: var(--text-secondary, #888);
   cursor: pointer;
-  color: #666;
-  padding: 4px;
+  padding: 6px;
+  border-radius: var(--radius-sm, 6px);
+  transition:
+    background 0.12s,
+    color 0.12s;
+}
+.mobile-menu-btn:hover {
+  background: var(--bg-hover, #252525);
+  color: var(--text-primary, #f0ece5);
 }
 
 .topbar-title {
   flex: 1;
+  min-width: 0;
 }
 .page-title {
-  font-family: 'Fraunces', serif;
+  font-family: var(--font-display, 'Fraunces', serif);
   font-size: 20px;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--text-primary, #f0ece5);
   letter-spacing: -0.3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .topbar-right {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
 }
 
 /* Pending pill */
@@ -564,26 +797,28 @@ onUnmounted(() => {
   align-items: center;
   gap: 6px;
   padding: 5px 12px;
-  background: #fff7ed;
-  border: 1px solid #fed7aa;
-  border-radius: 99px;
+  background: var(--accent-10, rgba(200, 115, 58, 0.1));
+  border: 1px solid var(--accent-30, rgba(200, 115, 58, 0.3));
+  border-radius: var(--radius-full, 9999px);
   font-size: 12px;
   font-weight: 600;
-  color: #c2410c;
+  font-family: var(--font-body, 'DM Sans', sans-serif);
+  color: var(--accent-400, #db8a60);
   cursor: pointer;
-  transition: all 0.15s;
-  animation: pulse-border 2s infinite;
+  transition: background 0.15s;
+  animation: pulse-border 2.5s ease infinite;
 }
 .pending-pill:hover {
-  background: #ffedd5;
+  background: var(--accent-20, rgba(200, 115, 58, 0.2));
 }
 
 .pill-dot {
   width: 6px;
   height: 6px;
-  background: #c8733a;
+  background: var(--accent, #c8733a);
   border-radius: 50%;
-  animation: pulse-dot 1.5s infinite;
+  animation: pulse-dot 1.5s ease infinite;
+  flex-shrink: 0;
 }
 
 @keyframes pulse-dot {
@@ -594,61 +829,92 @@ onUnmounted(() => {
   }
   50% {
     opacity: 0.5;
-    transform: scale(0.8);
+    transform: scale(0.75);
   }
 }
-
 @keyframes pulse-border {
   0%,
   100% {
     box-shadow: 0 0 0 0 rgba(200, 115, 58, 0);
   }
   50% {
-    box-shadow: 0 0 0 3px rgba(200, 115, 58, 0.1);
+    box-shadow: var(--shadow-glow, 0 0 20px rgba(200, 115, 58, 0.3));
   }
+}
+
+/* Icon button (notifications, etc.) */
+.icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  background: none;
+  border: 1px solid var(--border-strong, #2a2a2a);
+  border-radius: var(--radius-sm, 6px);
+  color: var(--text-muted, #666);
+  cursor: pointer;
+  transition:
+    background 0.12s,
+    color 0.12s,
+    border-color 0.12s;
+}
+.icon-btn:hover {
+  background: var(--bg-hover, #252525);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: var(--text-secondary, #888);
 }
 
 /* User avatar */
 .user-avatar {
   width: 34px;
   height: 34px;
-  border-radius: 50%;
-  background: #1c1917;
-  color: white;
-  font-size: 13px;
+  border-radius: var(--radius-full, 9999px);
+  background: var(--bg-card, #1e1e1e);
+  border: 1px solid var(--border-strong, #2a2a2a);
+  color: var(--text-primary, #f0ece5);
+  font-size: 12px;
   font-weight: 700;
+  font-family: var(--font-body, 'DM Sans', sans-serif);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   flex-shrink: 0;
+  transition: border-color 0.12s;
+}
+.user-avatar:hover {
+  border-color: var(--accent-30, rgba(200, 115, 58, 0.3));
 }
 
-/* ── Page content ─────────────────────────────── */
+/* ── Page content ── */
 .page-content {
   flex: 1;
   overflow-y: auto;
-  padding: 28px 28px;
-  background: #f5f3ef;
+  padding: 28px;
+  background: var(--bg-deep, #111);
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong, #2a2a2a) transparent;
 }
 .page-content::-webkit-scrollbar {
-  width: 6px;
+  width: 5px;
 }
 .page-content::-webkit-scrollbar-track {
   background: transparent;
 }
 .page-content::-webkit-scrollbar-thumb {
-  background: #d6cfc4;
+  background: var(--border-strong, #2a2a2a);
   border-radius: 3px;
 }
 
-/* ── Mobile ───────────────────────────────────── */
+/* Mobile overlay */
 .mobile-overlay {
   display: none;
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.6);
   z-index: 40;
+  backdrop-filter: blur(2px);
 }
 
 @media (max-width: 768px) {
@@ -659,8 +925,8 @@ onUnmounted(() => {
     height: 100vh;
     transform: translateX(-100%);
     transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    width: 240px !important;
-    min-width: 240px !important;
+    width: 228px !important;
+    min-width: 228px !important;
   }
   .sidebar.mobile-open {
     transform: translateX(0);
@@ -679,6 +945,12 @@ onUnmounted(() => {
   }
   .page-content {
     padding: 20px 16px;
+  }
+  .pending-pill span:not(.pill-dot) {
+    display: none;
+  }
+  .pending-pill {
+    padding: 6px 8px;
   }
 }
 </style>

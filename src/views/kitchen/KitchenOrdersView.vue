@@ -1,57 +1,113 @@
 <template>
-  <div class="kitchen-orders">
-    <!-- Tabs + mute toggle -->
-    <div class="tabs">
+  <div class="kitchen-page">
+    <!-- ── Header ─────────────────────────── -->
+    <div class="kitchen-header">
+      <div class="header-left">
+        <h1 class="kitchen-title">Kitchen</h1>
+        <div class="live-dot-wrap">
+          <span class="live-dot connected" />
+          <span class="live-label">Live</span>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="date-label">{{ todayLabel }}</div>
+        <button
+          class="audio-btn"
+          @click="muted = !muted"
+          :title="muted ? 'Unmute pings' : 'Mute pings'"
+        >
+          {{ muted ? '🔕' : '🔔' }}
+        </button>
+      </div>
+    </div>
+
+    <!-- ── Tabs ───────────────────────────── -->
+    <div class="tabs-bar">
       <button
         v-for="tab in tabs"
         :key="tab.key"
-        class="tab"
-        :class="{ 'tab--active': activeTab === tab.key }"
+        class="tab-btn"
+        :class="{ active: activeTab === tab.key }"
         @click="activeTab = tab.key"
       >
         {{ tab.label }}
-        <span class="tab-count" v-if="tabCount(tab.key) > 0">{{ tabCount(tab.key) }}</span>
-      </button>
-
-      <!-- Mute toggle -->
-      <button class="btn-mute" @click="muted = !muted" :title="muted ? 'Unmute' : 'Mute'">
-        {{ muted ? '🔇' : '🔔' }}
-        <span class="mute-label">{{ muted ? 'Muted' : 'Sound on' }}</span>
+        <span
+          v-if="tabCount(tab.key) > 0"
+          class="tab-count"
+          :class="{ urgent: tab.key === 'pending' }"
+        >
+          {{ tabCount(tab.key) }}
+        </span>
       </button>
     </div>
 
-    <!-- Orders Grid -->
-    <div class="orders-grid">
-      <div v-if="filteredOrders.length === 0" class="empty">
-        <p>No {{ activeTab }} orders</p>
+    <!-- ── Content ────────────────────────── -->
+    <div class="orders-area">
+      <!-- Empty per tab -->
+      <div v-if="filteredOrders.length === 0" class="state-center">
+        <div class="empty-icon">
+          {{ activeTab === 'pending' ? '⏳' : activeTab === 'cooking' ? '👨‍🍳' : '✅' }}
+        </div>
+        <p class="empty-text">{{ emptyText }}</p>
       </div>
 
-      <div v-for="order in filteredOrders" :key="order.id" class="order-card">
-        <div class="order-card-header">
-          <span class="table-name">{{ order.tables?.name ?? 'Table' }}</span>
-          <span class="order-time">{{ elapsed(order.created_at) }}</span>
-        </div>
-        <ul class="order-items">
-          <li v-for="item in order.order_items" :key="item.id">
-            <span class="item-qty">{{ item.quantity }}×</span>
-            <span class="item-name">{{ item.menu_items?.name }}</span>
-            <span v-if="item.notes" class="item-note">— {{ item.notes }}</span>
-          </li>
-        </ul>
-        <div class="order-actions">
-          <button v-if="activeTab === 'pending'" class="btn btn--accept" @click="accept(order.id)">
-            Accept
-          </button>
-          <button v-if="activeTab === 'pending'" class="btn btn--reject" @click="reject(order.id)">
-            Reject
-          </button>
-          <button
-            v-if="activeTab === 'cooking'"
-            class="btn btn--ready"
-            @click="markReady(order.id)"
-          >
-            Mark Ready
-          </button>
+      <!-- Orders grid -->
+      <div v-else class="orders-grid">
+        <div
+          v-for="order in filteredOrders"
+          :key="order.id"
+          class="order-card"
+          :class="`status-${order.status}`"
+        >
+          <!-- Card header -->
+          <div class="card-header">
+            <div class="card-header-left">
+              <span class="table-name">{{ order.tables?.name ?? 'Table' }}</span>
+              <span class="order-num">#{{ order.id.slice(-4).toUpperCase() }}</span>
+            </div>
+            <div class="card-header-right">
+              <span class="elapsed" :class="{ overdue: elapsedMinutes(order) >= 15 }">
+                {{ elapsed(order.created_at) }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Items -->
+          <div class="card-items">
+            <div v-for="item in order.order_items" :key="item.id" class="card-item">
+              <span class="item-qty">×{{ item.quantity }}</span>
+              <span class="item-name">{{ item.menu_items?.name }}</span>
+              <span v-if="item.notes" class="item-note">{{ item.notes }}</span>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="card-actions">
+            <!-- Pending: Accept + Reject -->
+            <template v-if="order.status === 'pending'">
+              <button class="btn-reject" @click="reject(order.id)">Reject</button>
+              <button class="btn-accept" @click="accept(order.id)">Accept →</button>
+            </template>
+
+            <!-- Cooking: Mark Ready -->
+            <template v-else-if="order.status === 'cooking'">
+              <div class="cooking-indicator">
+                <span class="cooking-dot" />
+                Cooking…
+              </div>
+              <button class="btn-ready" @click="markReady(order.id)">Mark Ready ✓</button>
+            </template>
+
+            <!-- Ready -->
+            <template v-else-if="order.status === 'ready'">
+              <div class="ready-badge">✅ Ready for pickup</div>
+            </template>
+
+            <!-- Rejected -->
+            <template v-else-if="order.status === 'rejected'">
+              <div class="rejected-badge">❌ Rejected</div>
+            </template>
+          </div>
         </div>
       </div>
     </div>
@@ -69,10 +125,12 @@ const activeTab = ref('pending')
 const muted = ref(false)
 let channel = null
 
+// ── Date label ────────────────────────────────────────────────────────────────
+const todayLabel = computed(() =>
+  new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }),
+)
+
 // ── Audio Ping ────────────────────────────────────────────────────────────────
-// Uses Web Audio API — no file needed, generates the sound programmatically.
-// We keep one AudioContext alive for the session (browsers block new ones until
-// a user gesture has occurred, which the mute button click satisfies).
 let audioCtx = null
 
 function getAudioCtx() {
@@ -84,72 +142,84 @@ function playPing() {
   if (muted.value) return
   try {
     const ctx = getAudioCtx()
-
-    // Two-tone ding: a short high note followed by a slightly lower one
     const tones = [
       { freq: 880, start: 0, duration: 0.15 },
       { freq: 660, start: 0.18, duration: 0.25 },
     ]
-
     tones.forEach(({ freq, start, duration }) => {
       const osc = ctx.createOscillator()
       const gain = ctx.createGain()
-
       osc.connect(gain)
       gain.connect(ctx.destination)
-
       osc.type = 'sine'
       osc.frequency.value = freq
-
-      // Fade in then out to avoid harsh clicks
       const t = ctx.currentTime + start
       gain.gain.setValueAtTime(0, t)
       gain.gain.linearRampToValueAtTime(0.4, t + 0.02)
       gain.gain.linearRampToValueAtTime(0, t + duration)
-
       osc.start(t)
       osc.stop(t + duration)
     })
   } catch (e) {
-    // Silently ignore — audio is a nice-to-have
     console.warn('Audio ping failed:', e)
   }
 }
 
-// ── Data ──────────────────────────────────────────────────────────────────────
+// ── Tabs ──────────────────────────────────────────────────────────────────────
 const tabs = [
-  { key: 'pending', label: '🔔 Pending' },
-  { key: 'cooking', label: '🔥 Cooking' },
-  { key: 'done', label: '✅ Done' },
+  { key: 'pending', label: 'Pending' },
+  { key: 'cooking', label: 'Cooking' },
+  { key: 'done', label: 'Done' },
 ]
 
-const filteredOrders = computed(() => orders.value.filter((o) => o.status === activeTab.value))
-
 function tabCount(key) {
+  if (key === 'done')
+    return orders.value.filter((o) => ['ready', 'rejected'].includes(o.status)).length
   return orders.value.filter((o) => o.status === key).length
 }
 
-function elapsed(createdAt) {
-  const diff = Math.floor((Date.now() - new Date(createdAt)) / 60000)
-  return diff < 1 ? 'just now' : `${diff}m ago`
+const filteredOrders = computed(() => {
+  if (activeTab.value === 'done')
+    return orders.value.filter((o) => ['ready', 'rejected'].includes(o.status))
+  return orders.value.filter((o) => o.status === activeTab.value)
+})
+
+const emptyText = computed(() => {
+  if (activeTab.value === 'pending') return 'No pending orders — all clear!'
+  if (activeTab.value === 'cooking') return 'Nothing cooking right now.'
+  return 'No completed orders yet today.'
+})
+
+// ── Elapsed ───────────────────────────────────────────────────────────────────
+function elapsedMinutes(order) {
+  return Math.floor((Date.now() - new Date(order.created_at)) / 60000)
 }
 
+function elapsed(createdAt) {
+  const m = Math.floor((Date.now() - new Date(createdAt)) / 60000)
+  if (m < 1) return 'Just now'
+  if (m === 1) return '1 min ago'
+  return `${m} min ago`
+}
+
+// ── Data ──────────────────────────────────────────────────────────────────────
 async function fetchOrders() {
+  const startOfDay = new Date()
+  startOfDay.setHours(0, 0, 0, 0)
+
   const { data } = await supabase
     .from('orders')
     .select('*, tables(name), order_items(*, menu_items(name))')
     .eq('restaurant_id', authStore.profile?.restaurant_id)
-    .in('status', ['pending', 'cooking', 'done'])
+    .in('status', ['pending', 'cooking', 'ready', 'rejected'])
+    .gte('created_at', startOfDay.toISOString())
     .order('created_at', { ascending: true })
   if (data) orders.value = data
 }
 
-// Called by the realtime subscription on every change
 function handleRealtimeChange(payload) {
-  // Only ping when a NEW pending order arrives
   if (payload.eventType === 'INSERT' && payload.new?.status === 'pending') {
     playPing()
-    // Auto-switch to pending tab so kitchen sees it immediately
     activeTab.value = 'pending'
   }
   fetchOrders()
@@ -180,176 +250,379 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.kitchen-orders {
-  height: 100%;
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:wght@700&family=DM+Sans:wght@400;500;600;700&display=swap');
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+.kitchen-page {
+  font-family: 'DM Sans', sans-serif;
+  background: #111;
+  min-height: 100vh;
+  color: #f0ece5;
   display: flex;
   flex-direction: column;
-  background: #111827;
-  color: #f9fafb;
 }
 
-.tabs {
+/* ── Header ─────────────────────────────────────────────── */
+.kitchen-header {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 1rem 1.5rem;
-  background: #1f2937;
-  border-bottom: 1px solid #374151;
+  justify-content: space-between;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  background: #161616;
   flex-shrink: 0;
 }
-.tab {
+.header-left {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.6rem 1.25rem;
-  background: transparent;
-  border: 1.5px solid #374151;
-  border-radius: 10px;
-  color: #9ca3af;
-  font-size: 0.95rem;
+  gap: 14px;
+}
+.kitchen-title {
+  font-family: 'Fraunces', serif;
+  font-size: 24px;
+  font-weight: 700;
+  color: #f5f0e8;
+}
+.live-dot-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #555;
+  transition: background 0.3s;
+}
+.live-dot.connected {
+  background: #4ade80;
+  box-shadow: 0 0 6px rgba(74, 222, 128, 0.6);
+  animation: pulse 2s infinite;
+}
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+.live-label {
+  font-size: 12px;
   font-weight: 600;
+  color: #666;
+}
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.date-label {
+  font-size: 13px;
+  color: #555;
+}
+.audio-btn {
+  background: none;
+  border: none;
+  font-size: 20px;
   cursor: pointer;
-  font-family: inherit;
+  padding: 4px;
+  border-radius: 6px;
+  transition: background 0.15s;
+}
+.audio-btn:hover {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+/* ── Tabs ────────────────────────────────────────────────── */
+.tabs-bar {
+  display: flex;
+  gap: 4px;
+  padding: 12px 24px;
+  background: #161616;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  flex-shrink: 0;
+}
+.tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 20px;
+  border-radius: 8px;
+  border: none;
+  font-size: 14px;
+  font-weight: 600;
+  color: #555;
+  background: transparent;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
   transition: all 0.15s;
 }
-.tab:hover {
-  border-color: #4b5563;
-  color: #f9fafb;
+.tab-btn:hover {
+  color: #aaa;
+  background: rgba(255, 255, 255, 0.05);
 }
-.tab--active {
-  background: #374151;
-  border-color: #4b5563;
-  color: #f9fafb;
+.tab-btn.active {
+  background: rgba(255, 255, 255, 0.08);
+  color: #f0ece5;
 }
 .tab-count {
-  background: #f97316;
+  padding: 2px 8px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.1);
+  color: #aaa;
+}
+.tab-count.urgent {
+  background: #c8733a;
   color: white;
-  border-radius: 999px;
-  padding: 0.1rem 0.5rem;
-  font-size: 0.75rem;
+  animation: urgentPulse 1.5s ease-in-out infinite;
+}
+@keyframes urgentPulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
 }
 
-/* Mute toggle — pushed to the right */
-.btn-mute {
-  margin-left: auto;
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  padding: 0.5rem 0.9rem;
-  background: #374151;
-  border: 1.5px solid #4b5563;
-  border-radius: 10px;
-  color: #9ca3af;
-  font-size: 0.85rem;
-  font-weight: 600;
-  cursor: pointer;
-  font-family: inherit;
-  transition: all 0.15s;
-}
-.btn-mute:hover {
-  background: #4b5563;
-  color: #f9fafb;
-}
-.mute-label {
-  font-size: 0.78rem;
-}
-
-.orders-grid {
+/* ── Orders area ─────────────────────────────────────────── */
+.orders-area {
   flex: 1;
+  padding: 20px 24px;
   overflow-y: auto;
-  padding: 1.5rem;
+}
+
+.state-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 80px 20px;
+  color: #444;
+}
+.empty-icon {
+  font-size: 42px;
+}
+.empty-text {
+  font-size: 15px;
+  color: #444;
+}
+
+/* ── Orders grid ─────────────────────────────────────────── */
+.orders-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 1rem;
-  align-content: start;
-}
-.empty {
-  grid-column: 1 / -1;
-  text-align: center;
-  color: #4b5563;
-  padding: 4rem;
-  font-size: 1rem;
+  gap: 16px;
+  align-items: start;
 }
 
 .order-card {
-  background: #1f2937;
-  border: 1.5px solid #374151;
+  background: #1e1e1e;
+  border: 1.5px solid #2a2a2a;
   border-radius: 14px;
-  padding: 1.25rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
+  overflow: hidden;
+  transition: all 0.2s;
 }
-.order-card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.order-card.status-pending {
+  border-color: rgba(200, 115, 58, 0.3);
 }
-.table-name {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: #f9fafb;
+.order-card.status-cooking {
+  border-color: rgba(251, 191, 36, 0.3);
 }
-.order-time {
-  font-size: 0.78rem;
-  color: #6b7280;
+.order-card.status-ready {
+  border-color: rgba(74, 222, 128, 0.3);
+}
+.order-card.status-rejected {
+  opacity: 0.5;
 }
 
-.order-items {
-  list-style: none;
+/* Card header */
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+.card-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.table-name {
+  font-size: 17px;
+  font-weight: 700;
+  color: #f0ece5;
+}
+.order-num {
+  font-size: 12px;
+  font-weight: 600;
+  color: #555;
+  background: #2a2a2a;
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+.elapsed {
+  font-size: 12px;
+  font-weight: 600;
+  color: #555;
+}
+.elapsed.overdue {
+  color: #ef4444;
+  animation: urgentPulse 1.5s ease-in-out infinite;
+}
+
+/* Card items */
+.card-items {
+  padding: 12px 16px;
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: 7px;
 }
-.order-items li {
-  font-size: 0.9rem;
-  color: #d1d5db;
+.card-item {
   display: flex;
-  gap: 0.4rem;
   align-items: baseline;
+  gap: 8px;
 }
 .item-qty {
+  font-size: 13px;
   font-weight: 700;
-  color: #f97316;
+  color: #c8733a;
+  width: 24px;
   flex-shrink: 0;
 }
 .item-name {
-  font-weight: 500;
+  font-size: 15px;
+  font-weight: 600;
+  color: #e0dbd3;
 }
 .item-note {
-  font-size: 0.78rem;
-  color: #6b7280;
+  font-size: 11.5px;
+  color: #666;
   font-style: italic;
 }
 
-.order-actions {
+/* Card actions */
+.card-actions {
   display: flex;
-  gap: 0.5rem;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(0, 0, 0, 0.2);
 }
-.btn {
-  flex: 1;
-  padding: 0.6rem;
-  border: none;
-  border-radius: 9px;
-  font-size: 0.85rem;
+
+.btn-reject {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1.5px solid #444;
+  background: transparent;
+  color: #888;
+  font-size: 13px;
   font-weight: 600;
+  font-family: 'DM Sans', sans-serif;
   cursor: pointer;
-  font-family: inherit;
-  transition: opacity 0.15s;
+  transition: all 0.15s;
 }
-.btn--accept {
-  background: #16a34a;
+.btn-reject:hover {
+  border-color: #ef4444;
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.07);
+}
+
+.btn-accept {
+  flex: 1;
+  padding: 9px;
+  background: #c8733a;
   color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+  transition: background 0.15s;
 }
-.btn--reject {
-  background: #374151;
-  color: #9ca3af;
+.btn-accept:hover {
+  background: #d98348;
 }
-.btn--ready {
-  background: #2563eb;
-  color: white;
+
+.btn-ready {
+  flex: 1;
+  padding: 9px;
+  background: rgba(74, 222, 128, 0.12);
+  color: #4ade80;
+  border: 1.5px solid rgba(74, 222, 128, 0.25);
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+  transition: all 0.15s;
 }
-.btn:hover {
-  opacity: 0.85;
+.btn-ready:hover {
+  background: rgba(74, 222, 128, 0.2);
+}
+
+.cooking-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #fbbf24;
+}
+.cooking-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #fbbf24;
+  animation: pulse 1.5s infinite;
+}
+
+.ready-badge {
+  flex: 1;
+  text-align: center;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #4ade80;
+}
+
+.rejected-badge {
+  flex: 1;
+  text-align: center;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #ef4444;
+}
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .kitchen-header {
+    padding: 14px 16px;
+  }
+  .orders-area {
+    padding: 16px;
+  }
+  .tabs-bar {
+    padding: 10px 16px;
+  }
+  .orders-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

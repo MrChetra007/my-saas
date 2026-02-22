@@ -1,1 +1,134 @@
+/* ============================================================
+   RestaurantOS — Tailwind v4 Design Tokens
+   File: src/assets/main.css
+
+   Tailwind v4 uses CSS-native @theme — no tailwind.config.js.
+   Change any token here and it updates everywhere in one go.
+   ============================================================ */
+
 @import 'tailwindcss';
+
+/* ── Google Fonts ────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,600;0,700;0,800;1,400;1,700&family=DM+Sans:wght@400;500;600&display=swap');
+
+@theme {
+  /* ── Fonts ────────────────────────────────────────────────
+     Swap font names here to change typography site-wide.
+     → font-display  (headlines / titles)
+     → font-body     (paragraphs, UI text)               */
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-body: 'DM Sans', sans-serif;
+
+  /* ── Accent (brand color) ─────────────────────────────────
+     Used for: CTAs, highlights, borders, icon tints.
+     Change --color-accent and the rest adapt automatically.  */
+  --color-accent: #c8733a;
+  --color-accent-hover: #d4844e;
+  --color-accent-muted: rgba(200, 115, 58, 0.12);
+  --color-accent-border: rgba(200, 115, 58, 0.25);
+  --color-accent-border-strong: rgba(200, 115, 58, 0.45);
+
+  /* ── Backgrounds ──────────────────────────────────────────
+     Three depth levels for the dark theme.
+     base     → page background
+     surface  → cards, panels
+     elevated → alternate sections (slightly darker)       */
+  --color-bg-base: #111111;
+  --color-bg-surface: #161616;
+  --color-bg-elevated: #0e0e0e;
+
+  /* ── Borders ──────────────────────────────────────────────*/
+  --color-border-subtle: rgba(255, 255, 255, 0.07);
+  --color-border-medium: rgba(255, 255, 255, 0.12);
+  --color-border-bright: rgba(255, 255, 255, 0.22);
+
+  /* ── Text ─────────────────────────────────────────────────*/
+  --color-text-primary: #ffffff;
+  --color-text-secondary: rgba(255, 255, 255, 0.55);
+  --color-text-muted: rgba(255, 255, 255, 0.35);
+  --color-text-faint: rgba(255, 255, 255, 0.2);
+
+  /* ── Status ───────────────────────────────────────────────*/
+  --color-status-success: #4ade80;
+  --color-status-warning: #facc15;
+
+  /* ── Layout ───────────────────────────────────────────────*/
+  --width-layout: 1160px;
+  --width-narrow: 680px;
+  --width-pricing: 720px;
+
+  /* ── Radius ───────────────────────────────────────────────*/
+  --radius-card: 10px;
+  --radius-pill: 999px;
+  --radius-panel: 16px;
+  --radius-phone: 22px;
+
+  /* ── Shadows ──────────────────────────────────────────────*/
+  --shadow-card: 0 12px 32px rgba(0, 0, 0, 0.35);
+  --shadow-float: 0 24px 56px rgba(0, 0, 0, 0.5);
+  --shadow-glow: 0 8px 24px rgba(200, 115, 58, 0.3);
+  --shadow-glow-lg: 0 0 80px rgba(200, 115, 58, 0.14);
+
+  /* ── Animations ───────────────────────────────────────────*/
+  --animate-pulse-dot: pulse-dot 2s ease-in-out infinite;
+  --animate-float-card: float-card 4s ease-in-out infinite;
+  --animate-float-in: float-in 0.5s ease both;
+
+  @keyframes pulse-dot {
+    0%,
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 0.5;
+      transform: scale(0.75);
+    }
+  }
+
+  @keyframes float-card {
+    0%,
+    100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-8px);
+    }
+  }
+
+  @keyframes float-in {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+/* ── Base resets ─────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--color-bg-base);
+  color: var(--color-text-primary);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Noise texture helper ────────────────────────────────── */
+.noise {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+  background-size: 200px;
+}
