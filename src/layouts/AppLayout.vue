@@ -199,17 +199,8 @@
     <!-- Mobile overlay -->
     <div class="mobile-overlay" v-if="mobileOpen" @click="mobileOpen = false" />
 
-    <!-- ── Upgrade toast ───────────────────────── -->
-    <Transition name="toast">
-      <div class="upgrade-toast" v-if="showUpgradeToast">
-        <Lock :size="13" />
-        <span>
-          <strong>{{ lockedFeatureName }}</strong> is available on Pro.
-          <RouterLink to="/app/settings">Upgrade →</RouterLink>
-        </span>
-        <button @click="showUpgradeToast = false"><X :size="13" /></button>
-      </div>
-    </Transition>
+    <!-- ── Plan Picker Modal ───────────────────── -->
+    <PlanPickerModal v-model="showPlanPicker" :featureName="lockedFeatureName" />
 
     <!-- ── Main area ───────────────────────────── -->
     <div class="main-area" :class="{ expanded: sidebarCollapsed }">
@@ -225,9 +216,6 @@
           <button class="pending-pill" v-if="pendingCount > 0" @click="$router.push('/app/orders')">
             <span class="pill-dot" />
             {{ pendingCount }} pending
-          </button>
-          <button class="icon-btn" aria-label="Notifications">
-            <Bell :size="17" />
           </button>
           <div class="user-avatar" :title="userName">{{ userInitial }}</div>
         </div>
@@ -246,6 +234,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute, RouterLink } from 'vue-router'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
+import PlanPickerModal from '@/components/PlanPickerModal.vue'
 
 import {
   LayoutDashboard,
@@ -262,9 +251,7 @@ import {
   ChevronRight,
   LogOut,
   Lock,
-  Bell,
   Menu,
-  X,
 } from 'lucide-vue-next'
 
 const router = useRouter()
@@ -278,15 +265,12 @@ const restaurantName = ref('')
 const restaurantPlan = ref('trial')
 const restauranLogoUrl = ref('')
 
-const showUpgradeToast = ref(false)
+const showPlanPicker = ref(false)
 const lockedFeatureName = ref('')
-let toastTimer = null
 
 function handleLockedClick(featureName) {
   lockedFeatureName.value = featureName
-  showUpgradeToast.value = true
-  clearTimeout(toastTimer)
-  toastTimer = setTimeout(() => (showUpgradeToast.value = false), 4000)
+  showPlanPicker.value = true
 }
 
 const canAccessAnalytics = computed(() =>
@@ -313,10 +297,6 @@ const currentPageTitle = computed(() => pageTitles[route.path] || 'Qrder')
 const userName = computed(() => authStore.profile?.full_name || 'User')
 const userInitial = computed(() => userName.value.charAt(0).toUpperCase())
 const restaurantInitial = computed(() => restaurantName.value.charAt(0).toUpperCase() || 'R')
-const planLabel = computed(() => {
-  const map = { trial: '14-day Trial', starter: 'Starter', pro: 'Pro', enterprise: 'Enterprise' }
-  return map[restaurantPlan.value] || 'Trial'
-})
 
 async function loadRestaurant() {
   if (!authStore.profile?.restaurant_id) return
@@ -331,6 +311,11 @@ async function loadRestaurant() {
     restauranLogoUrl.value = data.logo_url || ''
   }
 }
+
+const planLabel = computed(() => {
+  const map = { trial: '14-day Trial', starter: 'Starter', pro: 'Pro' }
+  return map[restaurantPlan.value] || 'Trial'
+})
 
 let ordersChannel = null
 async function loadPendingCount() {
@@ -374,7 +359,6 @@ onMounted(async () => {
 
 onUnmounted(() => {
   if (ordersChannel) supabase.removeChannel(ordersChannel)
-  clearTimeout(toastTimer)
 })
 </script>
 
@@ -438,7 +422,7 @@ onUnmounted(() => {
 }
 .logo-text {
   font-family: var(--font-display);
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 800;
   color: var(--color-text-primary);
   white-space: nowrap;
@@ -707,69 +691,6 @@ onUnmounted(() => {
   color: #ef4444;
 }
 
-/* ── Upgrade toast ── */
-.upgrade-toast {
-  position: fixed;
-  bottom: 24px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 999;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 16px;
-  background: var(--color-bg-surface);
-  border: 1px solid var(--color-accent-border);
-  border-radius: var(--radius-card);
-  box-shadow: var(--shadow-float);
-  font-size: 13px;
-  font-family: var(--font-body);
-  color: var(--color-text-secondary);
-  white-space: nowrap;
-}
-.upgrade-toast svg {
-  color: var(--color-accent);
-  flex-shrink: 0;
-}
-.upgrade-toast strong {
-  color: var(--color-text-primary);
-}
-.upgrade-toast a {
-  color: var(--color-accent);
-  text-decoration: none;
-  font-weight: 600;
-}
-.upgrade-toast a:hover {
-  text-decoration: underline;
-}
-.upgrade-toast button {
-  background: none;
-  border: none;
-  color: var(--color-text-faint);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  margin-left: 4px;
-  padding: 2px;
-  border-radius: 4px;
-  transition: color 0.12s;
-}
-.upgrade-toast button:hover {
-  color: var(--color-text-muted);
-}
-
-.toast-enter-active,
-.toast-leave-active {
-  transition:
-    opacity 0.2s,
-    transform 0.2s;
-}
-.toast-enter-from,
-.toast-leave-to {
-  opacity: 0;
-  transform: translateX(-50%) translateY(8px);
-}
-
 /* ── Main area ── */
 .main-area {
   flex: 1;
@@ -870,29 +791,6 @@ onUnmounted(() => {
   50% {
     box-shadow: var(--shadow-glow);
   }
-}
-
-/* Icon button */
-.icon-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 34px;
-  background: none;
-  border: 1px solid var(--color-border-medium);
-  border-radius: 6px;
-  color: var(--color-text-muted);
-  cursor: pointer;
-  transition:
-    background 0.12s,
-    color 0.12s,
-    border-color 0.12s;
-}
-.icon-btn:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: var(--color-border-bright);
-  color: var(--color-text-secondary);
 }
 
 /* User avatar */
