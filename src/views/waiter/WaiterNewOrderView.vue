@@ -1,13 +1,23 @@
 <template>
-  <div class="view-page">
-    <div class="view-header">
-      <h1 class="view-title">New Order</h1>
-      <p class="view-sub">Select a table, browse the menu and place the order.</p>
+  <div class="new-order-page">
+    <!-- Header -->
+    <div class="page-header">
+      <div class="header-content">
+        <h1 class="page-title">New Order</h1>
+        <p class="page-subtitle">Select a table, browse the menu and place the order</p>
+      </div>
+      <div v-if="selectedTable" class="table-indicator">
+        <MapPin class="indicator-icon" />
+        <span>{{ selectedTable.name }}</span>
+      </div>
     </div>
 
     <!-- Table Selector -->
-    <div class="table-selector">
-      <label class="section-label">Select Table</label>
+    <div class="table-section">
+      <div class="section-header">
+        <h2 class="section-title">Select Table</h2>
+        <span class="section-count">{{ tables.filter((t) => t.is_active).length }} available</span>
+      </div>
       <div class="table-grid">
         <button
           v-for="table in tables"
@@ -17,10 +27,16 @@
             'table-btn--selected': selectedTableId === table.id,
             'table-btn--inactive': !table.is_active,
           }"
-          @click="selectedTableId = table.id"
+          @click="table.is_active && (selectedTableId = table.id)"
+          :disabled="!table.is_active"
         >
-          <span class="table-btn-name">{{ table.name }}</span>
-          <span class="table-btn-status" v-if="!table.is_active">Inactive</span>
+          <div class="table-icon-wrap">
+            <Armchair v-if="table.is_active" class="table-icon" />
+            <Ban v-else class="table-icon inactive" />
+          </div>
+          <span class="table-name">{{ table.name }}</span>
+          <span class="table-status" v-if="!table.is_active">Inactive</span>
+          <CheckCircle2 v-if="selectedTableId === table.id" class="table-check" />
         </button>
       </div>
     </div>
@@ -28,70 +44,110 @@
     <!-- Menu -->
     <template v-if="selectedTableId">
       <!-- Category Tabs -->
-      <div class="category-tabs">
-        <button
-          v-for="cat in menu"
-          :key="cat.id"
-          class="cat-tab"
-          :class="{ 'cat-tab--active': activeCatId === cat.id }"
-          @click="activeCatId = cat.id"
-        >
-          {{ cat.name }}
-        </button>
+      <div class="category-section">
+        <div class="category-tabs">
+          <button
+            v-for="cat in menu"
+            :key="cat.id"
+            class="cat-tab"
+            :class="{ 'cat-tab--active': activeCatId === cat.id }"
+            @click="activeCatId = cat.id"
+          >
+            {{ cat.name }}
+          </button>
+        </div>
       </div>
 
       <!-- Menu Items -->
-      <div class="menu-items">
-        <div
-          v-for="item in activeItems"
-          :key="item.id"
-          class="menu-item"
-          :class="{ 'menu-item--unavailable': !item.is_available }"
-        >
-          <div class="item-img" v-if="item.image_url">
-            <img :src="item.image_url" :alt="item.name" />
-          </div>
-          <div class="item-img item-img--placeholder" v-else>🍽️</div>
-
-          <div class="item-body">
-            <div class="item-row">
-              <div class="item-info">
-                <span class="item-name">{{ item.name }}</span>
-                <span class="item-desc" v-if="item.description">{{ item.description }}</span>
-                <span class="item-price">${{ Number(item.price).toFixed(2) }}</span>
-              </div>
-              <div class="qty-control" v-if="item.is_available !== false">
-                <button class="qty-btn" @click="decrement(item)">−</button>
-                <span class="qty-value">{{ cart[item.id]?.qty ?? 0 }}</span>
-                <button class="qty-btn qty-btn--add" @click="increment(item)">+</button>
-              </div>
-              <span class="unavailable-label" v-else>Sold Out</span>
+      <div class="menu-section">
+        <div class="menu-items">
+          <div
+            v-for="item in activeItems"
+            :key="item.id"
+            class="menu-item"
+            :class="{ 'menu-item--unavailable': !item.is_available }"
+          >
+            <div class="item-image" v-if="item.image_url">
+              <img :src="item.image_url" :alt="item.name" />
             </div>
-            <div class="item-notes" v-if="cart[item.id]?.qty > 0">
-              <input
-                v-model="cart[item.id].notes"
-                type="text"
-                class="notes-input"
-                placeholder="Add note (e.g. no onions, extra spicy...)"
-                maxlength="120"
-              />
+            <div class="item-image item-image--placeholder" v-else>
+              <UtensilsCrossed class="placeholder-icon" />
+            </div>
+
+            <div class="item-content">
+              <div class="item-main">
+                <div class="item-info">
+                  <h3 class="item-name">{{ item.name }}</h3>
+                  <p class="item-desc" v-if="item.description">{{ item.description }}</p>
+                  <div class="item-price">
+                    <span class="price-currency">$</span>
+                    <span class="price-value">{{ Number(item.price).toFixed(2) }}</span>
+                  </div>
+                </div>
+
+                <div class="item-actions" v-if="item.is_available !== false">
+                  <div class="qty-control">
+                    <button
+                      class="qty-btn qty-btn--minus"
+                      @click="decrement(item)"
+                      :disabled="!cart[item.id]?.qty"
+                    >
+                      <Minus class="qty-icon" />
+                    </button>
+                    <span class="qty-value" :class="{ 'qty-value--active': cart[item.id]?.qty }">
+                      {{ cart[item.id]?.qty ?? 0 }}
+                    </span>
+                    <button class="qty-btn qty-btn--plus" @click="increment(item)">
+                      <Plus class="qty-icon" />
+                    </button>
+                  </div>
+                </div>
+                <div v-else class="sold-out-badge">
+                  <Ban class="sold-out-icon" />
+                  <span>Sold Out</span>
+                </div>
+              </div>
+
+              <!-- Notes Input -->
+              <div class="item-notes" v-if="cart[item.id]?.qty > 0">
+                <div class="notes-input-wrap">
+                  <MessageSquare class="notes-icon" />
+                  <input
+                    v-model="cart[item.id].notes"
+                    type="text"
+                    class="notes-input"
+                    placeholder="Add note (e.g. no onions, extra spicy...)"
+                    maxlength="120"
+                  />
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
     </template>
 
-    <div class="menu-empty" v-else>
-      <p>👆 Select a table above to start building the order.</p>
+    <!-- Empty State -->
+    <div class="empty-state" v-else>
+      <div class="empty-icon-wrap">
+        <MousePointerClick class="empty-icon" />
+      </div>
+      <h3 class="empty-title">Select a Table</h3>
+      <p class="empty-subtitle">Choose a table above to start building the order</p>
     </div>
 
-    <!-- ── FAB ── -->
+    <!-- ── Floating Action Button ── -->
     <transition name="fab">
       <button v-if="cartItems.length > 0" class="fab" @click="sheetOpen = true">
-        <span class="fab-icon">🛒</span>
-        <span class="fab-label">View Order</span>
-        <span class="fab-badge">{{ totalQty }}</span>
-        <span class="fab-total">${{ cartTotal.toFixed(2) }}</span>
+        <div class="fab-content">
+          <ShoppingCart class="fab-icon" />
+          <div class="fab-info">
+            <span class="fab-label">View Order</span>
+            <span class="fab-meta">{{ totalQty }} items • ${{ cartTotal.toFixed(2) }}</span>
+          </div>
+        </div>
+        <div class="fab-badge" v-if="totalQty > 0">{{ totalQty }}</div>
+        <ChevronRight class="fab-arrow" />
       </button>
     </transition>
 
@@ -101,46 +157,92 @@
         <div v-if="sheetOpen" class="sheet-overlay" @click.self="sheetOpen = false">
           <div class="sheet">
             <!-- Handle -->
-            <div class="sheet-handle"></div>
+            <div class="sheet-handle" @click="sheetOpen = false">
+              <div class="handle-bar"></div>
+            </div>
 
             <!-- Header -->
             <div class="sheet-header">
-              <div>
-                <h2 class="sheet-title">Your Order</h2>
-                <p class="sheet-sub" v-if="selectedTable">{{ selectedTable.name }}</p>
+              <div class="sheet-header-content">
+                <h2 class="sheet-title">Order Summary</h2>
+                <div v-if="selectedTable" class="sheet-table">
+                  <MapPin class="table-icon-sm" />
+                  <span>{{ selectedTable.name }}</span>
+                </div>
               </div>
-              <button class="sheet-close" @click="sheetOpen = false">✕</button>
+              <button class="sheet-close" @click="sheetOpen = false">
+                <X class="close-icon" />
+              </button>
             </div>
 
             <!-- Cart Items -->
             <div class="sheet-body">
-              <div v-for="item in cartItems" :key="item.id" class="cart-item">
-                <div class="cart-item-main">
-                  <div class="cart-item-info">
-                    <span class="cart-item-name">{{ item.name }}</span>
-                    <span class="cart-item-price">${{ (item.price * item.qty).toFixed(2) }}</span>
+              <div v-if="cartItems.length === 0" class="sheet-empty">
+                <ShoppingCart class="empty-cart-icon" />
+                <p>Your cart is empty</p>
+              </div>
+              <div v-else class="cart-list">
+                <div v-for="item in cartItems" :key="item.id" class="cart-item">
+                  <div class="cart-item-main">
+                    <div class="cart-item-info">
+                      <div class="cart-item-header">
+                        <span class="cart-item-name">{{ item.name }}</span>
+                        <span class="cart-item-total"
+                          >${{ (item.price * item.qty).toFixed(2) }}</span
+                        >
+                      </div>
+                      <div class="cart-item-unit">${{ item.price.toFixed(2) }} each</div>
+                    </div>
+                    <div class="qty-control qty-control--compact">
+                      <button
+                        class="qty-btn qty-btn--sm"
+                        @click="decrementById(item.id)"
+                        :disabled="item.qty <= 1"
+                      >
+                        <Minus class="qty-icon-sm" />
+                      </button>
+                      <span class="qty-value-sm">{{ item.qty }}</span>
+                      <button
+                        class="qty-btn qty-btn--sm qty-btn--plus"
+                        @click="incrementById(item.id)"
+                      >
+                        <Plus class="qty-icon-sm" />
+                      </button>
+                    </div>
                   </div>
-                  <div class="qty-control">
-                    <button class="qty-btn" @click="decrementById(item.id)">−</button>
-                    <span class="qty-value">{{ item.qty }}</span>
-                    <button class="qty-btn qty-btn--add" @click="incrementById(item.id)">+</button>
+                  <div class="cart-item-note" v-if="item.notes">
+                    <MessageSquare class="note-icon" />
+                    <span>{{ item.notes }}</span>
                   </div>
                 </div>
-                <!-- Notes shown in sheet too -->
-                <div class="cart-item-note" v-if="item.notes"><span>📝</span> {{ item.notes }}</div>
               </div>
             </div>
 
             <!-- Footer -->
             <div class="sheet-footer">
-              <div class="sheet-total-row">
-                <span class="sheet-total-label">Total</span>
-                <span class="sheet-total-value">${{ cartTotal.toFixed(2) }}</span>
+              <div class="total-section">
+                <div class="total-row">
+                  <span class="total-label">Subtotal</span>
+                  <span class="total-value">${{ cartTotal.toFixed(2) }}</span>
+                </div>
+                <div class="total-row total-row--final">
+                  <span class="total-label-final">Total</span>
+                  <span class="total-value-final">${{ cartTotal.toFixed(2) }}</span>
+                </div>
               </div>
-              <button class="btn-place" :disabled="submitting" @click="submitOrder">
-                {{ submitting ? 'Placing...' : 'Place Order →' }}
-              </button>
-              <button class="btn-clear" @click="clearCart">Clear order</button>
+              <div class="action-buttons">
+                <button class="btn-place" :disabled="submitting" @click="submitOrder">
+                  <span v-if="submitting" class="btn-spinner"></span>
+                  <span v-else>
+                    <Send class="btn-icon" />
+                    Place Order
+                  </span>
+                </button>
+                <button class="btn-clear" @click="clearCart">
+                  <Trash2 class="btn-icon-sm" />
+                  Clear
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -149,7 +251,10 @@
 
     <!-- Success Toast -->
     <transition name="toast">
-      <div v-if="successMsg" class="toast">✅ {{ successMsg }}</div>
+      <div v-if="successMsg" class="toast">
+        <CheckCircle2 class="toast-icon" />
+        <span>{{ successMsg }}</span>
+      </div>
     </transition>
   </div>
 </template>
@@ -158,6 +263,22 @@
 import { ref, computed, onMounted } from 'vue'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
+import {
+  MapPin,
+  Armchair,
+  Ban,
+  CheckCircle2,
+  UtensilsCrossed,
+  MousePointerClick,
+  Minus,
+  Plus,
+  MessageSquare,
+  ShoppingCart,
+  ChevronRight,
+  X,
+  Send,
+  Trash2,
+} from 'lucide-vue-next'
 
 const authStore = useAuthStore()
 
@@ -182,26 +303,34 @@ const selectedTable = computed(() => tables.value.find((t) => t.id === selectedT
 
 function increment(item) {
   if (!cart.value[item.id]) {
-    cart.value[item.id] = { id: item.id, name: item.name, price: item.price, qty: 0, notes: '' }
+    cart.value[item.id] = {
+      id: item.id,
+      name: item.name,
+      price: Number(item.price),
+      qty: 0,
+      notes: '',
+    }
   }
   cart.value[item.id].qty++
 }
+
 function decrement(item) {
   if (!cart.value[item.id] || cart.value[item.id].qty === 0) return
   cart.value[item.id].qty--
-  if (cart.value[item.id].qty === 0) cart.value[item.id].notes = ''
+  if (cart.value[item.id].qty === 0) {
+    cart.value[item.id].notes = ''
+  }
 }
 
-// Used inside the sheet — operate by id
 function incrementById(id) {
   if (cart.value[id]) cart.value[id].qty++
 }
+
 function decrementById(id) {
   if (!cart.value[id] || cart.value[id].qty === 0) return
   cart.value[id].qty--
   if (cart.value[id].qty === 0) {
     cart.value[id].notes = ''
-    // Auto-close sheet if cart becomes empty
     if (cartItems.value.length === 0) sheetOpen.value = false
   }
 }
@@ -215,37 +344,47 @@ async function submitOrder() {
   if (!selectedTableId.value || cartItems.value.length === 0) return
   submitting.value = true
 
-  const { data: order, error } = await supabase
-    .from('orders')
-    .insert({
-      restaurant_id: authStore.profile?.restaurant_id,
-      table_id: selectedTableId.value,
-      status: 'pending',
-    })
-    .select()
-    .single()
+  try {
+    const { data: order, error } = await supabase
+      .from('orders')
+      .insert({
+        restaurant_id: authStore.profile?.restaurant_id,
+        table_id: selectedTableId.value,
+        status: 'pending',
+      })
+      .select()
+      .single()
 
-  if (!error && order) {
-    await supabase.from('order_items').insert(
-      cartItems.value.map((i) => ({
-        order_id: order.id,
-        menu_item_id: i.id,
-        quantity: i.qty,
-        unit_price: i.price,
-        notes: i.notes?.trim() || null,
-      })),
-    )
+    if (error) throw error
 
-    cart.value = {}
-    selectedTableId.value = null
-    sheetOpen.value = false
-    successMsg.value = 'Order placed successfully!'
-    setTimeout(() => {
-      successMsg.value = ''
-    }, 3000)
+    if (order) {
+      const { error: itemsError } = await supabase.from('order_items').insert(
+        cartItems.value.map((i) => ({
+          order_id: order.id,
+          menu_item_id: i.id,
+          quantity: i.qty,
+          unit_price: i.price,
+          notes: i.notes?.trim() || null,
+        })),
+      )
+
+      if (itemsError) throw itemsError
+
+      cart.value = {}
+      selectedTableId.value = null
+      sheetOpen.value = false
+      successMsg.value = 'Order placed successfully!'
+      setTimeout(() => {
+        successMsg.value = ''
+      }, 3000)
+    }
+  } catch (err) {
+    console.error('Order error:', err)
+    successMsg.value = 'Failed to place order. Please try again.'
+    setTimeout(() => (successMsg.value = ''), 3000)
+  } finally {
+    submitting.value = false
   }
-
-  submitting.value = false
 }
 
 onMounted(async () => {
@@ -267,501 +406,980 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.view-page {
-  padding: 1.5rem 2rem;
-  max-width: 780px;
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,600;0,700;0,800;1,400;1,700&family=DM+Sans:wght@400;500;600&display=swap');
+
+.new-order-page {
+  padding: 24px;
+  max-width: 800px;
   margin: 0 auto;
   font-family: 'DM Sans', sans-serif;
-  padding-bottom: 7rem;
+  color: #ffffff;
+  min-height: 100vh;
+  padding-bottom: 120px;
 }
-.view-header {
-  margin-bottom: 1.5rem;
+
+@media (max-width: 640px) {
+  .new-order-page {
+    padding: 16px;
+    padding-bottom: 140px;
+  }
 }
-.view-title {
-  font-size: 1.5rem;
+
+/* ── Header ── */
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 28px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.header-content {
+  flex: 1;
+}
+
+.page-title {
+  font-family: 'Fraunces', serif;
+  font-size: 28px;
   font-weight: 700;
-  color: #111827;
-  margin: 0 0 0.25rem;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+  margin: 0 0 6px;
+  line-height: 1.2;
 }
-.view-sub {
-  font-size: 0.85rem;
-  color: #9ca3af;
+
+.page-subtitle {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.55);
   margin: 0;
 }
 
-/* Table Selector */
-.table-selector {
-  margin-bottom: 1.75rem;
-}
-.section-label {
-  display: block;
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: #6b7280;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  margin-bottom: 0.6rem;
-}
-.table-grid {
+.table-indicator {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-.table-btn {
-  padding: 0.5rem 1rem;
-  border: 1.5px solid #e5e7eb;
-  border-radius: 9px;
-  background: white;
-  cursor: pointer;
-  font-family: inherit;
-  font-size: 0.85rem;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: rgba(200, 115, 58, 0.15);
+  border: 1px solid rgba(200, 115, 58, 0.25);
+  border-radius: 999px;
+  color: #c8733a;
+  font-size: 14px;
   font-weight: 600;
-  color: #374151;
-  transition: all 0.15s;
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+.indicator-icon {
+  width: 16px;
+  height: 16px;
+}
+
+/* ── Table Section ── */
+.table-section {
+  margin-bottom: 32px;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.section-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.55);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 0;
+}
+
+.section-count {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.35);
+  font-weight: 500;
+}
+
+.table-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 12px;
+}
+
+@media (max-width: 640px) {
+  .table-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.table-btn {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.15rem;
-}
-.table-btn:hover {
-  border-color: #6366f1;
-  color: #6366f1;
-}
-.table-btn--selected {
-  border-color: #6366f1;
-  background: #eef2ff;
-  color: #4f46e5;
-}
-.table-btn--inactive {
-  opacity: 0.45;
-}
-.table-btn-name {
-  font-size: 0.85rem;
-}
-.table-btn-status {
-  font-size: 0.65rem;
-  color: #9ca3af;
-  font-weight: 400;
+  gap: 8px;
+  padding: 16px 12px;
+  background: #161616;
+  border: 1.5px solid rgba(255, 255, 255, 0.07);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  min-height: 90px;
 }
 
-/* Category Tabs */
+.table-btn:hover:not(:disabled) {
+  border-color: rgba(200, 115, 58, 0.4);
+  background: #1a1a1a;
+  transform: translateY(-2px);
+}
+
+.table-btn--selected {
+  background: rgba(200, 115, 58, 0.15);
+  border-color: #c8733a;
+  box-shadow: 0 4px 12px rgba(200, 115, 58, 0.2);
+}
+
+.table-btn--inactive {
+  opacity: 0.4;
+  cursor: not-allowed;
+  background: #0e0e0e;
+}
+
+.table-btn--inactive:hover {
+  transform: none;
+  border-color: rgba(255, 255, 255, 0.07);
+}
+
+.table-icon-wrap {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.table-btn--selected .table-icon-wrap {
+  background: rgba(200, 115, 58, 0.2);
+}
+
+.table-icon {
+  width: 22px;
+  height: 22px;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.table-icon.inactive {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.table-btn--selected .table-icon {
+  color: #c8733a;
+}
+
+.table-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+  text-align: center;
+}
+
+.table-btn--inactive .table-name {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.table-status {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.35);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+.table-check {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 18px;
+  height: 18px;
+  color: #c8733a;
+}
+
+/* ── Category Section ── */
+.category-section {
+  margin-bottom: 20px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #111111;
+  padding: 8px 0;
+}
+
 .category-tabs {
   display: flex;
-  gap: 0.4rem;
+  gap: 8px;
   overflow-x: auto;
-  padding-bottom: 0.25rem;
-  margin-bottom: 1.25rem;
-}
-.cat-tab {
-  flex-shrink: 0;
-  padding: 0.45rem 1rem;
-  border: 1.5px solid #e5e7eb;
-  border-radius: 999px;
-  background: white;
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: #6b7280;
-  cursor: pointer;
-  font-family: inherit;
-  transition: all 0.15s;
-  white-space: nowrap;
-}
-.cat-tab:hover {
-  border-color: #a5b4fc;
-  color: #4f46e5;
-}
-.cat-tab--active {
-  background: #4f46e5;
-  border-color: #4f46e5;
-  color: white;
+  scrollbar-width: none;
+  padding-bottom: 4px;
 }
 
-/* Menu Items */
+.category-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.cat-tab {
+  flex-shrink: 0;
+  padding: 10px 20px;
+  background: #161616;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.55);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.cat-tab:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.cat-tab--active {
+  background: #c8733a;
+  border-color: #c8733a;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(200, 115, 58, 0.3);
+}
+
+/* ── Menu Section ── */
+.menu-section {
+  margin-bottom: 32px;
+}
+
 .menu-items {
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
+  gap: 12px;
 }
+
 .menu-item {
   display: flex;
-  align-items: flex-start;
-  gap: 1rem;
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  padding: 0.85rem 1rem;
-  transition: border-color 0.15s;
+  gap: 16px;
+  padding: 16px;
+  background: #161616;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 14px;
+  transition: all 0.2s ease;
 }
+
 .menu-item:hover {
-  border-color: #d1d5db;
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
 }
+
 .menu-item--unavailable {
   opacity: 0.5;
+  filter: grayscale(0.6);
 }
-.item-img {
-  width: 52px;
-  height: 52px;
-  border-radius: 9px;
+
+.item-image {
+  width: 80px;
+  height: 80px;
+  border-radius: 10px;
   overflow: hidden;
   flex-shrink: 0;
-  margin-top: 2px;
+  background: #0e0e0e;
 }
-.item-img img {
+
+.item-image img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
-.item-img--placeholder {
-  background: #f3f4f6;
+
+.item-image--placeholder {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.4rem;
+  border: 1px solid rgba(255, 255, 255, 0.07);
 }
-.item-body {
+
+.placeholder-icon {
+  width: 32px;
+  height: 32px;
+  color: rgba(255, 255, 255, 0.25);
+}
+
+.item-content {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
+  gap: 12px;
   min-width: 0;
 }
-.item-row {
+
+.item-main {
   display: flex;
-  align-items: center;
-  gap: 0.75rem;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
 }
+
 .item-info {
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
   min-width: 0;
 }
+
 .item-name {
-  font-size: 0.9rem;
+  font-size: 16px;
   font-weight: 600;
-  color: #111827;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  color: #ffffff;
+  margin: 0 0 4px;
+  line-height: 1.3;
 }
+
 .item-desc {
-  font-size: 0.75rem;
-  color: #9ca3af;
-  white-space: nowrap;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.55);
+  margin: 0 0 8px;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
 }
+
 .item-price {
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: #4f46e5;
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
 }
+
+.price-currency {
+  font-size: 14px;
+  font-weight: 600;
+  color: #c8733a;
+}
+
+.price-value {
+  font-family: 'Fraunces', serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: #c8733a;
+}
+
+.item-actions {
+  flex-shrink: 0;
+}
+
 .qty-control {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  flex-shrink: 0;
+  gap: 12px;
+  background: #0e0e0e;
+  border-radius: 999px;
+  padding: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
 }
+
 .qty-btn {
-  width: 30px;
-  height: 30px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
-  border: 1.5px solid #e5e7eb;
-  background: white;
-  font-size: 1.1rem;
+  border: none;
+  background: #161616;
+  color: #ffffff;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: inherit;
-  transition: all 0.15s;
-  color: #374151;
-  line-height: 1;
+  transition: all 0.2s ease;
 }
-.qty-btn:hover {
-  border-color: #6366f1;
-  color: #4f46e5;
+
+.qty-btn:hover:not(:disabled) {
+  background: #c8733a;
 }
-.qty-btn--add {
-  background: #4f46e5;
-  border-color: #4f46e5;
-  color: white;
+
+.qty-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
 }
-.qty-btn--add:hover {
-  background: #4338ca;
-  border-color: #4338ca;
+
+.qty-btn--plus {
+  background: #c8733a;
 }
+
+.qty-btn--plus:hover {
+  background: #d4844e;
+}
+
+.qty-icon {
+  width: 18px;
+  height: 18px;
+}
+
 .qty-value {
-  font-size: 0.9rem;
+  font-size: 16px;
   font-weight: 700;
-  color: #111827;
-  min-width: 18px;
+  color: rgba(255, 255, 255, 0.35);
+  min-width: 24px;
   text-align: center;
 }
-.unavailable-label {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: #9ca3af;
-  flex-shrink: 0;
+
+.qty-value--active {
+  color: #ffffff;
 }
+
+.sold-out-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 8px;
+  color: #ef4444;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.sold-out-icon {
+  width: 14px;
+  height: 14px;
+}
+
+/* ── Notes ── */
 .item-notes {
   width: 100%;
 }
-.notes-input {
-  width: 100%;
-  padding: 0.45rem 0.75rem;
-  border: 1.5px solid #e0e7ff;
-  border-radius: 8px;
-  font-size: 0.8rem;
-  font-family: inherit;
-  color: #374151;
-  background: #f5f7ff;
-  outline: none;
-  transition: border-color 0.15s;
-  box-sizing: border-box;
-}
-.notes-input:focus {
-  border-color: #6366f1;
-  background: white;
-}
-.notes-input::placeholder {
-  color: #a5b4fc;
-}
-.menu-empty {
-  text-align: center;
-  padding: 3rem;
-  color: #9ca3af;
-  font-size: 0.9rem;
-}
 
-/* ── FAB ── */
-.fab {
-  position: fixed;
-  bottom: 2rem;
-  right: 2rem;
+.notes-input-wrap {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
-  background: #4f46e5;
-  color: white;
+  gap: 10px;
+  padding: 10px 14px;
+  background: #0e0e0e;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  transition: all 0.2s ease;
+}
+
+.notes-input-wrap:focus-within {
+  border-color: #c8733a;
+  box-shadow: 0 0 0 3px rgba(200, 115, 58, 0.15);
+}
+
+.notes-icon {
+  width: 16px;
+  height: 16px;
+  color: rgba(255, 255, 255, 0.35);
+  flex-shrink: 0;
+}
+
+.notes-input {
+  flex: 1;
+  background: transparent;
   border: none;
-  border-radius: 999px;
-  padding: 0.85rem 1.4rem;
-  font-size: 0.9rem;
-  font-weight: 700;
-  font-family: inherit;
-  cursor: pointer;
-  box-shadow: 0 8px 24px rgba(79, 70, 229, 0.4);
-  transition:
-    background 0.15s,
-    transform 0.15s,
-    box-shadow 0.15s;
-  z-index: 50;
+  color: #ffffff;
+  font-size: 14px;
+  font-family: 'DM Sans', sans-serif;
+  outline: none;
 }
-.fab:hover {
-  background: #4338ca;
-  transform: translateY(-2px);
-  box-shadow: 0 12px 28px rgba(79, 70, 229, 0.45);
+
+.notes-input::placeholder {
+  color: rgba(255, 255, 255, 0.35);
 }
-.fab-icon {
-  font-size: 1.1rem;
-}
-.fab-label {
-  font-size: 0.88rem;
-}
-.fab-badge {
-  background: white;
-  color: #4f46e5;
-  border-radius: 999px;
-  font-size: 0.72rem;
-  font-weight: 800;
-  padding: 0.1rem 0.5rem;
-  min-width: 20px;
+
+/* ── Empty State ── */
+.empty-state {
   text-align: center;
+  padding: 60px 24px;
+  background: #161616;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 16px;
 }
-.fab-total {
-  font-size: 0.88rem;
+
+.empty-icon-wrap {
+  width: 80px;
+  height: 80px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+}
+
+.empty-icon {
+  width: 40px;
+  height: 40px;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.empty-title {
+  font-family: 'Fraunces', serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 8px;
+}
+
+.empty-subtitle {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.55);
+  margin: 0;
+}
+
+/* ── Floating Action Button ── */
+.fab {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  background: #c8733a;
+  border: none;
+  border-radius: 16px;
+  color: #ffffff;
+  cursor: pointer;
+  box-shadow: 0 8px 32px rgba(200, 115, 58, 0.4);
+  transition: all 0.3s ease;
+  z-index: 50;
+  font-family: 'DM Sans', sans-serif;
+}
+
+.fab:hover {
+  background: #d4844e;
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(200, 115, 58, 0.5);
+}
+
+@media (max-width: 640px) {
+  .fab {
+    left: 16px;
+    right: 16px;
+    bottom: 16px;
+    justify-content: space-between;
+  }
+}
+
+.fab-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.fab-icon {
+  width: 24px;
+  height: 24px;
+}
+
+.fab-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.fab-label {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.fab-meta {
+  font-size: 12px;
   opacity: 0.85;
+}
+
+.fab-badge {
+  width: 28px;
+  height: 28px;
+  background: #ffffff;
+  color: #c8733a;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.fab-arrow {
+  width: 20px;
+  height: 20px;
+  opacity: 0.7;
 }
 
 /* FAB transition */
 .fab-enter-active,
 .fab-leave-active {
-  transition: all 0.2s ease;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
+
 .fab-enter-from,
 .fab-leave-to {
   opacity: 0;
-  transform: translateY(12px) scale(0.9);
+  transform: translateY(20px) scale(0.9);
 }
 
 /* ── Bottom Sheet ── */
 .sheet-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.45);
-  backdrop-filter: blur(2px);
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(8px);
   z-index: 200;
   display: flex;
   align-items: flex-end;
+  justify-content: center;
 }
+
 .sheet {
   width: 100%;
-  background: white;
-  border-radius: 20px 20px 0 0;
+  max-width: 600px;
+  max-height: 85vh;
+  background: #161616;
+  border-radius: 24px 24px 0 0;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-bottom: none;
   display: flex;
   flex-direction: column;
-  max-height: 85vh;
-  padding-bottom: env(safe-area-inset-bottom);
+  animation: sheet-up 0.3s ease;
 }
+
+@keyframes sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
 .sheet-handle {
+  padding: 12px;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+}
+
+.handle-bar {
   width: 40px;
   height: 4px;
-  background: #e5e7eb;
-  border-radius: 999px;
-  margin: 0.75rem auto 0;
-  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
 }
+
 .sheet-header {
   display: flex;
-  justify-content: space-between;
   align-items: flex-start;
-  padding: 1rem 1.5rem 0.75rem;
-  border-bottom: 1px solid #f3f4f6;
-  flex-shrink: 0;
+  justify-content: space-between;
+  padding: 8px 24px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
 }
+
+.sheet-header-content {
+  flex: 1;
+}
+
 .sheet-title {
-  font-size: 1.1rem;
+  font-family: 'Fraunces', serif;
+  font-size: 24px;
   font-weight: 700;
-  color: #111827;
-  margin: 0;
+  color: #ffffff;
+  margin: 0 0 8px;
+  letter-spacing: -0.02em;
 }
-.sheet-sub {
-  font-size: 0.78rem;
-  color: #9ca3af;
-  margin: 0.15rem 0 0;
+
+.sheet-table {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #c8733a;
+  font-weight: 500;
 }
+
+.table-icon-sm {
+  width: 16px;
+  height: 16px;
+}
+
 .sheet-close {
-  background: #f3f4f6;
-  border: none;
-  border-radius: 999px;
-  width: 28px;
-  height: 28px;
+  width: 40px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.55);
   cursor: pointer;
-  color: #6b7280;
-  flex-shrink: 0;
-}
-.sheet-close:hover {
-  background: #e5e7eb;
-  color: #111827;
+  transition: all 0.2s ease;
 }
 
-/* Cart items list */
+.sheet-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.close-icon {
+  width: 20px;
+  height: 20px;
+}
+
+/* Sheet Body */
 .sheet-body {
   flex: 1;
   overflow-y: auto;
-  padding: 0.75rem 1.5rem;
+  padding: 20px 24px;
+}
+
+.sheet-empty {
+  text-align: center;
+  padding: 40px;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.empty-cart-icon {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 16px;
+  opacity: 0.5;
+}
+
+.cart-list {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 16px;
 }
+
 .cart-item {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
+  padding: 16px;
+  background: #0e0e0e;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 12px;
 }
+
 .cart-item-main {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
+  gap: 16px;
 }
+
 .cart-item-info {
   flex: 1;
+  min-width: 0;
+}
+
+.cart-item-header {
   display: flex;
+  align-items: baseline;
   justify-content: space-between;
-  align-items: center;
+  gap: 12px;
+  margin-bottom: 4px;
 }
+
 .cart-item-name {
-  font-size: 0.9rem;
+  font-size: 15px;
   font-weight: 600;
-  color: #111827;
+  color: #ffffff;
 }
-.cart-item-price {
-  font-size: 0.88rem;
+
+.cart-item-total {
+  font-family: 'Fraunces', serif;
+  font-size: 16px;
   font-weight: 700;
-  color: #4f46e5;
+  color: #c8733a;
+  flex-shrink: 0;
 }
+
+.cart-item-unit {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.qty-control--compact {
+  background: #161616;
+  padding: 3px;
+  gap: 8px;
+}
+
+.qty-btn--sm {
+  width: 28px;
+  height: 28px;
+}
+
+.qty-icon-sm {
+  width: 14px;
+  height: 14px;
+}
+
+.qty-value-sm {
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffffff;
+  min-width: 20px;
+  text-align: center;
+}
+
 .cart-item-note {
-  font-size: 0.75rem;
-  color: #6366f1;
-  font-style: italic;
-  padding-left: 0.25rem;
   display: flex;
   align-items: center;
-  gap: 0.3rem;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.55);
+  font-style: italic;
+}
+
+.note-icon {
+  width: 14px;
+  height: 14px;
+  color: rgba(255, 255, 255, 0.35);
 }
 
 /* Sheet Footer */
 .sheet-footer {
-  padding: 1rem 1.5rem;
-  border-top: 1px solid #f3f4f6;
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-  flex-shrink: 0;
+  padding: 20px 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  background: #0e0e0e;
+  border-radius: 0 0 24px 24px;
 }
-.sheet-total-row {
+
+.total-section {
+  margin-bottom: 20px;
+}
+
+.total-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-bottom: 8px;
 }
-.sheet-total-label {
-  font-size: 0.88rem;
-  color: #6b7280;
-  font-weight: 500;
+
+.total-label {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.55);
 }
-.sheet-total-value {
-  font-size: 1.2rem;
-  font-weight: 800;
-  color: #111827;
+
+.total-value {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 600;
 }
+
+.total-row--final {
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  margin-top: 12px;
+}
+
+.total-label-final {
+  font-size: 16px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.total-value-final {
+  font-family: 'Fraunces', serif;
+  font-size: 28px;
+  font-weight: 700;
+  color: #c8733a;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 12px;
+}
+
 .btn-place {
-  background: #4f46e5;
-  color: white;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 16px;
+  background: #c8733a;
   border: none;
   border-radius: 12px;
-  padding: 0.85rem;
-  font-size: 0.95rem;
+  color: #ffffff;
+  font-size: 16px;
   font-weight: 700;
   cursor: pointer;
-  font-family: inherit;
-  transition: background 0.15s;
+  transition: all 0.2s ease;
 }
+
 .btn-place:hover:not(:disabled) {
-  background: #4338ca;
+  background: #d4844e;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(200, 115, 58, 0.3);
 }
+
 .btn-place:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  transform: none;
 }
+
+.btn-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.btn-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  display: inline-block;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .btn-clear {
-  background: none;
-  border: none;
-  color: #9ca3af;
-  font-size: 0.82rem;
-  font-family: inherit;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 20px;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
-  text-align: center;
-  padding: 0.25rem;
+  transition: all 0.2s ease;
 }
+
 .btn-clear:hover {
-  color: #e11d48;
+  border-color: #ef4444;
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.btn-icon-sm {
+  width: 16px;
+  height: 16px;
 }
 
 /* Sheet transition */
@@ -769,56 +1387,61 @@ onMounted(async () => {
 .sheet-leave-active {
   transition: all 0.3s ease;
 }
+
 .sheet-enter-from,
 .sheet-leave-to {
   opacity: 0;
 }
+
 .sheet-enter-from .sheet,
 .sheet-leave-to .sheet {
   transform: translateY(100%);
 }
-.sheet-enter-active .sheet,
-.sheet-leave-active .sheet {
-  transition: transform 0.3s ease;
-}
 
-/* Toast */
+/* ── Toast ── */
 .toast {
   position: fixed;
-  bottom: 2rem;
+  bottom: 24px;
   left: 50%;
   transform: translateX(-50%);
-  background: #111827;
-  color: white;
-  padding: 0.7rem 1.4rem;
-  border-radius: 10px;
-  font-size: 0.88rem;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 24px;
+  background: #161616;
+  border: 1px solid rgba(74, 222, 128, 0.3);
+  border-radius: 12px;
+  color: #4ade80;
+  font-size: 14px;
   font-weight: 600;
   z-index: 300;
-  white-space: nowrap;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 }
+
+.toast-icon {
+  width: 20px;
+  height: 20px;
+}
+
 .toast-enter-active,
 .toast-leave-active {
-  transition: all 0.25s ease;
+  transition: all 0.3s ease;
 }
+
 .toast-enter-from,
 .toast-leave-to {
   opacity: 0;
-  transform: translateX(-50%) translateY(8px);
+  transform: translateX(-50%) translateY(20px);
 }
 
-/* Responsive */
-@media (max-width: 640px) {
-  .view-page {
-    padding: 1.25rem 1rem;
-    padding-bottom: 8rem;
+/* Animations */
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 1;
   }
-  .fab {
-    bottom: 5.5rem;
-    right: 1rem;
-    left: 1rem;
-    justify-content: center;
-    border-radius: 14px;
+  50% {
+    opacity: 0.5;
   }
 }
 </style>
