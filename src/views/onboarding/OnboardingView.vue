@@ -1,13 +1,26 @@
 <template>
   <div class="onboarding-root">
-    <!-- Background -->
-    <div class="bg-grid" />
+    <!-- Ambient background -->
+    <div class="bg-noise" />
+    <div class="bg-glow" />
 
     <div class="onboarding-wrapper">
       <!-- Header -->
       <div class="onboarding-header">
-        <div class="logo-mark">🍽️</div>
-        <span class="logo-text">RestaurantOS</span>
+        <div class="logo-icon">
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+          >
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" />
+            <path d="M8 12c0-2.21 1.79-4 4-4s4 1.79 4 4-1.79 4-4 4-4-1.79-4-4z" />
+          </svg>
+        </div>
+        <span class="logo-text">RestoOS</span>
       </div>
 
       <!-- Progress bar -->
@@ -21,12 +34,19 @@
           v-for="i in totalSteps"
           :key="i"
           class="step-dot"
-          :class="{
-            'step-done': i < currentStep,
-            'step-active': i === currentStep,
-          }"
+          :class="{ 'step-done': i < currentStep, 'step-active': i === currentStep }"
         >
-          <span v-if="i < currentStep" class="dot-check">✓</span>
+          <svg
+            v-if="i < currentStep"
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="3"
+          >
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
           <span v-else>{{ i }}</span>
         </div>
       </div>
@@ -41,7 +61,21 @@
             This is what your customers will see when they visit your menu page.
           </p>
 
-          <div class="error-box" v-if="error">{{ error }}</div>
+          <div class="error-box" v-if="error">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+            {{ error }}
+          </div>
 
           <div class="fields">
             <!-- Logo upload -->
@@ -54,7 +88,18 @@
               >
                 <img v-if="logoPreview" :src="logoPreview" class="logo-preview" />
                 <div v-else class="logo-placeholder">
-                  <span class="upload-icon">↑</span>
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                  >
+                    <polyline points="16 16 12 12 8 16" />
+                    <line x1="12" y1="12" x2="12" y2="21" />
+                    <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3" />
+                  </svg>
                   <span>Upload logo</span>
                   <span class="upload-hint">PNG or JPG, max 2MB</span>
                 </div>
@@ -128,7 +173,22 @@
           </div>
 
           <button class="btn-next" :disabled="loading" @click="saveStep1">
-            <span v-if="loading" class="btn-loading">Saving…</span>
+            <span v-if="loading" class="loading-state">
+              <svg
+                class="spinner"
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+              >
+                <path
+                  d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"
+                />
+              </svg>
+              Saving…
+            </span>
             <span v-else>Continue →</span>
           </button>
         </div>
@@ -141,7 +201,21 @@
             Create a category and your first dish — your menu will feel alive right away.
           </p>
 
-          <div class="error-box" v-if="error">{{ error }}</div>
+          <div class="error-box" v-if="error">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+            {{ error }}
+          </div>
 
           <div class="fields">
             <!-- Category -->
@@ -167,7 +241,7 @@
               />
             </div>
 
-            <div class="divider"><span>then add a dish</span></div>
+            <div class="section-divider"><span>then add a dish</span></div>
 
             <!-- Item name -->
             <div class="field-group">
@@ -213,7 +287,22 @@
           <div class="btn-row">
             <button class="btn-back" @click="currentStep = 1">← Back</button>
             <button class="btn-next" :disabled="loading" @click="saveStep2">
-              <span v-if="loading">Saving…</span>
+              <span v-if="loading" class="loading-state">
+                <svg
+                  class="spinner"
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                >
+                  <path
+                    d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"
+                  />
+                </svg>
+                Saving…
+              </span>
               <span v-else>Continue →</span>
             </button>
           </div>
@@ -227,7 +316,21 @@
             Each table gets a unique QR code. Customers scan it to order — no app needed.
           </p>
 
-          <div class="error-box" v-if="error">{{ error }}</div>
+          <div class="error-box" v-if="error">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+            {{ error }}
+          </div>
 
           <div class="fields">
             <div class="field-group">
@@ -255,17 +358,48 @@
 
           <!-- QR Preview -->
           <div v-if="qrDataUrl" class="qr-preview-box">
-            <div class="qr-label">Your QR Code</div>
-            <img :src="qrDataUrl" class="qr-image" alt="QR Code" />
+            <div class="qr-badge">Your QR Code</div>
+            <div class="qr-frame">
+              <img :src="qrDataUrl" class="qr-image" alt="QR Code" />
+            </div>
             <p class="qr-url">{{ currentOrderUrl }}</p>
-            <button class="btn-download" @click="downloadQr">⬇ Download QR</button>
+            <button class="btn-download" @click="downloadQr">
+              <svg
+                width="13"
+                height="13"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+              >
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+              Download QR
+            </button>
           </div>
 
           <div class="btn-row">
             <button class="btn-back" @click="currentStep = 2">← Back</button>
-            <button class="btn-next" :disabled="loading" @click="saveStep3">
-              <span v-if="loading">Finishing up…</span>
-              <span v-else>🎉 Open my dashboard</span>
+            <button class="btn-next btn-finish" :disabled="loading" @click="saveStep3">
+              <span v-if="loading" class="loading-state">
+                <svg
+                  class="spinner"
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                >
+                  <path
+                    d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"
+                  />
+                </svg>
+                Finishing up…
+              </span>
+              <span v-else>Open my dashboard →</span>
             </button>
           </div>
         </div>
@@ -309,13 +443,10 @@ const qrDataUrl = ref('')
 const restaurantSlug = ref('')
 const newTableId = ref('')
 
-// ✅ FIX: computed from refs directly, not from window.location at definition time
 const currentOrderUrl = computed(
   () => `${window.location.origin}/order/${restaurantSlug.value}/${newTableId.value}`,
 )
 
-// ✅ FIX: watch table name changes to regenerate QR preview — but only update
-// the visual, not the DB. DB save happens only in saveStep3.
 watch(
   () => step3.value.tableName,
   async () => {
@@ -347,7 +478,6 @@ async function saveStep1() {
     error.value = 'Please enter your restaurant name.'
     return
   }
-
   loading.value = true
   try {
     const {
@@ -360,7 +490,6 @@ async function saveStep1() {
       .single()
     const restaurantId = profile.restaurant_id
     let logo_url = null
-
     if (logoFile.value) {
       const ext = logoFile.value.name.split('.').pop()
       const path = `${restaurantId}/logo.${ext}`
@@ -371,7 +500,6 @@ async function saveStep1() {
       const { data: urlData } = supabase.storage.from('restaurant-assets').getPublicUrl(path)
       logo_url = urlData.publicUrl
     }
-
     const { error: updateError } = await supabase
       .from('restaurants')
       .update({
@@ -383,7 +511,6 @@ async function saveStep1() {
         updated_at: new Date().toISOString(),
       })
       .eq('id', restaurantId)
-
     if (updateError) throw updateError
     currentStep.value = 2
   } catch (err) {
@@ -404,7 +531,6 @@ async function saveStep2() {
     error.value = 'Please enter a dish name.'
     return
   }
-
   loading.value = true
   try {
     const {
@@ -416,16 +542,12 @@ async function saveStep2() {
       .eq('id', user.id)
       .single()
     const restaurantId = profile.restaurant_id
-
-    // Create category
     const { data: category, error: catError } = await supabase
       .from('menu_categories')
       .insert({ restaurant_id: restaurantId, name: step2.value.categoryName.trim(), sort_order: 0 })
       .select()
       .single()
     if (catError) throw catError
-
-    // Create menu item
     const { error: itemError } = await supabase.from('menu_items').insert({
       restaurant_id: restaurantId,
       category_id: category.id,
@@ -435,19 +557,13 @@ async function saveStep2() {
       sort_order: 0,
     })
     if (itemError) throw itemError
-
-    // Fetch slug for QR generation
     const { data: restaurant } = await supabase
       .from('restaurants')
       .select('slug')
       .eq('id', restaurantId)
       .single()
     restaurantSlug.value = restaurant.slug
-
-    // ✅ FIX: Pre-create the table row to get an ID, THEN generate QR with
-    // the correct URL (slug + tableId both available at this point)
     await createTableRow(restaurantId)
-
     currentStep.value = 3
   } catch (err) {
     error.value = err.message || 'Failed to save. Please try again.'
@@ -456,24 +572,16 @@ async function saveStep2() {
   }
 }
 
-// ✅ FIX: Create table row, set newTableId, THEN generate QR and save qr_code_url back to DB
 async function createTableRow(restaurantId) {
-  // Insert the table first to get its ID
   const { data: table, error: tableError } = await supabase
     .from('tables')
     .insert({ restaurant_id: restaurantId, name: step3.value.tableName.trim() || 'Table 1' })
     .select()
     .single()
   if (tableError) throw tableError
-
-  // Now we have both slug and tableId — build the correct URL
   newTableId.value = table.id
   const orderUrl = `${window.location.origin}/order/${restaurantSlug.value}/${table.id}`
-
-  // ✅ Save qr_code_url to the tables table
   await supabase.from('tables').update({ qr_code_url: orderUrl }).eq('id', table.id)
-
-  // Generate QR image for visual preview
   await generateQr()
 }
 
@@ -484,26 +592,19 @@ async function saveStep3() {
     error.value = 'Please enter a table name.'
     return
   }
-
   loading.value = true
   try {
     if (newTableId.value) {
-      // Update table name + regenerate qr_code_url with correct final name
-      // (name doesn't affect the URL since URL uses table ID, but update name anyway)
       const orderUrl = `${window.location.origin}/order/${restaurantSlug.value}/${newTableId.value}`
-
       const { error: updateError } = await supabase
         .from('tables')
         .update({
           name: step3.value.tableName.trim(),
-          qr_code_url: orderUrl, // ✅ ensure qr_code_url is set even if createTableRow was skipped
+          qr_code_url: orderUrl,
         })
         .eq('id', newTableId.value)
-
       if (updateError) throw updateError
     }
-
-    // Mark onboarding complete
     const {
       data: { user },
     } = await supabase.auth.getUser()
@@ -516,7 +617,6 @@ async function saveStep3() {
       .from('restaurants')
       .update({ onboarding_completed: true })
       .eq('id', profile.restaurant_id)
-
     router.push('/app/dashboard')
   } catch (err) {
     error.value = err.message || 'Failed to finish setup.'
@@ -526,7 +626,6 @@ async function saveStep3() {
 }
 
 // ── QR Code ───────────────────────────────────────────────
-// Generates the QR image using the currentOrderUrl computed value
 async function generateQr() {
   if (!restaurantSlug.value || !newTableId.value) return
   try {
@@ -548,7 +647,6 @@ function downloadQr() {
   link.click()
 }
 
-// Load existing restaurant data into step 1 on mount
 async function loadRestaurantData() {
   const {
     data: { user },
@@ -579,34 +677,42 @@ loadRestaurantData()
 </script>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@400;500;600&display=swap');
-
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
+/* ── Root ── */
 .onboarding-root {
   min-height: 100vh;
-  background: #faf8f5;
+  background: #111111;
   font-family: 'DM Sans', sans-serif;
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  padding: 40px 16px 80px;
+  padding: 48px 16px 96px;
   position: relative;
+  overflow: hidden;
 }
-.bg-grid {
+
+/* Ambient background effects */
+.bg-noise {
   position: fixed;
   inset: 0;
-  background-image:
-    linear-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 0, 0, 0.03) 1px, transparent 1px);
-  background-size: 32px 32px;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  background-size: 200px;
   pointer-events: none;
   z-index: 0;
 }
+
+.bg-glow {
+  position: fixed;
+  top: -200px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(200, 115, 58, 0.08) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Wrapper ── */
 .onboarding-wrapper {
   width: 100%;
   max-width: 520px;
@@ -614,78 +720,95 @@ loadRestaurantData()
   z-index: 1;
 }
 
-/* Header */
+/* ── Header ── */
 .onboarding-header {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 32px;
-}
-.logo-mark {
-  font-size: 22px;
-}
-.logo-text {
-  font-family: 'Fraunces', serif;
-  font-size: 20px;
-  font-weight: 700;
-  color: #1a1a1a;
-  letter-spacing: -0.3px;
+  gap: 10px;
+  margin-bottom: 36px;
 }
 
-/* Progress */
+.logo-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: rgba(200, 115, 58, 0.15);
+  border: 1px solid rgba(200, 115, 58, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #c8733a;
+}
+
+.logo-text {
+  font-family: 'Fraunces', serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+}
+
+/* ── Progress bar ── */
 .progress-track {
-  height: 3px;
-  background: #e8e3da;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.07);
   border-radius: 99px;
   margin-bottom: 20px;
   overflow: hidden;
 }
+
 .progress-fill {
   height: 100%;
-  background: #c8733a;
+  background: linear-gradient(90deg, #c8733a, #d4844e);
   border-radius: 99px;
   transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 0 12px rgba(200, 115, 58, 0.5);
 }
 
-/* Step dots */
+/* ── Step dots ── */
 .step-indicators {
   display: flex;
-  gap: 10px;
-  margin-bottom: 28px;
+  gap: 8px;
+  margin-bottom: 24px;
 }
+
 .step-dot {
-  width: 30px;
-  height: 30px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
-  background: #e8e3da;
-  color: #999;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.3);
   transition: all 0.3s ease;
 }
+
 .step-dot.step-active {
-  background: #c8733a;
-  color: white;
-  box-shadow: 0 0 0 4px rgba(200, 115, 58, 0.15);
-}
-.step-dot.step-done {
-  background: #2d6a4f;
-  color: white;
+  background: rgba(200, 115, 58, 0.2);
+  border-color: rgba(200, 115, 58, 0.5);
+  color: #c8733a;
+  box-shadow: 0 0 0 3px rgba(200, 115, 58, 0.1);
 }
 
-/* Card */
+.step-dot.step-done {
+  background: rgba(200, 115, 58, 0.15);
+  border-color: rgba(200, 115, 58, 0.4);
+  color: #c8733a;
+}
+
+/* ── Step Card ── */
 .step-card {
-  background: #ffffff;
-  border: 1px solid #e8e3da;
+  background: #161616;
+  border: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: 16px;
   padding: 36px 32px;
-  box-shadow:
-    0 4px 24px rgba(0, 0, 0, 0.06),
-    0 1px 4px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 24px 56px rgba(0, 0, 0, 0.4);
 }
+
 .step-label {
   font-size: 11px;
   font-weight: 600;
@@ -694,92 +817,134 @@ loadRestaurantData()
   color: #c8733a;
   margin-bottom: 8px;
 }
+
 .step-title {
   font-family: 'Fraunces', serif;
   font-size: 26px;
   font-weight: 700;
-  color: #1a1a1a;
-  letter-spacing: -0.5px;
-  line-height: 1.2;
+  color: #ffffff;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
   margin-bottom: 6px;
 }
+
 .step-sub {
   font-size: 14px;
-  color: #888;
-  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.45);
+  line-height: 1.6;
   margin-bottom: 28px;
 }
 
-/* Error */
+/* ── Error box ── */
 .error-box {
-  background: #fff5f5;
-  border: 1px solid #fecaca;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.25);
   border-radius: 8px;
-  padding: 10px 14px;
+  padding: 11px 14px;
   font-size: 13px;
-  color: #dc2626;
+  color: #ef4444;
   margin-bottom: 20px;
+  line-height: 1.4;
 }
 
-/* Fields */
+.error-box svg {
+  flex-shrink: 0;
+}
+
+/* ── Fields ── */
 .fields {
   display: flex;
   flex-direction: column;
   gap: 18px;
   margin-bottom: 28px;
 }
+
 .field-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 14px;
 }
+
 .field-group {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 7px;
 }
+
 .field-label {
   font-size: 13px;
-  font-weight: 600;
-  color: #444;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.55);
 }
+
 .optional {
   font-weight: 400;
-  color: #aaa;
+  color: rgba(255, 255, 255, 0.25);
 }
+
 .field-input {
   width: 100%;
   padding: 10px 14px;
-  border: 1.5px solid #e2ddd6;
+  background: #111111;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
   font-size: 14px;
   font-family: 'DM Sans', sans-serif;
-  color: #1a1a1a;
-  background: #fdfcfa;
+  color: #ffffff;
   outline: none;
   transition:
-    border-color 0.2s,
-    box-shadow 0.2s;
+    border-color 0.15s,
+    box-shadow 0.15s;
   appearance: none;
+  -webkit-appearance: none;
+  box-sizing: border-box;
 }
+
+.field-input::placeholder {
+  color: rgba(255, 255, 255, 0.2);
+}
+
+.field-input:hover {
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
 .field-input:focus {
-  border-color: #c8733a;
+  border-color: rgba(200, 115, 58, 0.4);
   box-shadow: 0 0 0 3px rgba(200, 115, 58, 0.1);
-  background: #fff;
 }
+
+/* Select arrow */
+select.field-input {
+  background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='rgba(255,255,255,0.3)' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 36px;
+  cursor: pointer;
+}
+
+select.field-input option {
+  background: #1e1e1e;
+  color: #ffffff;
+}
+
 .field-textarea {
   resize: vertical;
-  min-height: 64px;
+  min-height: 68px;
+  line-height: 1.5;
 }
+
 .mt-2 {
   margin-top: 8px;
 }
 
-/* Logo upload */
+/* ── Logo upload ── */
 .logo-upload {
   width: 120px;
   height: 90px;
-  border: 2px dashed #d6cfc4;
+  border: 1.5px dashed rgba(255, 255, 255, 0.12);
   border-radius: 10px;
   display: flex;
   align-items: center;
@@ -789,219 +954,303 @@ loadRestaurantData()
     border-color 0.2s,
     background 0.2s;
   overflow: hidden;
-  background: #fdfcfa;
+  background: rgba(255, 255, 255, 0.02);
 }
+
 .logo-upload:hover,
 .logo-upload.has-logo {
-  border-color: #c8733a;
+  border-color: rgba(200, 115, 58, 0.5);
   border-style: solid;
+  background: rgba(200, 115, 58, 0.04);
 }
+
 .logo-preview {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
+
 .logo-placeholder {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 3px;
+  gap: 4px;
   font-size: 11px;
-  color: #aaa;
+  color: rgba(255, 255, 255, 0.3);
   text-align: center;
-  padding: 8px;
+  padding: 10px;
 }
-.upload-icon {
-  font-size: 18px;
+
+.logo-placeholder svg {
   color: #c8733a;
+  opacity: 0.7;
+  margin-bottom: 2px;
 }
+
 .upload-hint {
   font-size: 10px;
-  color: #ccc;
+  color: rgba(255, 255, 255, 0.2);
 }
+
 .hidden-input {
   display: none;
 }
 
-/* Suggestion chips */
+/* ── Suggestion chips ── */
 .category-suggestions {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
 }
+
 .suggestion-chip {
-  padding: 5px 12px;
+  padding: 5px 13px;
   border-radius: 99px;
-  border: 1.5px solid #e2ddd6;
+  border: 1px solid rgba(255, 255, 255, 0.1);
   font-size: 12px;
   font-weight: 500;
-  color: #666;
-  background: #fdfcfa;
+  color: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.03);
   cursor: pointer;
   transition: all 0.15s;
   font-family: 'DM Sans', sans-serif;
 }
+
 .suggestion-chip:hover {
-  border-color: #c8733a;
+  border-color: rgba(200, 115, 58, 0.4);
   color: #c8733a;
-}
-.suggestion-chip.active {
-  border-color: #c8733a;
-  background: #c8733a;
-  color: white;
+  background: rgba(200, 115, 58, 0.06);
 }
 
-/* Divider */
-.divider {
+.suggestion-chip.active {
+  border-color: rgba(200, 115, 58, 0.5);
+  background: rgba(200, 115, 58, 0.15);
+  color: #c8733a;
+}
+
+/* ── Section divider ── */
+.section-divider {
   display: flex;
   align-items: center;
   gap: 12px;
-  color: #bbb;
-  font-size: 12px;
+  color: rgba(255, 255, 255, 0.2);
+  font-size: 11px;
   font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
-.divider::before,
-.divider::after {
+
+.section-divider::before,
+.section-divider::after {
   content: '';
   flex: 1;
   height: 1px;
-  background: #e8e3da;
+  background: rgba(255, 255, 255, 0.07);
 }
 
-/* Price input */
+/* ── Price input ── */
 .price-input-wrap {
   display: flex;
-  align-items: center;
+  align-items: stretch;
 }
+
 .currency-symbol {
-  padding: 10px 12px;
-  background: #f4f0ea;
-  border: 1.5px solid #e2ddd6;
+  padding: 10px 13px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-right: none;
   border-radius: 8px 0 0 8px;
   font-size: 14px;
   font-weight: 600;
-  color: #666;
+  color: rgba(255, 255, 255, 0.35);
   white-space: nowrap;
-}
-.price-input {
-  border-radius: 0 8px 8px 0 !important;
-  border-left: none !important;
-}
-.price-input:focus {
-  border-left: none !important;
+  display: flex;
+  align-items: center;
 }
 
-/* QR preview */
+.price-input {
+  border-radius: 0 8px 8px 0 !important;
+}
+
+/* ── QR Preview ── */
 .qr-preview-box {
-  background: #fdfcfa;
-  border: 1.5px solid #e8e3da;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: 12px;
   padding: 24px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   margin-bottom: 24px;
 }
-.qr-label {
-  font-size: 11px;
+
+.qr-badge {
+  font-size: 10px;
   font-weight: 600;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: #aaa;
+  color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 4px 10px;
+  border-radius: 99px;
 }
+
+.qr-frame {
+  padding: 10px;
+  background: #ffffff;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
 .qr-image {
-  width: 160px;
-  height: 160px;
-  border-radius: 4px;
+  width: 150px;
+  height: 150px;
+  display: block;
+  border-radius: 2px;
 }
+
 .qr-url {
   font-size: 11px;
-  color: #bbb;
+  color: rgba(255, 255, 255, 0.2);
   word-break: break-all;
   text-align: center;
   max-width: 280px;
+  line-height: 1.5;
 }
+
 .btn-download {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   padding: 8px 18px;
-  border: 1.5px solid #c8733a;
+  border: 1px solid rgba(200, 115, 58, 0.35);
   border-radius: 8px;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 500;
   color: #c8733a;
-  background: transparent;
+  background: rgba(200, 115, 58, 0.06);
   cursor: pointer;
   font-family: 'DM Sans', sans-serif;
   transition: all 0.15s;
 }
+
 .btn-download:hover {
-  background: #c8733a;
-  color: white;
+  background: rgba(200, 115, 58, 0.14);
+  border-color: rgba(200, 115, 58, 0.5);
 }
 
-/* Buttons */
+/* ── Buttons ── */
 .btn-next {
   width: 100%;
-  padding: 13px;
-  background: #1a1a1a;
-  color: white;
+  padding: 12px;
+  background: #c8733a;
+  color: #ffffff;
   border: none;
   border-radius: 10px;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   font-family: 'DM Sans', sans-serif;
   cursor: pointer;
   transition:
-    background 0.2s,
+    background 0.15s,
+    box-shadow 0.15s,
     transform 0.1s;
 }
+
 .btn-next:hover:not(:disabled) {
-  background: #c8733a;
+  background: #d4844e;
+  box-shadow: 0 0 20px rgba(200, 115, 58, 0.35);
 }
+
 .btn-next:active:not(:disabled) {
+  background: #b05d2e;
   transform: scale(0.99);
 }
+
 .btn-next:disabled {
-  opacity: 0.5;
+  opacity: 0.4;
   cursor: not-allowed;
 }
+
 .btn-row {
   display: flex;
   gap: 10px;
 }
+
+.btn-row .btn-next {
+  flex: 1;
+}
+
 .btn-back {
-  padding: 13px 20px;
+  padding: 12px 18px;
   background: transparent;
-  color: #888;
-  border: 1.5px solid #e2ddd6;
+  color: rgba(255, 255, 255, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 10px;
-  font-size: 15px;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 500;
   font-family: 'DM Sans', sans-serif;
   cursor: pointer;
   transition: all 0.15s;
   white-space: nowrap;
 }
+
 .btn-back:hover {
-  border-color: #999;
-  color: #444;
-}
-.btn-row .btn-next {
-  flex: 1;
+  border-color: rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.6);
 }
 
-/* Slide transition */
+/* Loading state */
+.loading-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.spinner {
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ── Slide transition ── */
 .slide-enter-active,
 .slide-leave-active {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.28s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
 .slide-enter-from {
   opacity: 0;
-  transform: translateX(24px);
+  transform: translateX(20px);
 }
+
 .slide-leave-to {
   opacity: 0;
-  transform: translateX(-24px);
+  transform: translateX(-20px);
+}
+
+/* ── Responsive ── */
+@media (max-width: 480px) {
+  .step-card {
+    padding: 28px 20px;
+  }
+
+  .field-row {
+    grid-template-columns: 1fr;
+  }
+
+  .step-title {
+    font-size: 22px;
+  }
 }
 </style>

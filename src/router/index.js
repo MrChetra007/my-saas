@@ -33,6 +33,11 @@ const routes = [
     component: () => import('@/views/auth/SignupView.vue'),
     meta: { public: true },
   },
+  {
+    path: '/reset-password',
+    component: () => import('@/views/auth/ResetPasswordView.vue'),
+    meta: { public: true },
+  }, // ← add this
 
   // ── Onboarding (admin only) ──────────────────────
   {
