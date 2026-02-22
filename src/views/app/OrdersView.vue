@@ -1,17 +1,28 @@
 <template>
   <div class="orders-page">
-    <!-- Header -->
+    <!-- ── Header ──────────────────────────────────────── -->
     <div class="page-header">
       <div>
         <p class="header-sub">Live order management</p>
         <h1 class="header-title">Orders</h1>
       </div>
-
-      <!-- Waiter: create order button -->
-      <button v-if="isWaiter" class="btn-primary" @click="openNewOrder">+ New Order</button>
+      <button v-if="isWaiter || isAdmin" class="btn-new-order" @click="openNewOrder">
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+        >
+          <line x1="12" y1="5" x2="12" y2="19" />
+          <line x1="5" y1="12" x2="19" y2="12" />
+        </svg>
+        New Order
+      </button>
     </div>
 
-    <!-- Status Filter Tabs -->
+    <!-- ── Filter Tabs ─────────────────────────────────── -->
     <div class="filter-tabs">
       <button
         v-for="tab in visibleTabs"
@@ -21,24 +32,41 @@
         @click="activeTab = tab.value"
       >
         {{ tab.label }}
-        <span v-if="countByStatus[tab.value]" class="tab-count">
+        <span
+          v-if="tab.value !== 'all' && countByStatus[tab.value]"
+          class="tab-count"
+          :class="`tab-count--${tab.value}`"
+        >
           {{ countByStatus[tab.value] }}
         </span>
       </button>
     </div>
 
-    <!-- Loading -->
+    <!-- ── Loading ─────────────────────────────────────── -->
     <div v-if="loading" class="loading-grid">
-      <div v-for="n in 4" :key="n" class="skeleton-card"></div>
+      <div v-for="n in 6" :key="n" class="skeleton-card" />
     </div>
 
-    <!-- Empty -->
+    <!-- ── Empty ───────────────────────────────────────── -->
     <div v-else-if="filteredOrders.length === 0" class="empty-state">
-      <span class="empty-icon">🧾</span>
+      <svg
+        width="36"
+        height="36"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.2"
+        class="empty-icon"
+      >
+        <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
+        <rect x="9" y="3" width="6" height="4" rx="1" />
+        <line x1="9" y1="12" x2="15" y2="12" />
+        <line x1="9" y1="16" x2="13" y2="16" />
+      </svg>
       <p>No {{ activeTab === 'all' ? '' : activeTab }} orders right now</p>
     </div>
 
-    <!-- Orders Grid -->
+    <!-- ── Orders Grid ─────────────────────────────────── -->
     <div v-else class="orders-grid">
       <div
         v-for="order in filteredOrders"
@@ -46,13 +74,20 @@
         class="order-card"
         :class="`card--${order.status}`"
       >
+        <!-- Color stripe -->
+        <div class="card-stripe" :class="`stripe--${order.status}`" />
+
         <!-- Card Header -->
         <div class="card-header">
           <div class="card-header-left">
-            <span class="card-table">{{ order.tables?.name || 'Table' }}</span>
-            <span class="card-elapsed">{{ timeElapsed(order.created_at) }}</span>
+            <div class="table-avatar">{{ (order.tables?.name || 'T').charAt(0) }}</div>
+            <div>
+              <p class="card-table">{{ order.tables?.name || 'Table' }}</p>
+              <p class="card-elapsed">{{ timeElapsed(order.created_at) }}</p>
+            </div>
           </div>
           <span class="status-badge" :class="`status--${order.status}`">
+            <span class="status-dot" />
             {{ statusLabel(order.status) }}
           </span>
         </div>
@@ -68,36 +103,64 @@
 
         <!-- Note -->
         <div v-if="order.note" class="card-note">
-          <span class="note-icon">📝</span> {{ order.note }}
+          <svg
+            width="11"
+            height="11"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+          </svg>
+          {{ order.note }}
         </div>
 
         <!-- Total -->
         <div class="card-total">
-          <span>Total</span>
-          <span class="total-amount">{{ formatCurrency(order.total_price) }}</span>
+          <span class="total-label">Total</span>
+          <span class="total-amount">{{ formatCurrency(orderTotal(order)) }}</span>
         </div>
 
         <!-- Actions -->
         <div class="card-actions">
-          <!-- Cashier: mark as paid (only for ready orders) -->
           <button
             v-if="isCashier && order.status === 'ready'"
             class="btn-action btn-paid"
             @click="markAsPaid(order)"
           >
-            ✅ Mark as Paid
+            <svg
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+            >
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+            Mark as Paid
           </button>
 
-          <!-- Admin sees paid button too -->
           <button
             v-if="isAdmin && order.status === 'ready'"
             class="btn-action btn-paid"
             @click="markAsPaid(order)"
           >
-            ✅ Mark as Paid
+            <svg
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+            >
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+            Mark as Paid
           </button>
 
-          <!-- Waiter: cancel pending orders only -->
           <button
             v-if="isWaiter && order.status === 'pending'"
             class="btn-action btn-cancel-order"
@@ -106,25 +169,50 @@
             Cancel Order
           </button>
 
-          <!-- Read-only states -->
           <p v-if="(isCashier || isAdmin) && order.status === 'pending'" class="card-waiting">
+            <span class="waiting-dot" />
             Waiting for kitchen to accept…
           </p>
           <p v-if="(isCashier || isAdmin) && order.status === 'cooking'" class="card-waiting">
+            <span class="waiting-dot waiting-dot--cooking" />
             Kitchen is cooking…
           </p>
-          <p v-if="order.status === 'paid'" class="card-paid-label">✅ Paid</p>
+          <p v-if="order.status === 'paid'" class="card-paid-label">
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+            >
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
+            Paid
+          </p>
         </div>
       </div>
     </div>
 
-    <!-- ── New Order Modal (Waiter) ── -->
+    <!-- ══ NEW ORDER MODAL ════════════════════════════════ -->
     <Transition name="modal">
       <div v-if="showNewOrder" class="modal-overlay" @click.self="closeNewOrder">
         <div class="modal modal--lg">
           <div class="modal-header">
             <h2 class="modal-title">New Order</h2>
-            <button class="modal-close" @click="closeNewOrder">✕</button>
+            <button class="modal-close" @click="closeNewOrder">
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+              >
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
           </div>
 
           <div class="modal-body">
@@ -158,19 +246,19 @@
                     </div>
                     <div class="menu-item-qty" v-if="cartQty(item.id) > 0">
                       <button class="qty-btn" @click.stop="removeFromCart(item.id)">−</button>
-                      <span>{{ cartQty(item.id) }}</span>
+                      <span class="qty-num">{{ cartQty(item.id) }}</span>
                       <button class="qty-btn" @click.stop="addToCart(item)">+</button>
                     </div>
                     <div v-else-if="!item.is_available" class="sold-out">Sold out</div>
-                    <div v-else class="add-hint">Tap to add</div>
+                    <div v-else class="add-hint">+ Add</div>
                   </div>
                 </div>
               </div>
             </div>
 
             <!-- Note -->
-            <div class="form-group" style="margin-top: 1rem">
-              <label class="form-label">Order Note (optional)</label>
+            <div class="form-group">
+              <label class="form-label">Order Note <span class="optional">(optional)</span></label>
               <input
                 v-model="newOrder.note"
                 type="text"
@@ -186,24 +274,24 @@
                 <span>×{{ ci.quantity }} {{ ci.name }}</span>
                 <span>{{ formatCurrency(ci.price * ci.quantity) }}</span>
               </div>
-              <div class="cart-total">
+              <div class="cart-total-row">
                 <span>Total</span>
-                <span>{{ formatCurrency(cartTotal) }}</span>
+                <span class="cart-total-val">{{ formatCurrency(cartTotal) }}</span>
               </div>
             </div>
 
-            <div v-if="newOrderError" class="alert alert--error">{{ newOrderError }}</div>
+            <div v-if="newOrderError" class="error-alert">{{ newOrderError }}</div>
           </div>
 
           <div class="modal-footer">
-            <button class="btn-cancel" @click="closeNewOrder" :disabled="submitting">Cancel</button>
+            <button class="btn-ghost" @click="closeNewOrder" :disabled="submitting">Cancel</button>
             <button
               class="btn-submit"
               @click="submitOrder"
               :disabled="submitting || !newOrder.tableId || cartItems.length === 0"
             >
-              <span v-if="submitting" class="spinner"></span>
-              {{ submitting ? 'Placing...' : `Place Order · ${formatCurrency(cartTotal)}` }}
+              <span v-if="submitting" class="spinner" />
+              {{ submitting ? 'Placing…' : `Place Order · ${formatCurrency(cartTotal)}` }}
             </button>
           </div>
         </div>
@@ -230,10 +318,8 @@ const loading = ref(true)
 const orders = ref([])
 const tables = ref([])
 const menuCategories = ref([])
-
 const activeTab = ref('all')
 
-// Cashier sees all non-paid tabs; Waiter sees all; Admin sees all
 const allTabs = [
   { label: 'All', value: 'all' },
   { label: 'Pending', value: 'pending' },
@@ -245,9 +331,7 @@ const visibleTabs = computed(() => allTabs)
 
 const countByStatus = computed(() => {
   const counts = {}
-  for (const o of orders.value) {
-    counts[o.status] = (counts[o.status] || 0) + 1
-  }
+  for (const o of orders.value) counts[o.status] = (counts[o.status] || 0) + 1
   return counts
 })
 
@@ -261,7 +345,7 @@ const showNewOrder = ref(false)
 const submitting = ref(false)
 const newOrderError = ref('')
 const newOrder = ref({ tableId: '', note: '' })
-const cart = ref({}) // { [menuItemId]: { id, name, price, quantity } }
+const cart = ref({})
 
 const cartItems = computed(() => Object.values(cart.value).filter((i) => i.quantity > 0))
 const cartTotal = computed(() => cartItems.value.reduce((sum, i) => sum + i.price * i.quantity, 0))
@@ -271,9 +355,8 @@ function cartQty(itemId) {
 }
 
 function addToCart(item) {
-  if (!cart.value[item.id]) {
+  if (!cart.value[item.id])
     cart.value[item.id] = { id: item.id, name: item.name, price: item.price, quantity: 0 }
-  }
   cart.value[item.id].quantity++
 }
 
@@ -312,18 +395,24 @@ function statusLabel(status) {
   return { pending: 'Pending', cooking: 'Cooking', ready: 'Ready', paid: 'Paid' }[status] || status
 }
 
+// ✅ Calculate total from order_items — no total_price column needed
+function orderTotal(order) {
+  return (order.order_items || []).reduce(
+    (sum, item) => sum + (item.unit_price || 0) * (item.quantity || 1),
+    0,
+  )
+}
+
 // ─── Fetch Data ───────────────────────────────────────────────────────────────
 async function fetchOrders() {
   const restaurantId = authStore.profile?.restaurant_id
   const { data, error } = await supabase
     .from('orders')
     .select(
-      'id, status, notes, total_amount, created_at, tables(name), order_items(id, quantity, unit_price, menu_items(name))',
+      'id, status, notes, created_at, tables(name), order_items(id, quantity, unit_price, menu_items(name))',
     )
     .eq('restaurant_id', restaurantId)
     .order('created_at', { ascending: false })
-
-  console.log('Fetched orders:', orders.value)
 
   if (!error) orders.value = data || []
   loading.value = false
@@ -337,8 +426,6 @@ async function fetchTables() {
     .eq('restaurant_id', restaurantId)
     .order('name')
   tables.value = data || []
-
-  console.log('Fetched tables:', tables.value)
 }
 
 async function fetchMenu() {
@@ -350,32 +437,27 @@ async function fetchMenu() {
     .eq('menu_items.is_available', true)
     .order('name')
   menuCategories.value = (data || []).filter((c) => c.menu_items?.length > 0)
-
-  console.log('Fetched menu:', menuCategories.value)
 }
 
 // ─── Actions ──────────────────────────────────────────────────────────────────
 async function markAsPaid(order) {
   const { error } = await supabase.from('orders').update({ status: 'paid' }).eq('id', order.id)
-
   if (!error) order.status = 'paid'
 }
 
 async function cancelOrder(order) {
   const { error } = await supabase.from('orders').update({ status: 'cancelled' }).eq('id', order.id)
-
   if (!error) orders.value = orders.value.filter((o) => o.id !== order.id)
 }
 
 async function submitOrder() {
   newOrderError.value = ''
   if (!newOrder.value.tableId || cartItems.value.length === 0) return
-
   submitting.value = true
   const restaurantId = authStore.profile?.restaurant_id
 
   try {
-    // 1. Create order
+    // 1. Create the order (no total_price column)
     const { data: orderData, error: orderErr } = await supabase
       .from('orders')
       .insert({
@@ -383,7 +465,6 @@ async function submitOrder() {
         table_id: newOrder.value.tableId,
         status: 'pending',
         note: newOrder.value.note || null,
-        total_price: cartTotal.value,
       })
       .select()
       .single()
@@ -444,101 +525,123 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+/* ── Base ────────────────────────────────────────────────── */
 .orders-page {
-  padding: 2rem;
+  font-family: var(--font-body, 'DM Sans', sans-serif);
   max-width: 1200px;
-  margin: 0 auto;
-  font-family: 'DM Sans', sans-serif;
 }
 
-/* ── Header ── */
+/* ── Header ──────────────────────────────────────────────── */
 .page-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
-  margin-bottom: 1.5rem;
+  margin-bottom: 24px;
 }
 .header-sub {
-  font-size: 0.78rem;
-  color: #9ca3af;
+  font-size: 11px;
+  color: var(--color-text-muted, rgba(255, 255, 255, 0.35));
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  margin-bottom: 0.25rem;
+  letter-spacing: 0.09em;
+  margin-bottom: 4px;
 }
 .header-title {
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: #111827;
+  font-family: var(--font-display, 'Fraunces', serif);
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--color-text-primary, #fff);
+  letter-spacing: -0.5px;
   margin: 0;
 }
-.btn-primary {
-  background: #111827;
+.btn-new-order {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 20px;
+  background: var(--color-accent, #c8733a);
   color: #fff;
   border: none;
-  padding: 0.65rem 1.25rem;
-  border-radius: 10px;
-  font-size: 0.85rem;
+  border-radius: var(--radius-pill, 999px);
+  font-size: 13.5px;
   font-weight: 600;
+  font-family: var(--font-body, 'DM Sans', sans-serif);
   cursor: pointer;
   transition: background 0.15s;
+  box-shadow: var(--shadow-glow, 0 8px 24px rgba(200, 115, 58, 0.3));
 }
-.btn-primary:hover {
-  background: #374151;
+.btn-new-order:hover {
+  background: var(--color-accent-hover, #d4844e);
 }
 
-/* ── Filter Tabs ── */
+/* ── Filter Tabs ─────────────────────────────────────────── */
 .filter-tabs {
   display: flex;
-  gap: 0.4rem;
-  margin-bottom: 1.5rem;
+  gap: 6px;
+  margin-bottom: 20px;
   flex-wrap: wrap;
 }
 .tab {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.45rem 1rem;
-  border-radius: 999px;
-  border: 1px solid #e5e7eb;
-  background: #fff;
-  font-size: 0.8rem;
+  gap: 6px;
+  padding: 7px 16px;
+  border-radius: var(--radius-pill, 999px);
+  border: 1px solid var(--color-border-subtle, rgba(255, 255, 255, 0.07));
+  background: var(--color-bg-surface, #161616);
+  font-size: 12.5px;
   font-weight: 500;
-  color: #6b7280;
+  font-family: var(--font-body, 'DM Sans', sans-serif);
+  color: var(--color-text-secondary, rgba(255, 255, 255, 0.55));
   cursor: pointer;
   transition: all 0.15s;
 }
 .tab:hover {
-  border-color: #d1d5db;
-  color: #374151;
+  border-color: var(--color-border-medium, rgba(255, 255, 255, 0.12));
+  color: var(--color-text-primary, #fff);
 }
 .tab.active {
-  background: #111827;
-  color: #fff;
-  border-color: #111827;
+  background: var(--color-text-primary, #fff);
+  color: #111;
+  border-color: transparent;
+  font-weight: 600;
 }
 .tab-count {
-  background: #e5e7eb;
-  color: #374151;
-  font-size: 0.7rem;
+  font-size: 10px;
   font-weight: 700;
-  padding: 0.1rem 0.45rem;
+  padding: 1px 6px;
   border-radius: 999px;
 }
+.tab-count--pending {
+  background: rgba(250, 204, 21, 0.2);
+  color: #facc15;
+}
+.tab-count--cooking {
+  background: rgba(251, 146, 60, 0.2);
+  color: #fb923c;
+}
+.tab-count--ready {
+  background: rgba(74, 222, 128, 0.2);
+  color: #4ade80;
+}
+.tab-count--paid {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.5);
+}
 .tab.active .tab-count {
-  background: rgba(255, 255, 255, 0.2);
-  color: #fff;
+  background: rgba(0, 0, 0, 0.1);
+  color: #333;
 }
 
-/* ── Skeleton ── */
+/* ── Skeleton ────────────────────────────────────────────── */
 .loading-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 1rem;
+  gap: 12px;
 }
 .skeleton-card {
-  height: 180px;
-  border-radius: 14px;
-  background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+  height: 200px;
+  border-radius: var(--radius-card, 10px);
+  background: linear-gradient(90deg, #1a1a1a 25%, #222 50%, #1a1a1a 75%);
   background-size: 200% 100%;
   animation: shimmer 1.4s infinite;
 }
@@ -551,356 +654,507 @@ onUnmounted(() => {
   }
 }
 
-/* ── Empty ── */
+/* ── Empty ───────────────────────────────────────────────── */
 .empty-state {
-  text-align: center;
-  padding: 4rem 1rem;
-  color: #9ca3af;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 80px 20px;
+  color: var(--color-text-muted, rgba(255, 255, 255, 0.35));
+  font-size: 14px;
 }
 .empty-icon {
-  font-size: 2.5rem;
-  display: block;
-  margin-bottom: 0.75rem;
+  opacity: 0.3;
 }
 
-/* ── Orders Grid ── */
+/* ── Orders Grid ─────────────────────────────────────────── */
 .orders-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 1rem;
+  gap: 12px;
 }
 
-/* ── Order Card ── */
+/* ── Order Card ──────────────────────────────────────────── */
 .order-card {
-  background: #fff;
-  border: 1.5px solid #e5e7eb;
-  border-radius: 14px;
-  padding: 1.25rem;
+  background: var(--color-bg-surface, #161616);
+  border: 1px solid var(--color-border-subtle, rgba(255, 255, 255, 0.07));
+  border-radius: var(--radius-card, 10px);
   display: flex;
   flex-direction: column;
-  gap: 0.85rem;
-  transition: box-shadow 0.15s;
+  gap: 12px;
+  overflow: hidden;
+  transition:
+    border-color 0.15s,
+    transform 0.15s;
+  position: relative;
 }
 .order-card:hover {
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.07);
+  border-color: var(--color-border-medium, rgba(255, 255, 255, 0.12));
+  transform: translateY(-1px);
 }
-.card--pending {
-  border-color: #fde68a;
+
+/* Left color stripe */
+.card-stripe {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
 }
-.card--cooking {
-  border-color: #fca5a5;
+.stripe--pending {
+  background: #facc15;
 }
-.card--ready {
-  border-color: #6ee7b7;
+.stripe--cooking {
+  background: #fb923c;
 }
-.card--paid {
-  border-color: #e5e7eb;
-  opacity: 0.7;
+.stripe--ready {
+  background: #4ade80;
+}
+.stripe--paid {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* Offset content so stripe doesn't overlap */
+.card-header,
+.card-items,
+.card-note,
+.card-total,
+.card-actions {
+  padding-left: 18px;
+  padding-right: 16px;
 }
 
 .card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding-top: 16px;
 }
 .card-header-left {
   display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
+  align-items: center;
+  gap: 10px;
+}
+.table-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--color-accent, #c8733a);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 .card-table {
+  font-size: 14px;
   font-weight: 700;
-  font-size: 0.95rem;
-  color: #111827;
+  color: var(--color-text-primary, #fff);
+  margin: 0 0 2px;
 }
 .card-elapsed {
-  font-size: 0.72rem;
-  color: #9ca3af;
+  font-size: 11px;
+  color: var(--color-text-muted, rgba(255, 255, 255, 0.35));
+  margin: 0;
 }
 
+/* Status badge */
 .status-badge {
-  font-size: 0.72rem;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
   font-weight: 600;
-  padding: 0.25rem 0.65rem;
+  padding: 4px 10px;
   border-radius: 999px;
+  white-space: nowrap;
+}
+.status-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.8;
 }
 .status--pending {
-  background: #fef3c7;
-  color: #d97706;
+  background: rgba(250, 204, 21, 0.12);
+  color: #facc15;
+  border: 1px solid rgba(250, 204, 21, 0.2);
 }
 .status--cooking {
-  background: #fee2e2;
-  color: #dc2626;
+  background: rgba(251, 146, 60, 0.12);
+  color: #fb923c;
+  border: 1px solid rgba(251, 146, 60, 0.2);
 }
 .status--ready {
-  background: #d1fae5;
-  color: #059669;
+  background: rgba(74, 222, 128, 0.12);
+  color: #4ade80;
+  border: 1px solid rgba(74, 222, 128, 0.2);
 }
 .status--paid {
-  background: #f3f4f6;
-  color: #6b7280;
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
+/* Items */
 .card-items {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: 6px;
 }
 .card-item {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  font-size: 0.83rem;
+  gap: 8px;
+  font-size: 13px;
 }
 .item-qty {
   font-weight: 700;
-  color: #6b7280;
+  color: var(--color-text-muted, rgba(255, 255, 255, 0.35));
   min-width: 24px;
+  font-size: 12px;
 }
 .item-name {
   flex: 1;
-  color: #374151;
+  color: var(--color-text-secondary, rgba(255, 255, 255, 0.55));
 }
 .item-price {
-  color: #6b7280;
-  font-size: 0.78rem;
+  font-size: 12px;
+  color: var(--color-text-muted, rgba(255, 255, 255, 0.35));
 }
 
+/* Note */
 .card-note {
-  background: #fafafa;
-  border: 1px solid #f3f4f6;
-  border-radius: 8px;
-  padding: 0.5rem 0.75rem;
-  font-size: 0.78rem;
-  color: #6b7280;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  background: var(--color-bg-elevated, #0e0e0e);
+  border-top: 1px solid var(--color-border-subtle, rgba(255, 255, 255, 0.05));
+  border-bottom: 1px solid var(--color-border-subtle, rgba(255, 255, 255, 0.05));
+  padding-top: 8px;
+  padding-bottom: 8px;
+  font-size: 12px;
+  color: var(--color-text-muted, rgba(255, 255, 255, 0.35));
+  line-height: 1.4;
+}
+.card-note svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+  opacity: 0.5;
 }
 
+/* Total */
 .card-total {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-top: 1px solid #f3f4f6;
-  padding-top: 0.75rem;
-  font-size: 0.82rem;
-  color: #6b7280;
+  border-top: 1px solid var(--color-border-subtle, rgba(255, 255, 255, 0.05));
+  padding-top: 10px;
+}
+.total-label {
+  font-size: 12px;
+  color: var(--color-text-muted, rgba(255, 255, 255, 0.35));
 }
 .total-amount {
+  font-family: var(--font-display, 'Fraunces', serif);
+  font-size: 16px;
   font-weight: 700;
-  font-size: 0.95rem;
-  color: #111827;
+  color: var(--color-text-primary, #fff);
+  letter-spacing: -0.3px;
 }
 
+/* Actions */
 .card-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
+  padding-bottom: 14px;
 }
+
 .btn-action {
   width: 100%;
-  padding: 0.6rem;
-  border-radius: 9px;
+  padding: 9px;
+  border-radius: 8px;
   border: none;
-  font-size: 0.85rem;
+  font-size: 13px;
   font-weight: 600;
+  font-family: var(--font-body, 'DM Sans', sans-serif);
   cursor: pointer;
   transition: all 0.15s;
-}
-.btn-paid {
-  background: #059669;
-  color: #fff;
-}
-.btn-paid:hover {
-  background: #047857;
-}
-.btn-cancel-order {
-  background: #fff1f2;
-  color: #e11d48;
-  border: 1px solid #fecdd3;
-}
-.btn-cancel-order:hover {
-  background: #ffe4e6;
-}
-.card-waiting {
-  font-size: 0.78rem;
-  color: #9ca3af;
-  text-align: center;
-  margin: 0;
-}
-.card-paid-label {
-  font-size: 0.82rem;
-  color: #059669;
-  font-weight: 600;
-  text-align: center;
-  margin: 0;
-}
-
-/* ── Modal ── */
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.45);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 100;
-  padding: 1rem;
+  gap: 6px;
+}
+.btn-paid {
+  background: rgba(74, 222, 128, 0.1);
+  color: #4ade80;
+  border: 1px solid rgba(74, 222, 128, 0.2);
+}
+.btn-paid:hover {
+  background: rgba(74, 222, 128, 0.18);
+}
+.btn-cancel-order {
+  background: rgba(239, 68, 68, 0.08);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.15);
+}
+.btn-cancel-order:hover {
+  background: rgba(239, 68, 68, 0.15);
+}
+
+.card-waiting {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  color: var(--color-text-muted, rgba(255, 255, 255, 0.35));
+  margin: 0;
+}
+.waiting-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #facc15;
+  animation: pulse-dot 1.5s ease-in-out infinite;
+  flex-shrink: 0;
+}
+.waiting-dot--cooking {
+  background: #fb923c;
+}
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(0.7);
+  }
+}
+.card-paid-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #4ade80;
+  margin: 0;
+}
+
+/* ── Modal ───────────────────────────────────────────────── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 16px;
+  backdrop-filter: blur(4px);
 }
 .modal {
-  background: #fff;
-  border-radius: 16px;
+  background: var(--color-bg-surface, #161616);
+  border: 1px solid var(--color-border-medium, rgba(255, 255, 255, 0.12));
+  border-radius: var(--radius-panel, 16px);
   width: 100%;
   max-width: 540px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
-  max-height: 90vh;
+  max-height: 88vh;
   display: flex;
   flex-direction: column;
+  box-shadow: var(--shadow-float, 0 24px 56px rgba(0, 0, 0, 0.5));
+  animation: modal-in 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .modal--lg {
   max-width: 600px;
 }
+
+@keyframes modal-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
 .modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1.5rem 1.5rem 0;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--color-border-subtle, rgba(255, 255, 255, 0.07));
   flex-shrink: 0;
 }
 .modal-title {
-  font-size: 1.05rem;
+  font-family: var(--font-display, 'Fraunces', serif);
+  font-size: 18px;
   font-weight: 700;
-  color: #111827;
+  color: var(--color-text-primary, #fff);
   margin: 0;
 }
 .modal-close {
+  width: 30px;
+  height: 30px;
   background: none;
-  border: none;
-  font-size: 0.85rem;
-  color: #9ca3af;
+  border: 1px solid var(--color-border-medium, rgba(255, 255, 255, 0.12));
+  border-radius: 7px;
+  color: var(--color-text-muted, rgba(255, 255, 255, 0.35));
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background 0.12s,
+    color 0.12s;
 }
 .modal-close:hover {
-  color: #111827;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--color-text-primary, #fff);
 }
+
 .modal-body {
-  padding: 1.25rem 1.5rem;
+  padding: 20px 24px;
   overflow-y: auto;
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-medium, rgba(255, 255, 255, 0.12)) transparent;
 }
 .modal-footer {
   display: flex;
   justify-content: flex-end;
-  gap: 0.75rem;
-  padding: 1rem 1.5rem 1.5rem;
+  gap: 10px;
+  padding: 16px 24px;
+  border-top: 1px solid var(--color-border-subtle, rgba(255, 255, 255, 0.07));
+  background: var(--color-bg-elevated, #0e0e0e);
   flex-shrink: 0;
-  border-top: 1px solid #f3f4f6;
 }
 
-/* ── Form ── */
+/* ── Form fields ─────────────────────────────────────────── */
 .form-group {
-  margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 .form-label {
-  display: block;
-  font-size: 0.78rem;
+  font-size: 12.5px;
   font-weight: 600;
-  color: #374151;
-  margin-bottom: 0.4rem;
+  color: var(--color-text-secondary, rgba(255, 255, 255, 0.55));
+}
+.optional {
+  font-weight: 400;
+  color: var(--color-text-muted, rgba(255, 255, 255, 0.35));
 }
 .form-input {
   width: 100%;
-  padding: 0.65rem 0.9rem;
-  border: 1px solid #d1d5db;
-  border-radius: 9px;
-  font-size: 0.85rem;
-  color: #111827;
+  padding: 9px 13px;
+  background: var(--color-bg-elevated, #0e0e0e);
+  border: 1px solid var(--color-border-medium, rgba(255, 255, 255, 0.12));
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: var(--font-body, 'DM Sans', sans-serif);
+  color: var(--color-text-primary, #fff);
   outline: none;
-  box-sizing: border-box;
   transition: border-color 0.15s;
-  background: #fff;
+  appearance: none;
+  box-sizing: border-box;
+}
+.form-input::placeholder {
+  color: var(--color-text-muted, rgba(255, 255, 255, 0.3));
 }
 .form-input:focus {
-  border-color: #6366f1;
+  border-color: var(--color-accent-border-strong, rgba(200, 115, 58, 0.45));
 }
 
-/* ── Menu ── */
+/* ── Menu in modal ───────────────────────────────────────── */
 .menu-category {
-  margin-bottom: 1.25rem;
+  margin-bottom: 12px;
 }
 .category-name {
-  font-size: 0.75rem;
+  font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: #9ca3af;
-  margin-bottom: 0.6rem;
+  letter-spacing: 0.1em;
+  color: var(--color-text-muted, rgba(255, 255, 255, 0.35));
+  margin-bottom: 6px;
 }
 .menu-items-grid {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: 4px;
 }
+
 .menu-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.65rem 0.85rem;
-  border-radius: 9px;
-  border: 1px solid #f3f4f6;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--color-border-subtle, rgba(255, 255, 255, 0.07));
+  background: var(--color-bg-elevated, #0e0e0e);
   cursor: pointer;
-  transition: all 0.15s;
-  background: #fff;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
 }
 .menu-item:hover:not(.item--unavailable) {
-  border-color: #c7d2fe;
-  background: #eef2ff;
+  border-color: var(--color-accent-border, rgba(200, 115, 58, 0.25));
+  background: rgba(200, 115, 58, 0.06);
 }
 .item--in-cart {
-  border-color: #6366f1 !important;
-  background: #eef2ff !important;
+  border-color: var(--color-accent-border-strong, rgba(200, 115, 58, 0.45)) !important;
+  background: rgba(200, 115, 58, 0.1) !important;
 }
 .item--unavailable {
-  opacity: 0.45;
+  opacity: 0.4;
   cursor: not-allowed;
 }
+
 .menu-item-info {
   flex: 1;
 }
 .menu-item-name {
-  font-size: 0.85rem;
+  font-size: 13px;
   font-weight: 600;
-  color: #111827;
+  color: var(--color-text-primary, #fff);
+  margin-bottom: 2px;
 }
 .menu-item-price {
-  font-size: 0.75rem;
-  color: #6b7280;
-  margin-top: 0.1rem;
+  font-size: 11px;
+  color: var(--color-text-muted, rgba(255, 255, 255, 0.35));
 }
 .add-hint {
-  font-size: 0.72rem;
-  color: #9ca3af;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-accent, #c8733a);
 }
 .sold-out {
-  font-size: 0.72rem;
-  color: #e11d48;
-  font-weight: 600;
+  font-size: 10px;
+  font-weight: 700;
+  color: #f87171;
 }
+
 .menu-item-qty {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: #4338ca;
+  gap: 8px;
 }
 .qty-btn {
-  width: 24px;
-  height: 24px;
+  width: 26px;
+  height: 26px;
   border-radius: 50%;
-  background: #e0e7ff;
-  color: #4338ca;
+  background: rgba(200, 115, 58, 0.15);
+  color: var(--color-accent, #c8733a);
   border: none;
-  font-size: 1rem;
-  line-height: 1;
+  font-size: 15px;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -908,102 +1162,110 @@ onUnmounted(() => {
   transition: background 0.12s;
 }
 .qty-btn:hover {
-  background: #c7d2fe;
+  background: rgba(200, 115, 58, 0.25);
+}
+.qty-num {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text-primary, #fff);
+  min-width: 16px;
+  text-align: center;
 }
 
-/* ── Cart Summary ── */
+/* ── Cart summary ────────────────────────────────────────── */
 .cart-summary {
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
+  background: var(--color-bg-elevated, #0e0e0e);
+  border: 1px solid var(--color-border-medium, rgba(255, 255, 255, 0.12));
   border-radius: 10px;
-  padding: 1rem;
-  margin-top: 1rem;
+  padding: 14px 16px;
 }
 .cart-title {
-  font-size: 0.78rem;
+  font-size: 10px;
   font-weight: 700;
-  color: #374151;
-  margin-bottom: 0.6rem;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.1em;
+  color: var(--color-text-muted, rgba(255, 255, 255, 0.35));
+  margin-bottom: 10px;
 }
 .cart-row {
   display: flex;
   justify-content: space-between;
-  font-size: 0.83rem;
-  color: #374151;
-  margin-bottom: 0.35rem;
+  font-size: 13px;
+  color: var(--color-text-secondary, rgba(255, 255, 255, 0.55));
+  margin-bottom: 6px;
 }
-.cart-total {
+.cart-total-row {
   display: flex;
   justify-content: space-between;
-  font-weight: 700;
-  font-size: 0.9rem;
-  color: #111827;
-  border-top: 1px solid #e5e7eb;
-  padding-top: 0.6rem;
-  margin-top: 0.6rem;
-}
-
-/* ── Alert ── */
-.alert {
-  padding: 0.75rem 1rem;
-  border-radius: 9px;
-  font-size: 0.82rem;
-  font-weight: 500;
-  margin-top: 0.75rem;
-}
-.alert--error {
-  background: #fff1f2;
-  color: #e11d48;
-  border: 1px solid #fecdd3;
-}
-
-/* ── Buttons ── */
-.btn-cancel {
-  padding: 0.65rem 1.25rem;
-  background: #f3f4f6;
-  color: #374151;
-  border: none;
-  border-radius: 9px;
-  font-size: 0.85rem;
+  font-size: 14px;
   font-weight: 600;
+  color: var(--color-text-primary, #fff);
+  border-top: 1px solid var(--color-border-subtle, rgba(255, 255, 255, 0.07));
+  padding-top: 10px;
+  margin-top: 6px;
+}
+.cart-total-val {
+  color: var(--color-accent, #c8733a);
+}
+
+/* Error */
+.error-alert {
+  padding: 10px 14px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 8px;
+  font-size: 13px;
+  color: #f87171;
+}
+
+/* ── Buttons ─────────────────────────────────────────────── */
+.btn-ghost {
+  padding: 9px 18px;
+  background: transparent;
+  color: var(--color-text-secondary, rgba(255, 255, 255, 0.55));
+  border: 1px solid var(--color-border-medium, rgba(255, 255, 255, 0.12));
+  border-radius: 8px;
+  font-size: 13.5px;
+  font-weight: 600;
+  font-family: var(--font-body, 'DM Sans', sans-serif);
   cursor: pointer;
-  transition: background 0.12s;
+  transition: all 0.15s;
 }
-.btn-cancel:hover:not(:disabled) {
-  background: #e5e7eb;
+.btn-ghost:hover:not(:disabled) {
+  border-color: var(--color-border-bright, rgba(255, 255, 255, 0.22));
+  color: var(--color-text-primary, #fff);
 }
-.btn-cancel:disabled {
-  opacity: 0.5;
+.btn-ghost:disabled {
+  opacity: 0.4;
   cursor: not-allowed;
 }
+
 .btn-submit {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.65rem 1.25rem;
-  background: #111827;
+  gap: 7px;
+  padding: 9px 20px;
+  background: var(--color-accent, #c8733a);
   color: #fff;
   border: none;
-  border-radius: 9px;
-  font-size: 0.85rem;
+  border-radius: 8px;
+  font-size: 13.5px;
   font-weight: 600;
+  font-family: var(--font-body, 'DM Sans', sans-serif);
   cursor: pointer;
-  transition: background 0.12s;
+  transition: background 0.15s;
 }
 .btn-submit:hover:not(:disabled) {
-  background: #374151;
+  background: var(--color-accent-hover, #d4844e);
 }
 .btn-submit:disabled {
-  opacity: 0.5;
+  opacity: 0.4;
   cursor: not-allowed;
 }
 
-/* ── Spinner ── */
 .spinner {
-  width: 14px;
-  height: 14px;
+  width: 13px;
+  height: 13px;
   border: 2px solid rgba(255, 255, 255, 0.3);
   border-top-color: #fff;
   border-radius: 50%;
@@ -1015,7 +1277,7 @@ onUnmounted(() => {
   }
 }
 
-/* ── Modal Transition ── */
+/* ── Modal transition ────────────────────────────────────── */
 .modal-enter-active,
 .modal-leave-active {
   transition: opacity 0.2s ease;
@@ -1024,18 +1286,14 @@ onUnmounted(() => {
 .modal-leave-to {
   opacity: 0;
 }
-.modal-enter-from .modal,
-.modal-leave-to .modal {
-  transform: scale(0.96) translateY(8px);
-}
 
-/* ── Responsive ── */
+/* ── Responsive ──────────────────────────────────────────── */
 @media (max-width: 768px) {
-  .orders-page {
-    padding: 1rem;
-  }
   .orders-grid {
     grid-template-columns: 1fr;
+  }
+  .header-title {
+    font-size: 1.5rem;
   }
 }
 </style>

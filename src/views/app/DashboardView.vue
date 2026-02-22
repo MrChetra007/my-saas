@@ -1,150 +1,342 @@
 <template>
   <div class="dashboard">
-    <!-- Header -->
+    <!-- ── Header ──────────────────────────────────────── -->
     <div class="dashboard-header">
       <div class="header-left">
-        <p class="header-date">{{ todayFormatted }}</p>
+        <p class="header-sub">Welcome back to {{ restaurantName || 'your restaurant' }}</p>
         <h1 class="header-title">Dashboard</h1>
       </div>
       <div class="header-right">
-        <div class="live-badge">
-          <span class="live-dot"></span>
-          Live
-        </div>
+        <p class="header-time">{{ currentTime }}</p>
+        <p class="header-date">{{ todayFormatted }}</p>
       </div>
     </div>
 
-    <!-- Loading State -->
-    <div v-if="loading" class="loading-grid">
-      <div v-for="n in 4" :key="n" class="skeleton-card"></div>
+    <!-- ── Loading ─────────────────────────────────────── -->
+    <div v-if="loading" class="skeleton-grid">
+      <div v-for="n in 4" :key="n" class="skeleton-card" />
     </div>
 
     <template v-else>
-      <!-- Stat Cards -->
+      <!-- ── Stat Cards ──────────────────────────────────── -->
       <div class="stats-grid">
-        <div class="stat-card stat-card--revenue">
-          <div class="stat-icon">💰</div>
-          <div class="stat-body">
-            <p class="stat-label">Today's Revenue</p>
-            <p class="stat-value">{{ formatCurrency(stats.revenue) }}</p>
-            <p class="stat-sub">from {{ stats.paidOrders }} paid orders</p>
-          </div>
-        </div>
-
-        <div class="stat-card stat-card--orders">
-          <div class="stat-icon">🧾</div>
-          <div class="stat-body">
-            <p class="stat-label">Total Orders</p>
+        <div class="stat-card">
+          <div class="stat-left">
+            <p class="stat-label">Today's Orders</p>
             <p class="stat-value">{{ stats.totalOrders }}</p>
-            <p class="stat-sub">{{ stats.pendingOrders }} pending right now</p>
+          </div>
+          <div class="stat-icon stat-icon--blue">
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <circle cx="9" cy="21" r="1" />
+              <circle cx="20" cy="21" r="1" />
+              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+            </svg>
           </div>
         </div>
 
-        <div class="stat-card stat-card--tables">
-          <div class="stat-icon">🪑</div>
-          <div class="stat-body">
+        <div class="stat-card">
+          <div class="stat-left">
+            <p class="stat-label">Revenue</p>
+            <p class="stat-value">{{ formatCurrency(stats.revenue) }}</p>
+          </div>
+          <div class="stat-icon stat-icon--green">
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <line x1="12" y1="1" x2="12" y2="23" />
+              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+            </svg>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-left">
             <p class="stat-label">Active Tables</p>
             <p class="stat-value">{{ stats.activeTables }}</p>
-            <p class="stat-sub">of {{ stats.totalTables }} total</p>
+          </div>
+          <div class="stat-icon stat-icon--purple">
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+              <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+            </svg>
           </div>
         </div>
 
-        <div class="stat-card stat-card--avg">
-          <div class="stat-icon">📊</div>
-          <div class="stat-body">
-            <p class="stat-label">Avg. Order Value</p>
-            <p class="stat-value">{{ formatCurrency(stats.avgOrderValue) }}</p>
-            <p class="stat-sub">per paid order today</p>
+        <div class="stat-card">
+          <div class="stat-left">
+            <p class="stat-label">Avg. Prep Time</p>
+            <p class="stat-value">{{ avgPrepTime }} min</p>
+          </div>
+          <div class="stat-icon stat-icon--amber">
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
+            </svg>
           </div>
         </div>
       </div>
 
-      <!-- Bottom Row -->
-      <div class="bottom-grid">
-        <!-- Live Pending Orders -->
-        <div class="panel">
+      <!-- ── Main Grid ───────────────────────────────────── -->
+      <div class="main-grid">
+        <!-- Live Orders -->
+        <div class="orders-panel">
           <div class="panel-header">
-            <h2 class="panel-title">Live Pending Orders</h2>
-            <router-link to="/app/orders" class="panel-link">View all →</router-link>
+            <h2 class="panel-title">Live Orders</h2>
+            <router-link to="/app/orders" class="view-all-link">View all →</router-link>
           </div>
 
           <div v-if="pendingOrders.length === 0" class="empty-state">
-            <span class="empty-icon">✅</span>
+            <svg
+              width="32"
+              height="32"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              class="empty-icon"
+            >
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+              <polyline points="22 4 12 14.01 9 11.01" />
+            </svg>
             <p>No pending orders right now</p>
           </div>
 
           <div v-else class="orders-list">
-            <div v-for="order in pendingOrders" :key="order.id" class="order-row">
-              <div class="order-row-left">
-                <span class="order-table">{{ order.tables?.name || 'Table' }}</span>
-                <span class="order-items-count">{{ order.order_items?.length || 0 }} item(s)</span>
-              </div>
-              <div class="order-row-right">
-                <span class="order-elapsed">{{ timeElapsed(order.created_at) }}</span>
-                <span class="order-status-badge" :class="`status--${order.status}`">
-                  {{ order.status }}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Top Menu Items -->
-        <div class="panel">
-          <div class="panel-header">
-            <h2 class="panel-title">Top Items Today</h2>
-            <router-link to="/app/menu" class="panel-link">Menu →</router-link>
-          </div>
-
-          <div v-if="topItems.length === 0" class="empty-state">
-            <span class="empty-icon">🍽️</span>
-            <p>No orders placed yet today</p>
-          </div>
-
-          <div v-else class="top-items-list">
-            <div v-for="(item, index) in topItems" :key="item.name" class="top-item-row">
-              <div class="top-item-rank">{{ index + 1 }}</div>
-              <div class="top-item-info">
-                <p class="top-item-name">{{ item.name }}</p>
-                <div class="top-item-bar-wrap">
-                  <div
-                    class="top-item-bar"
-                    :style="{ width: `${(item.qty / topItems[0].qty) * 100}%` }"
-                  ></div>
+            <div
+              v-for="order in pendingOrders"
+              :key="order.id"
+              class="order-card"
+              :class="{ expanded: expandedOrder === order.id }"
+              @click="toggleOrder(order.id)"
+            >
+              <div class="order-card-main">
+                <div class="order-avatar">
+                  {{ (order.tables?.name || 'T').charAt(0).toUpperCase() }}
+                </div>
+                <div class="order-info">
+                  <p class="order-table-name">{{ order.tables?.name || 'Table' }}</p>
+                  <p class="order-meta">
+                    {{ order.order_items?.length || 0 }} item{{
+                      (order.order_items?.length || 0) !== 1 ? 's' : ''
+                    }}
+                    &bull; {{ timeElapsed(order.created_at) }}
+                  </p>
+                </div>
+                <div class="order-actions">
+                  <span class="order-total">{{ formatCurrency(order.total_amount) }}</span>
+                  <router-link :to="`/app/orders`" class="view-btn" @click.stop>
+                    <svg
+                      width="13"
+                      height="13"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg>
+                    View
+                  </router-link>
                 </div>
               </div>
-              <div class="top-item-qty">×{{ item.qty }}</div>
+              <div class="order-card-items" v-if="expandedOrder === order.id">
+                <p class="order-items-text">
+                  {{
+                    (order.order_items || [])
+                      .map((oi) => `${oi.quantity}x ${oi.menu_items?.name || 'Item'}`)
+                      .join(', ')
+                  }}
+                </p>
+              </div>
+              <!-- Always show items preview when NOT expanded -->
+              <div class="order-card-preview" v-else-if="order.order_items?.length">
+                <p class="order-items-text">
+                  {{
+                    (order.order_items || [])
+                      .map((oi) => `${oi.quantity}x ${oi.menu_items?.name || 'Item'}`)
+                      .join(', ')
+                  }}
+                </p>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- Quick Links -->
-      <div class="quick-links">
-        <router-link to="/app/menu" class="quick-link">
-          <span class="ql-icon">🍔</span>
-          <span>Menu</span>
-        </router-link>
-        <router-link to="/app/tables" class="quick-link">
-          <span class="ql-icon">🪑</span>
-          <span>Tables</span>
-        </router-link>
-        <router-link to="/app/orders" class="quick-link">
-          <span class="ql-icon">🧾</span>
-          <span>Orders</span>
-        </router-link>
-        <router-link to="/app/kitchen" class="quick-link">
-          <span class="ql-icon">👨‍🍳</span>
-          <span>Kitchen</span>
-        </router-link>
-        <router-link to="/app/staff" class="quick-link">
-          <span class="ql-icon">👥</span>
-          <span>Staff</span>
-        </router-link>
-        <router-link to="/app/settings" class="quick-link">
-          <span class="ql-icon">⚙️</span>
-          <span>Settings</span>
-        </router-link>
+        <!-- Right Column -->
+        <div class="right-col">
+          <!-- Top Items -->
+          <div class="side-panel">
+            <div class="panel-header">
+              <h2 class="panel-title">
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                  style="color: var(--accent)"
+                >
+                  <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
+                  <polyline points="17 6 23 6 23 12" />
+                </svg>
+                Top Items Today
+              </h2>
+            </div>
+
+            <div v-if="topItems.length === 0" class="empty-state">
+              <p>No orders yet today</p>
+            </div>
+
+            <div v-else class="top-items-list">
+              <div v-for="(item, idx) in topItems" :key="item.name" class="top-item-row">
+                <span class="top-item-rank">{{ idx + 1 }}</span>
+                <span class="top-item-name">{{ item.name }}</span>
+                <div class="top-item-right">
+                  <span class="top-item-qty">{{ item.qty }}</span>
+                  <span class="top-item-rev">{{ formatCurrency(item.revenue) }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Actions -->
+          <div class="side-panel">
+            <div class="panel-header">
+              <h2 class="panel-title">Quick Actions</h2>
+            </div>
+            <div class="quick-actions-list">
+              <router-link to="/app/menu" class="quick-action-row">
+                <div class="qa-icon qa-icon--orange">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <line x1="8" y1="6" x2="21" y2="6" />
+                    <line x1="8" y1="12" x2="21" y2="12" />
+                    <line x1="8" y1="18" x2="21" y2="18" />
+                    <line x1="3" y1="6" x2="3.01" y2="6" />
+                    <line x1="3" y1="12" x2="3.01" y2="12" />
+                    <line x1="3" y1="18" x2="3.01" y2="18" />
+                  </svg>
+                </div>
+                <div class="qa-info">
+                  <p class="qa-title">Manage Menu</p>
+                  <p class="qa-sub">Update items, prices & availability</p>
+                </div>
+                <svg
+                  class="qa-arrow"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </router-link>
+
+              <router-link to="/app/tables" class="quick-action-row">
+                <div class="qa-icon qa-icon--blue">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <rect x="3" y="3" width="7" height="7" rx="1" />
+                    <rect x="14" y="3" width="7" height="7" rx="1" />
+                    <rect x="3" y="14" width="7" height="7" rx="1" />
+                    <rect x="14" y="14" width="7" height="7" rx="1" />
+                  </svg>
+                </div>
+                <div class="qa-info">
+                  <p class="qa-title">View Tables</p>
+                  <p class="qa-sub">Generate & download QR codes</p>
+                </div>
+                <svg
+                  class="qa-arrow"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </router-link>
+
+              <router-link to="/app/kitchen" class="quick-action-row">
+                <div class="qa-icon qa-icon--green">
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <path d="M12 2a4 4 0 0 1 4 4v1H8V6a4 4 0 0 1 4-4z" />
+                    <rect x="4" y="7" width="16" height="2" rx="1" />
+                    <path d="M5 9v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9" />
+                  </svg>
+                </div>
+                <div class="qa-info">
+                  <p class="qa-title">Kitchen View</p>
+                  <p class="qa-sub">Live order display for kitchen</p>
+                </div>
+                <svg
+                  class="qa-arrow"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <polyline points="9 18 15 12 9 6" />
+                </svg>
+              </router-link>
+            </div>
+          </div>
+        </div>
       </div>
     </template>
   </div>
@@ -157,6 +349,10 @@ import { useAuthStore } from '@/stores/auth'
 
 const authStore = useAuthStore()
 const loading = ref(true)
+const expandedOrder = ref(null)
+const restaurantName = ref('')
+const restaurantPlan = ref('trial')
+const currentTime = ref('')
 
 const stats = ref({
   revenue: 0,
@@ -170,18 +366,28 @@ const stats = ref({
 
 const pendingOrders = ref([])
 const topItems = ref([])
+const avgPrepTime = ref(0)
 
 let realtimeChannel = null
+let clockInterval = null
 
-// ─── Helpers ────────────────────────────────────────────────────────────────
+// ── Helpers ──────────────────────────────────────────────────────
 
 const todayFormatted = computed(() => {
   return new Date().toLocaleDateString('en-US', {
     weekday: 'long',
-    month: 'long',
+    month: 'short',
     day: 'numeric',
   })
 })
+
+function updateClock() {
+  currentTime.value = new Date().toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  })
+}
 
 function formatCurrency(amount) {
   const currency = authStore.profile?.restaurants?.currency || 'USD'
@@ -203,7 +409,24 @@ function getTodayRange() {
   return { start: start.toISOString(), end: end.toISOString() }
 }
 
-// ─── Data Fetching ───────────────────────────────────────────────────────────
+function toggleOrder(id) {
+  expandedOrder.value = expandedOrder.value === id ? null : id
+}
+
+// ── Data Fetching ─────────────────────────────────────────────────
+
+async function loadRestaurant() {
+  if (!authStore.profile?.restaurant_id) return
+  const { data } = await supabase
+    .from('restaurants')
+    .select('name, plan')
+    .eq('id', authStore.profile.restaurant_id)
+    .single()
+  if (data) {
+    restaurantName.value = data.name
+    restaurantPlan.value = data.plan
+  }
+}
 
 async function fetchDashboard() {
   loading.value = true
@@ -212,18 +435,15 @@ async function fetchDashboard() {
 
   const { start, end } = getTodayRange()
 
-  // Fetch today's orders with items and table info
   const { data: orders, error } = await supabase
     .from('orders')
     .select(
-      'id, status, created_at, total_amount, order_items(id, quantity, menu_items(name)), tables(name)',
+      'id, status, created_at, total_amount, order_items(id, quantity, menu_items(name, price)), tables(name)',
     )
     .eq('restaurant_id', restaurantId)
     .gte('created_at', start)
     .lte('created_at', end)
     .order('created_at', { ascending: false })
-
-  console.log('Fetched orders:', orders)
 
   if (error) {
     console.error('Dashboard fetch error:', error)
@@ -231,24 +451,14 @@ async function fetchDashboard() {
     return
   }
 
-  // Fetch all tables count
-  const { count: totalTables, error: TableError } = await supabase
+  const { count: totalTables } = await supabase
     .from('tables')
     .select('id', { count: 'exact', head: true })
     .eq('restaurant_id', restaurantId)
 
-  if (TableError) {
-    console.error('Error fetching tables:', TableError)
-    return
-  }
-
-  console.log('Total tables:', totalTables)
-  // Stats
   const paidOrders = orders.filter((o) => o.status === 'paid')
   const revenue = paidOrders.reduce((sum, o) => sum + (o.total_amount || 0), 0)
   const pendingList = orders.filter((o) => ['pending', 'cooking'].includes(o.status))
-
-  // Active tables (tables with a non-paid order today)
   const activeTableIds = new Set(pendingList.map((o) => o.tables?.name).filter(Boolean))
 
   stats.value = {
@@ -261,31 +471,42 @@ async function fetchDashboard() {
     avgOrderValue: paidOrders.length ? revenue / paidOrders.length : 0,
   }
 
-  // Live pending orders (show max 6)
-  pendingOrders.value = pendingList.slice(0, 6)
+  // Avg prep time (cooking orders, time from created_at to now)
+  if (pendingList.length) {
+    const avgMs =
+      pendingList.reduce((sum, o) => sum + (Date.now() - new Date(o.created_at)), 0) /
+      pendingList.length
+    avgPrepTime.value = Math.round(avgMs / 60000)
+  } else {
+    avgPrepTime.value = 0
+  }
 
-  // Top items
-  const itemCounts = {}
+  pendingOrders.value = pendingList.slice(0, 8)
+
+  // Top items with revenue
+  const itemMap = {}
   for (const order of orders) {
     for (const oi of order.order_items || []) {
       const name = oi.menu_items?.name || 'Unknown'
-      itemCounts[name] = (itemCounts[name] || 0) + (oi.quantity || 1)
+      const price = oi.menu_items?.price || 0
+      if (!itemMap[name]) itemMap[name] = { qty: 0, revenue: 0 }
+      itemMap[name].qty += oi.quantity || 1
+      itemMap[name].revenue += (oi.quantity || 1) * price
     }
   }
-  topItems.value = Object.entries(itemCounts)
-    .map(([name, qty]) => ({ name, qty }))
+  topItems.value = Object.entries(itemMap)
+    .map(([name, data]) => ({ name, ...data }))
     .sort((a, b) => b.qty - a.qty)
     .slice(0, 5)
 
   loading.value = false
 }
 
-// ─── Realtime ────────────────────────────────────────────────────────────────
+// ── Realtime ──────────────────────────────────────────────────────
 
 function subscribeRealtime() {
   const restaurantId = authStore.profile?.restaurant_id
   if (!restaurantId) return
-
   realtimeChannel = supabase
     .channel('dashboard-orders')
     .on(
@@ -301,90 +522,83 @@ function subscribeRealtime() {
     .subscribe()
 }
 
-// ─── Lifecycle ───────────────────────────────────────────────────────────────
+// ── Lifecycle ─────────────────────────────────────────────────────
 
 onMounted(async () => {
+  updateClock()
+  clockInterval = setInterval(updateClock, 1000)
+  if (!authStore.profile) await authStore.fetchProfile()
+  await loadRestaurant()
   await fetchDashboard()
   subscribeRealtime()
 })
 
 onUnmounted(() => {
   if (realtimeChannel) supabase.removeChannel(realtimeChannel)
+  if (clockInterval) clearInterval(clockInterval)
 })
 </script>
 
 <style scoped>
-/* ── Layout ── */
+/* ── Base ─────────────────────────────────────────────────────────── */
 .dashboard {
-  padding: 2rem;
+  padding: 28px 32px;
   max-width: 1200px;
   margin: 0 auto;
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-body, 'DM Sans', sans-serif);
+  color: var(--color-text-primary, #fff);
 }
 
-/* ── Header ── */
+/* ── Header ───────────────────────────────────────────────────────── */
 .dashboard-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-end;
-  margin-bottom: 2rem;
+  align-items: flex-start;
+  margin-bottom: 28px;
 }
-.header-date {
-  font-size: 0.8rem;
-  color: #9ca3af;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  margin-bottom: 0.25rem;
+.header-sub {
+  font-size: 13px;
+  color: var(--color-text-secondary, rgba(255, 255, 255, 0.55));
+  margin-bottom: 4px;
+  letter-spacing: 0.01em;
 }
 .header-title {
-  font-size: 1.75rem;
-  font-weight: 700;
-  color: #111827;
+  font-family: var(--font-display, 'Fraunces', serif);
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--color-text-primary, #fff);
+  letter-spacing: -0.5px;
   margin: 0;
+  line-height: 1.1;
 }
-.live-badge {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  background: #f0fdf4;
-  border: 1px solid #bbf7d0;
-  color: #16a34a;
-  font-size: 0.75rem;
-  font-weight: 600;
-  padding: 0.35rem 0.75rem;
-  border-radius: 999px;
-  letter-spacing: 0.04em;
+.header-right {
+  text-align: right;
 }
-.live-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #16a34a;
-  animation: pulse 1.5s ease-in-out infinite;
+.header-time {
+  font-family: var(--font-display, 'Fraunces', serif);
+  font-size: 1.7rem;
+  font-weight: 700;
+  color: var(--color-text-primary, #fff);
+  letter-spacing: -0.5px;
+  line-height: 1.15;
 }
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.4;
-    transform: scale(0.85);
-  }
+.header-date {
+  font-size: 12px;
+  color: var(--color-text-secondary, rgba(255, 255, 255, 0.55));
+  margin-top: 2px;
 }
 
-/* ── Skeleton ── */
-.loading-grid {
+/* ── Skeleton ─────────────────────────────────────────────────────── */
+.skeleton-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 1rem;
-  margin-bottom: 1.5rem;
+  gap: 12px;
+  margin-bottom: 20px;
 }
 .skeleton-card {
-  height: 110px;
-  border-radius: 14px;
-  background: linear-gradient(90deg, #f3f4f6 25%, #e5e7eb 50%, #f3f4f6 75%);
+  height: 92px;
+  border-radius: var(--radius-card, 10px);
+  background: linear-gradient(90deg, #1e1e1e 25%, #252525 50%, #1e1e1e 75%);
   background-size: 200% 100%;
   animation: shimmer 1.4s infinite;
 }
@@ -397,280 +611,378 @@ onUnmounted(() => {
   }
 }
 
-/* ── Stat Cards ── */
+/* ── Stat Cards ───────────────────────────────────────────────────── */
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 1rem;
-  margin-bottom: 1.5rem;
+  gap: 12px;
+  margin-bottom: 20px;
 }
 .stat-card {
-  border-radius: 14px;
-  padding: 1.25rem 1.5rem;
+  background: var(--color-bg-surface, #161616);
+  border: 1px solid var(--color-border-subtle, rgba(255, 255, 255, 0.07));
+  border-radius: var(--radius-card, 10px);
+  padding: 18px 20px;
   display: flex;
-  gap: 1rem;
   align-items: center;
-  border: 1px solid transparent;
+  justify-content: space-between;
+  gap: 12px;
   transition:
-    transform 0.15s ease,
-    box-shadow 0.15s ease;
+    border-color 0.15s,
+    transform 0.15s;
 }
 .stat-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  border-color: var(--color-border-medium, rgba(255, 255, 255, 0.12));
+  transform: translateY(-1px);
 }
-.stat-card--revenue {
-  background: #fffbeb;
-  border-color: #fde68a;
-}
-.stat-card--orders {
-  background: #eff6ff;
-  border-color: #bfdbfe;
-}
-.stat-card--tables {
-  background: #f0fdf4;
-  border-color: #bbf7d0;
-}
-.stat-card--avg {
-  background: #fdf4ff;
-  border-color: #e9d5ff;
-}
-
-.stat-icon {
-  font-size: 2rem;
-  line-height: 1;
+.stat-left {
 }
 .stat-label {
-  font-size: 0.72rem;
+  font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: #6b7280;
-  margin-bottom: 0.2rem;
+  letter-spacing: 0.07em;
+  color: var(--color-text-secondary, rgba(255, 255, 255, 0.55));
+  margin-bottom: 6px;
 }
 .stat-value {
-  font-size: 1.5rem;
+  font-family: var(--font-display, 'Fraunces', serif);
+  font-size: 1.65rem;
   font-weight: 700;
-  color: #111827;
-  line-height: 1.2;
+  color: var(--color-text-primary, #fff);
+  letter-spacing: -0.5px;
+  line-height: 1;
 }
-.stat-sub {
-  font-size: 0.72rem;
-  color: #9ca3af;
-  margin-top: 0.15rem;
+.stat-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.stat-icon--blue {
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+}
+.stat-icon--green {
+  background: rgba(34, 197, 94, 0.12);
+  color: #4ade80;
+}
+.stat-icon--purple {
+  background: rgba(139, 92, 246, 0.15);
+  color: #a78bfa;
+}
+.stat-icon--amber {
+  background: rgba(234, 179, 8, 0.13);
+  color: #facc15;
 }
 
-/* ── Bottom Grid ── */
-.bottom-grid {
+/* ── Main Grid ────────────────────────────────────────────────────── */
+.main-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
+  grid-template-columns: 1fr 360px;
+  gap: 16px;
+  align-items: start;
 }
 
-/* ── Panel ── */
-.panel {
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 14px;
-  padding: 1.5rem;
+/* ── Panel base ───────────────────────────────────────────────────── */
+.orders-panel,
+.side-panel {
+  background: var(--color-bg-surface, #161616);
+  border: 1px solid var(--color-border-subtle, rgba(255, 255, 255, 0.07));
+  border-radius: var(--radius-card, 10px);
+  padding: 20px;
 }
+.right-col {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
 .panel-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.25rem;
+  justify-content: space-between;
+  margin-bottom: 16px;
 }
 .panel-title {
-  font-size: 0.95rem;
+  font-family: var(--font-display, 'Fraunces', serif);
+  font-size: 1rem;
   font-weight: 700;
-  color: #111827;
+  color: var(--color-text-primary, #fff);
   margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
-.panel-link {
-  font-size: 0.78rem;
-  color: #6b7280;
-  text-decoration: none;
+.view-all-link {
+  font-size: 12px;
   font-weight: 500;
-  transition: color 0.15s;
+  color: var(--color-accent, #c8733a);
+  text-decoration: none;
+  transition: opacity 0.15s;
 }
-.panel-link:hover {
-  color: #111827;
+.view-all-link:hover {
+  opacity: 0.8;
 }
 
-/* ── Empty State ── */
+/* ── Empty ────────────────────────────────────────────────────────── */
 .empty-state {
   text-align: center;
-  padding: 2rem 1rem;
-  color: #9ca3af;
-  font-size: 0.85rem;
+  padding: 28px 16px;
+  color: var(--color-text-muted, rgba(255, 255, 255, 0.35));
+  font-size: 13px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
 }
 .empty-icon {
-  font-size: 2rem;
-  display: block;
-  margin-bottom: 0.5rem;
+  opacity: 0.4;
 }
 
-/* ── Orders List ── */
+/* ── Orders ───────────────────────────────────────────────────────── */
 .orders-list {
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
+  gap: 10px;
 }
-.order-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.65rem 0.9rem;
-  background: #f9fafb;
+.order-card {
+  background: var(--color-bg-elevated, #0e0e0e);
+  border: 1px solid var(--color-border-subtle, rgba(255, 255, 255, 0.07));
   border-radius: 8px;
-  border: 1px solid #f3f4f6;
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color 0.15s;
 }
-.order-row-left {
-  display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
+.order-card:hover {
+  border-color: var(--color-border-medium, rgba(255, 255, 255, 0.12));
 }
-.order-table {
-  font-weight: 600;
-  font-size: 0.85rem;
-  color: #111827;
-}
-.order-items-count {
-  font-size: 0.72rem;
-  color: #9ca3af;
-}
-.order-row-right {
+.order-card-main {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: 12px;
+  padding: 14px 16px;
 }
-.order-elapsed {
-  font-size: 0.72rem;
-  color: #9ca3af;
+.order-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--color-accent, #c8733a);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
-.order-status-badge {
-  font-size: 0.68rem;
+.order-info {
+  flex: 1;
+  min-width: 0;
+}
+.order-table-name {
+  font-size: 14px;
   font-weight: 600;
-  padding: 0.2rem 0.55rem;
-  border-radius: 999px;
-  text-transform: capitalize;
+  color: var(--color-text-primary, #fff);
+  margin-bottom: 2px;
 }
-.status--pending {
-  background: #fef3c7;
-  color: #d97706;
+.order-meta {
+  font-size: 11px;
+  color: var(--color-text-muted, rgba(255, 255, 255, 0.35));
 }
-.status--cooking {
-  background: #ffe4e6;
-  color: #e11d48;
+.order-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
 }
-.status--ready {
-  background: #d1fae5;
-  color: #059669;
+.order-total {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-text-primary, #fff);
+}
+.view-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  background: transparent;
+  border: 1px solid var(--color-border-medium, rgba(255, 255, 255, 0.12));
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: var(--font-body, 'DM Sans', sans-serif);
+  color: var(--color-text-secondary, rgba(255, 255, 255, 0.55));
+  cursor: pointer;
+  text-decoration: none;
+  transition:
+    background 0.15s,
+    color 0.15s,
+    border-color 0.15s;
+}
+.view-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--color-text-primary, #fff);
+  border-color: var(--color-border-bright, rgba(255, 255, 255, 0.22));
 }
 
-/* ── Top Items ── */
+.order-card-preview,
+.order-card-items {
+  padding: 0 16px 12px 64px;
+}
+.order-items-text {
+  font-size: 12px;
+  color: var(--color-text-muted, rgba(255, 255, 255, 0.35));
+  line-height: 1.5;
+}
+
+/* ── Top Items ────────────────────────────────────────────────────── */
 .top-items-list {
   display: flex;
   flex-direction: column;
-  gap: 0.9rem;
+  gap: 0;
 }
 .top-item-row {
   display: flex;
   align-items: center;
-  gap: 0.85rem;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--color-border-subtle, rgba(255, 255, 255, 0.05));
+}
+.top-item-row:last-child {
+  border-bottom: none;
 }
 .top-item-rank {
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: #d1d5db;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-faint, rgba(255, 255, 255, 0.2));
   width: 16px;
   text-align: center;
   flex-shrink: 0;
 }
-.top-item-info {
-  flex: 1;
-  min-width: 0;
-}
 .top-item-name {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: #374151;
-  margin-bottom: 0.3rem;
+  flex: 1;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-primary, #fff);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.top-item-bar-wrap {
-  height: 5px;
-  background: #f3f4f6;
-  border-radius: 999px;
-  overflow: hidden;
-}
-.top-item-bar {
-  height: 100%;
-  background: linear-gradient(90deg, #6366f1, #8b5cf6);
-  border-radius: 999px;
-  transition: width 0.6s ease;
+.top-item-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+  flex-shrink: 0;
 }
 .top-item-qty {
-  font-size: 0.78rem;
+  font-size: 13px;
   font-weight: 700;
-  color: #6b7280;
+  color: var(--color-text-primary, #fff);
+}
+.top-item-rev {
+  font-size: 10px;
+  color: var(--color-text-muted, rgba(255, 255, 255, 0.35));
+}
+
+/* ── Quick Actions ────────────────────────────────────────────────── */
+.quick-actions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.quick-action-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 10px;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: background 0.15s;
+}
+.quick-action-row:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+.quick-action-row:hover .qa-arrow {
+  opacity: 1;
+  transform: translateX(2px);
+}
+
+.qa-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.qa-icon--orange {
+  background: rgba(200, 115, 58, 0.18);
+  color: var(--color-accent, #c8733a);
+}
+.qa-icon--blue {
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
+}
+.qa-icon--green {
+  background: rgba(34, 197, 94, 0.12);
+  color: #4ade80;
+}
+
+.qa-info {
+  flex: 1;
+  min-width: 0;
+}
+.qa-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-primary, #fff);
+  margin-bottom: 2px;
+}
+.qa-sub {
+  font-size: 11px;
+  color: var(--color-text-muted, rgba(255, 255, 255, 0.35));
+}
+.qa-arrow {
+  color: var(--color-text-muted, rgba(255, 255, 255, 0.3));
+  opacity: 0.5;
+  transition:
+    opacity 0.15s,
+    transform 0.15s;
   flex-shrink: 0;
 }
 
-/* ── Quick Links ── */
-.quick-links {
-  display: flex;
-  gap: 0.75rem;
-  flex-wrap: wrap;
+/* ── Responsive ───────────────────────────────────────────────────── */
+@media (max-width: 1100px) {
+  .main-grid {
+    grid-template-columns: 1fr;
+  }
 }
-.quick-link {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.6rem 1.1rem;
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 10px;
-  text-decoration: none;
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: #374151;
-  transition: all 0.15s ease;
-}
-.quick-link:hover {
-  background: #111827;
-  color: #fff;
-  border-color: #111827;
-  transform: translateY(-1px);
-}
-.ql-icon {
-  font-size: 1rem;
-}
-
-/* ── Responsive ── */
-@media (max-width: 1024px) {
+@media (max-width: 900px) {
   .stats-grid {
     grid-template-columns: repeat(2, 1fr);
   }
 }
-@media (max-width: 768px) {
+@media (max-width: 640px) {
   .dashboard {
-    padding: 1rem;
+    padding: 20px 16px;
   }
   .stats-grid {
     grid-template-columns: 1fr 1fr;
   }
-  .bottom-grid {
-    grid-template-columns: 1fr;
+  .header-time {
+    font-size: 1.3rem;
   }
   .header-title {
-    font-size: 1.4rem;
+    font-size: 1.5rem;
   }
 }
-@media (max-width: 480px) {
+@media (max-width: 400px) {
   .stats-grid {
     grid-template-columns: 1fr;
   }

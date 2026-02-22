@@ -1,122 +1,251 @@
 <template>
   <div class="menu-page">
-    <!-- ── Header ───────────────────────────────── -->
+    <!-- ── Header ──────────────────────────────────────── -->
     <div class="page-header">
-      <div>
-        <h1 class="page-title">Menu</h1>
-        <p class="page-sub">{{ categories.length }} categories · {{ totalItems }} items</p>
-      </div>
-      <button class="btn-primary" @click="openAddCategory">+ Add Category</button>
+      <h1 class="page-title">Menu</h1>
+      <button class="btn-add-item" @click="openAddItem(activeCategory)">
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+        >
+          <line x1="12" y1="5" x2="12" y2="19" />
+          <line x1="5" y1="12" x2="19" y2="12" />
+        </svg>
+        Add Item
+      </button>
     </div>
 
-    <!-- ── Loading ──────────────────────────────── -->
+    <!-- ── Loading ─────────────────────────────────────── -->
     <div v-if="loading" class="loading-state">
       <div class="spinner" />
-      <span>Loading menu…</span>
     </div>
 
-    <!-- ── Empty ────────────────────────────────── -->
-    <div v-else-if="categories.length === 0" class="empty-state">
-      <div class="empty-icon">📋</div>
-      <h3>No categories yet</h3>
-      <p>Start by creating a category like "Starters" or "Drinks"</p>
-      <button class="btn-primary" @click="openAddCategory">+ Add Category</button>
-    </div>
+    <!-- ── Layout ──────────────────────────────────────── -->
+    <div v-else class="menu-layout">
+      <!-- ── Sidebar ───────────────────────────────────── -->
+      <aside class="sidebar">
+        <p class="sidebar-label">CATEGORIES</p>
 
-    <!-- ── Categories ───────────────────────────── -->
-    <div v-else class="categories-list">
-      <div
-        v-for="category in categories"
-        :key="category.id"
-        class="category-block"
-        :class="{ collapsed: category._collapsed }"
-      >
-        <!-- Category header -->
-        <div class="category-header">
-          <button class="collapse-btn" @click="category._collapsed = !category._collapsed">
-            <span class="collapse-arrow" :class="{ rotated: category._collapsed }">▾</span>
-          </button>
-
-          <div class="category-info">
-            <span class="category-name">{{ category.name }}</span>
-            <span class="category-count">{{ category.items?.length || 0 }} items</span>
+        <div class="category-list">
+          <div
+            v-for="cat in categories"
+            :key="cat.id"
+            class="category-item"
+            :class="{ active: activeCategory?.id === cat.id }"
+            @click="activeCategory = cat"
+          >
+            <span class="cat-name">{{ cat.name }}</span>
+            <span class="cat-count">({{ cat.items?.length || 0 }})</span>
+            <div class="cat-actions" @click.stop>
+              <button class="cat-action-btn" @click="openEditCategory(cat)" title="Edit">
+                <svg
+                  width="11"
+                  height="11"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                </svg>
+              </button>
+              <button
+                class="cat-action-btn cat-action-btn--danger"
+                @click="confirmDeleteCategory(cat)"
+                title="Delete"
+              >
+                <svg
+                  width="11"
+                  height="11"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <polyline points="3 6 5 6 21 6" />
+                  <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                  <path d="M10 11v6" />
+                  <path d="M14 11v6" />
+                </svg>
+              </button>
+            </div>
           </div>
+        </div>
 
-          <div class="category-status">
-            <button
-              class="toggle-btn"
-              :class="{ active: category.is_active }"
-              @click="toggleCategory(category)"
-              :title="category.is_active ? 'Hide category' : 'Show category'"
+        <button class="btn-add-category" @click="openAddCategory">+ Add Category</button>
+      </aside>
+
+      <!-- ── Items area ─────────────────────────────────── -->
+      <div class="items-area">
+        <!-- Search -->
+        <div class="search-wrap">
+          <svg
+            class="search-icon"
+            width="15"
+            height="15"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          <input
+            v-model="searchQuery"
+            type="text"
+            class="search-input"
+            :placeholder="`Search ${activeCategory ? activeCategory.name.toLowerCase() : 'items'}…`"
+          />
+          <button v-if="searchQuery" class="search-clear" @click="searchQuery = ''">
+            <svg
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
             >
-              {{ category.is_active ? 'Visible' : 'Hidden' }}
-            </button>
-          </div>
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
 
-          <div class="category-actions">
-            <button class="icon-btn" @click="openEditCategory(category)" title="Edit">✎</button>
-            <button class="icon-btn danger" @click="confirmDeleteCategory(category)" title="Delete">
-              ✕
-            </button>
-          </div>
-
-          <button class="btn-add-item" @click="openAddItem(category)">+ Item</button>
+        <!-- Empty category -->
+        <div v-if="!activeCategory" class="empty-state">
+          <p>Select or create a category to get started</p>
         </div>
 
         <!-- Items grid -->
-        <div class="items-grid" v-show="!category._collapsed">
-          <div v-if="!category.items || category.items.length === 0" class="items-empty">
+        <div v-else-if="filteredItems.length === 0" class="empty-state">
+          <p v-if="searchQuery">No items matching "{{ searchQuery }}"</p>
+          <p v-else>
             No items yet —
-            <button class="link-btn" @click="openAddItem(category)">add the first one</button>
-          </div>
+            <button class="link-btn" @click="openAddItem(activeCategory)">add the first one</button>
+          </p>
+        </div>
 
+        <div v-else class="items-grid">
           <div
-            v-for="item in category.items"
+            v-for="item in filteredItems"
             :key="item.id"
             class="item-card"
-            :class="{ unavailable: !item.is_available }"
+            :class="{ 'item-card--unavailable': !item.is_available }"
           >
             <!-- Image -->
             <div class="item-image-wrap">
               <img
                 v-if="item.image_url"
                 :src="item.image_url"
-                class="item-image"
                 :alt="item.name"
+                class="item-image"
               />
-              <div v-else class="item-image-placeholder">🍽️</div>
-              <!-- Availability overlay -->
-              <div v-if="!item.is_available" class="unavailable-overlay">Unavailable</div>
+              <div v-else class="item-image-placeholder">
+                <svg
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.2"
+                >
+                  <rect x="3" y="3" width="18" height="18" rx="2" />
+                  <circle cx="8.5" cy="8.5" r="1.5" />
+                  <polyline points="21 15 16 10 5 21" />
+                </svg>
+              </div>
+              <div v-if="!item.is_available" class="item-image-overlay">
+                <span>Sold Out</span>
+              </div>
             </div>
 
-            <!-- Info -->
-            <div class="item-body">
-              <div class="item-name">{{ item.name }}</div>
-              <div class="item-desc" v-if="item.description">{{ item.description }}</div>
-              <div class="item-footer">
+            <!-- Body -->
+            <div class="item-card-body">
+              <div class="item-main">
+                <div class="item-name-row">
+                  <span class="item-name">{{ item.name }}</span>
+                  <span v-if="!item.is_available" class="sold-out-badge">Sold Out</span>
+                </div>
+                <p class="item-desc" v-if="item.description">{{ item.description }}</p>
                 <span class="item-price"
                   >{{ currencySymbol }}{{ Number(item.price).toFixed(2) }}</span
                 >
-                <div class="item-actions">
-                  <button
-                    class="avail-toggle"
-                    :class="{ on: item.is_available }"
-                    @click="toggleItem(item)"
-                    :title="item.is_available ? 'Mark unavailable' : 'Mark available'"
+              </div>
+
+              <div class="item-controls">
+                <button
+                  class="ctrl-btn ctrl-btn--avail"
+                  :class="{
+                    'ctrl-btn--on': item.is_available,
+                    'ctrl-btn--off': !item.is_available,
+                  }"
+                  @click="toggleItem(item)"
+                  :title="item.is_available ? 'Mark unavailable' : 'Mark available'"
+                >
+                  <svg
+                    v-if="item.is_available"
+                    width="13"
+                    height="13"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
                   >
-                    {{ item.is_available ? 'On' : 'Off' }}
-                  </button>
-                  <button class="icon-btn small" @click="openEditItem(item, category)" title="Edit">
-                    ✎
-                  </button>
-                  <button
-                    class="icon-btn small danger"
-                    @click="confirmDeleteItem(item, category)"
-                    title="Delete"
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  <svg
+                    v-else
+                    width="13"
+                    height="13"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
                   >
-                    ✕
-                  </button>
-                </div>
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                </button>
+                <button
+                  class="ctrl-btn ctrl-btn--edit"
+                  @click="openEditItem(item, activeCategory)"
+                  title="Edit"
+                >
+                  <svg
+                    width="13"
+                    height="13"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                  </svg>
+                </button>
+                <button
+                  class="ctrl-btn ctrl-btn--delete"
+                  @click="confirmDeleteItem(item, activeCategory)"
+                  title="Delete"
+                >
+                  <svg
+                    width="13"
+                    height="13"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <polyline points="3 6 5 6 21 6" />
+                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                  </svg>
+                </button>
               </div>
             </div>
           </div>
@@ -124,7 +253,7 @@
       </div>
     </div>
 
-    <!-- ══ CATEGORY MODAL ════════════════════════ -->
+    <!-- ══ CATEGORY MODAL ════════════════════════════════ -->
     <Teleport to="body">
       <div
         v-if="categoryModal.open"
@@ -136,11 +265,21 @@
             <h2 class="modal-title">
               {{ categoryModal.editing ? 'Edit Category' : 'New Category' }}
             </h2>
-            <button class="modal-close" @click="categoryModal.open = false">✕</button>
+            <button class="modal-close" @click="categoryModal.open = false">
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+              >
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
           </div>
-
           <div class="modal-error" v-if="categoryModal.error">{{ categoryModal.error }}</div>
-
           <div class="modal-body">
             <div class="field-group">
               <label class="field-label">Category Name</label>
@@ -154,16 +293,11 @@
               />
             </div>
           </div>
-
           <div class="modal-footer">
             <button class="btn-ghost" @click="categoryModal.open = false">Cancel</button>
             <button class="btn-primary" :disabled="categoryModal.saving" @click="saveCategory">
               {{
-                categoryModal.saving
-                  ? 'Saving…'
-                  : categoryModal.editing
-                    ? 'Save Changes'
-                    : 'Create Category'
+                categoryModal.saving ? 'Saving…' : categoryModal.editing ? 'Save Changes' : 'Create'
               }}
             </button>
           </div>
@@ -171,17 +305,27 @@
       </div>
     </Teleport>
 
-    <!-- ══ ITEM MODAL ════════════════════════════ -->
+    <!-- ══ ITEM MODAL ════════════════════════════════════ -->
     <Teleport to="body">
       <div v-if="itemModal.open" class="modal-backdrop" @click.self="itemModal.open = false">
         <div class="modal modal-lg">
           <div class="modal-header">
             <h2 class="modal-title">{{ itemModal.editing ? 'Edit Item' : 'New Item' }}</h2>
-            <button class="modal-close" @click="itemModal.open = false">✕</button>
+            <button class="modal-close" @click="itemModal.open = false">
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+              >
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
           </div>
-
           <div class="modal-error" v-if="itemModal.error">{{ itemModal.error }}</div>
-
           <div class="modal-body">
             <!-- Image upload -->
             <div class="field-group">
@@ -197,16 +341,37 @@
                   class="upload-preview"
                 />
                 <div v-else class="upload-placeholder">
-                  <span class="upload-icon-lg">↑</span>
-                  <span>Click to upload image</span>
-                  <span class="upload-hint">PNG or JPG, max 2MB</span>
+                  <svg
+                    width="22"
+                    height="22"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                  >
+                    <rect x="3" y="3" width="18" height="18" rx="2" />
+                    <circle cx="8.5" cy="8.5" r="1.5" />
+                    <polyline points="21 15 16 10 5 21" />
+                  </svg>
+                  <span>Click to upload</span>
+                  <span class="upload-hint">PNG or JPG · max 2MB</span>
                 </div>
                 <button
                   v-if="itemModal.imagePreview"
                   class="remove-image"
                   @click.stop="removeImage"
                 >
-                  ✕
+                  <svg
+                    width="10"
+                    height="10"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="3"
+                  >
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
                 </button>
               </div>
               <input
@@ -255,7 +420,6 @@
                   />
                 </div>
               </div>
-
               <div class="field-group">
                 <label class="field-label">Category</label>
                 <select v-model="itemModal.categoryId" class="field-input">
@@ -272,19 +436,39 @@
                   :class="{ on: itemModal.isAvailable }"
                   @click="itemModal.isAvailable = true"
                 >
-                  ✓ Available
+                  <svg
+                    width="13"
+                    height="13"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                  >
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  Available
                 </button>
                 <button
                   class="avail-big"
                   :class="{ off: !itemModal.isAvailable }"
                   @click="itemModal.isAvailable = false"
                 >
-                  ✕ Unavailable
+                  <svg
+                    width="13"
+                    height="13"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.5"
+                  >
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                  Sold Out
                 </button>
               </div>
             </div>
           </div>
-
           <div class="modal-footer">
             <button class="btn-ghost" @click="itemModal.open = false">Cancel</button>
             <button class="btn-primary" :disabled="itemModal.saving" @click="saveItem">
@@ -295,7 +479,7 @@
       </div>
     </Teleport>
 
-    <!-- ══ DELETE CONFIRM ════════════════════════ -->
+    <!-- ══ DELETE CONFIRM ════════════════════════════════ -->
     <Teleport to="body">
       <div v-if="deleteModal.open" class="modal-backdrop" @click.self="deleteModal.open = false">
         <div class="modal modal-sm">
@@ -303,13 +487,25 @@
             <h2 class="modal-title">
               Delete {{ deleteModal.type === 'category' ? 'Category' : 'Item' }}?
             </h2>
-            <button class="modal-close" @click="deleteModal.open = false">✕</button>
+            <button class="modal-close" @click="deleteModal.open = false">
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+              >
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
           </div>
           <div class="modal-body">
             <p class="delete-warning">
               <span v-if="deleteModal.type === 'category'">
-                This will delete <strong>{{ deleteModal.target?.name }}</strong> and all its items
-                permanently.
+                This will permanently delete <strong>{{ deleteModal.target?.name }}</strong> and all
+                its items.
               </span>
               <span v-else>
                 This will permanently delete <strong>{{ deleteModal.target?.name }}</strong
@@ -337,6 +533,8 @@ import { useAuthStore } from '@/stores/auth'
 const authStore = useAuthStore()
 const loading = ref(true)
 const categories = ref([])
+const activeCategory = ref(null)
+const searchQuery = ref('')
 const restaurantId = ref(null)
 const currency = ref('USD')
 const imageInput = ref(null)
@@ -346,9 +544,17 @@ const currencySymbol = computed(() => {
   return map[currency.value] || '$'
 })
 
-const totalItems = computed(() => categories.value.reduce((n, c) => n + (c.items?.length || 0), 0))
+const filteredItems = computed(() => {
+  const items = activeCategory.value?.items || []
+  if (!searchQuery.value.trim()) return items
+  const q = searchQuery.value.toLowerCase()
+  return items.filter(
+    (i) => i.name.toLowerCase().includes(q) || (i.description || '').toLowerCase().includes(q),
+  )
+})
 
-// ── Category modal state ─────────────────────
+// ── Modals ──────────────────────────────────────────────
+
 const categoryModal = ref({
   open: false,
   editing: false,
@@ -357,8 +563,6 @@ const categoryModal = ref({
   saving: false,
   error: '',
 })
-
-// ── Item modal state ─────────────────────────
 const itemModal = ref({
   open: false,
   editing: false,
@@ -373,8 +577,6 @@ const itemModal = ref({
   saving: false,
   error: '',
 })
-
-// ── Delete modal state ───────────────────────
 const deleteModal = ref({
   open: false,
   type: null,
@@ -383,19 +585,18 @@ const deleteModal = ref({
   saving: false,
 })
 
-// ── Load data ────────────────────────────────
+// ── Load ─────────────────────────────────────────────────
+
 onMounted(async () => {
   if (!authStore.profile) await authStore.fetchProfile()
   restaurantId.value = authStore.profile?.restaurant_id
   if (!restaurantId.value) return
-
   const { data: restaurant } = await supabase
     .from('restaurants')
     .select('currency')
     .eq('id', restaurantId.value)
     .single()
   if (restaurant) currency.value = restaurant.currency || 'USD'
-
   await loadMenu()
 })
 
@@ -406,24 +607,27 @@ async function loadMenu() {
     .select('*')
     .eq('restaurant_id', restaurantId.value)
     .order('sort_order')
-
   if (cats) {
     const { data: items } = await supabase
       .from('menu_items')
       .select('*')
       .eq('restaurant_id', restaurantId.value)
       .order('sort_order')
-
     categories.value = cats.map((c) => ({
       ...c,
-      _collapsed: false,
       items: items?.filter((i) => i.category_id === c.id) || [],
     }))
+    if (!activeCategory.value && categories.value.length) activeCategory.value = categories.value[0]
+    else if (activeCategory.value) {
+      activeCategory.value =
+        categories.value.find((c) => c.id === activeCategory.value.id) || categories.value[0]
+    }
   }
   loading.value = false
 }
 
-// ── Category CRUD ─────────────────────────────
+// ── Category CRUD ─────────────────────────────────────────
+
 function openAddCategory() {
   categoryModal.value = { open: true, editing: false, id: null, name: '', saving: false, error: '' }
 }
@@ -437,7 +641,6 @@ function openEditCategory(cat) {
     error: '',
   }
 }
-
 async function saveCategory() {
   const m = categoryModal.value
   if (!m.name.trim()) {
@@ -446,7 +649,6 @@ async function saveCategory() {
   }
   m.saving = true
   m.error = ''
-
   try {
     if (m.editing) {
       const { error } = await supabase
@@ -454,21 +656,15 @@ async function saveCategory() {
         .update({ name: m.name.trim() })
         .eq('id', m.id)
       if (error) throw error
-      const cat = categories.value.find((c) => c.id === m.id)
-      if (cat) cat.name = m.name.trim()
     } else {
-      const { data, error } = await supabase
-        .from('menu_categories')
-        .insert({
-          restaurant_id: restaurantId.value,
-          name: m.name.trim(),
-          sort_order: categories.value.length,
-        })
-        .select()
-        .single()
+      const { error } = await supabase.from('menu_categories').insert({
+        restaurant_id: restaurantId.value,
+        name: m.name.trim(),
+        sort_order: categories.value.length,
+      })
       if (error) throw error
-      categories.value.push({ ...data, _collapsed: false, items: [] })
     }
+    await loadMenu()
     categoryModal.value.open = false
   } catch (e) {
     m.error = e.message
@@ -477,13 +673,10 @@ async function saveCategory() {
   }
 }
 
-async function toggleCategory(cat) {
-  cat.is_active = !cat.is_active
-  await supabase.from('menu_categories').update({ is_active: cat.is_active }).eq('id', cat.id)
-}
+// ── Item CRUD ─────────────────────────────────────────────
 
-// ── Item CRUD ─────────────────────────────────
 function openAddItem(category) {
+  if (!category) return
   itemModal.value = {
     open: true,
     editing: false,
@@ -515,11 +708,9 @@ function openEditItem(item, category) {
     error: '',
   }
 }
-
 function triggerImageUpload() {
   imageInput.value?.click()
 }
-
 function handleImageChange(e) {
   const file = e.target.files[0]
   if (!file) return
@@ -531,7 +722,6 @@ function handleImageChange(e) {
   itemModal.value.imagePreview = URL.createObjectURL(file)
   e.target.value = ''
 }
-
 function removeImage() {
   itemModal.value.imageFile = null
   itemModal.value.imagePreview = ''
@@ -545,11 +735,8 @@ async function saveItem() {
   }
   m.saving = true
   m.error = ''
-
   try {
     let image_url = m.imagePreview && !m.imageFile ? m.imagePreview : null
-
-    // Upload new image if provided
     if (m.imageFile) {
       const ext = m.imageFile.name.split('.').pop()
       const itemId = m.editing ? m.id : crypto.randomUUID()
@@ -561,7 +748,6 @@ async function saveItem() {
       const { data: urlData } = supabase.storage.from('menu-images').getPublicUrl(path)
       image_url = urlData.publicUrl
     }
-
     const payload = {
       name: m.name.trim(),
       description: m.description.trim() || null,
@@ -571,19 +757,15 @@ async function saveItem() {
       image_url,
       updated_at: new Date().toISOString(),
     }
-
     if (m.editing) {
       const { error } = await supabase.from('menu_items').update(payload).eq('id', m.id)
       if (error) throw error
     } else {
-      const { error } = await supabase.from('menu_items').insert({
-        ...payload,
-        restaurant_id: restaurantId.value,
-        sort_order: 0,
-      })
+      const { error } = await supabase
+        .from('menu_items')
+        .insert({ ...payload, restaurant_id: restaurantId.value, sort_order: 0 })
       if (error) throw error
     }
-
     await loadMenu()
     itemModal.value.open = false
   } catch (e) {
@@ -598,7 +780,8 @@ async function toggleItem(item) {
   await supabase.from('menu_items').update({ is_available: item.is_available }).eq('id', item.id)
 }
 
-// ── Delete ────────────────────────────────────
+// ── Delete ─────────────────────────────────────────────────
+
 function confirmDeleteCategory(cat) {
   deleteModal.value = {
     open: true,
@@ -611,19 +794,16 @@ function confirmDeleteCategory(cat) {
 function confirmDeleteItem(item, cat) {
   deleteModal.value = { open: true, type: 'item', target: item, parentCategory: cat, saving: false }
 }
-
 async function confirmDelete() {
   const d = deleteModal.value
   d.saving = true
   try {
     if (d.type === 'category') {
       await supabase.from('menu_categories').delete().eq('id', d.target.id)
-      categories.value = categories.value.filter((c) => c.id !== d.target.id)
     } else {
       await supabase.from('menu_items').delete().eq('id', d.target.id)
-      const cat = categories.value.find((c) => c.id === d.parentCategory.id)
-      if (cat) cat.items = cat.items.filter((i) => i.id !== d.target.id)
     }
+    await loadMenu()
     deleteModal.value.open = false
   } catch (e) {
     console.error(e)
@@ -634,153 +814,64 @@ async function confirmDelete() {
 </script>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=DM+Sans:wght@400;500;600&display=swap');
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
+/* ── Base ────────────────────────────────────────────────── */
 .menu-page {
-  font-family: 'DM Sans', sans-serif;
-  max-width: 1000px;
+  font-family: var(--font-body, 'DM Sans', sans-serif);
+  max-width: 1200px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
-/* Header */
+/* ── Header ──────────────────────────────────────────────── */
 .page-header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  margin-bottom: 28px;
-  gap: 16px;
+  margin-bottom: 24px;
+  flex-shrink: 0;
 }
 .page-title {
-  font-family: 'Fraunces', serif;
-  font-size: 26px;
-  font-weight: 700;
-  color: #1a1a1a;
+  font-family: var(--font-display, 'Fraunces', serif);
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--color-text-primary, #fff);
   letter-spacing: -0.5px;
 }
-.page-sub {
-  font-size: 13px;
-  color: #aaa;
-  margin-top: 2px;
-}
-
-/* Buttons */
-.btn-primary {
-  padding: 9px 18px;
-  background: #1a1a1a;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 13.5px;
-  font-weight: 600;
-  font-family: 'DM Sans', sans-serif;
-  cursor: pointer;
-  transition: background 0.15s;
-  white-space: nowrap;
-}
-.btn-primary:hover:not(:disabled) {
-  background: #c8733a;
-}
-.btn-primary:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.btn-ghost {
-  padding: 9px 18px;
-  background: transparent;
-  color: #666;
-  border: 1.5px solid #e2ddd6;
-  border-radius: 8px;
-  font-size: 13.5px;
-  font-weight: 600;
-  font-family: 'DM Sans', sans-serif;
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.btn-ghost:hover {
-  border-color: #aaa;
-  color: #333;
-}
-
-.btn-danger {
-  padding: 9px 18px;
-  background: #dc2626;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 13.5px;
-  font-weight: 600;
-  font-family: 'DM Sans', sans-serif;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-.btn-danger:hover:not(:disabled) {
-  background: #b91c1c;
-}
-.btn-danger:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.icon-btn {
-  width: 30px;
-  height: 30px;
-  border-radius: 6px;
-  border: 1.5px solid #e2ddd6;
-  background: white;
-  color: #666;
-  font-size: 13px;
-  cursor: pointer;
+.btn-add-item {
   display: flex;
   align-items: center;
-  justify-content: center;
-  transition: all 0.15s;
-}
-.icon-btn:hover {
-  border-color: #c8733a;
-  color: #c8733a;
-}
-.icon-btn.danger:hover {
-  border-color: #dc2626;
-  color: #dc2626;
-}
-.icon-btn.small {
-  width: 26px;
-  height: 26px;
-  font-size: 11px;
-}
-
-.link-btn {
-  background: none;
+  gap: 7px;
+  padding: 10px 20px;
+  background: var(--color-accent, #c8733a);
+  color: #fff;
   border: none;
-  color: #c8733a;
+  border-radius: var(--radius-pill, 999px);
+  font-size: 13.5px;
+  font-weight: 600;
+  font-family: var(--font-body, 'DM Sans', sans-serif);
   cursor: pointer;
-  font-size: 13px;
-  text-decoration: underline;
-  font-family: 'DM Sans', sans-serif;
+  transition:
+    background 0.15s,
+    box-shadow 0.15s;
+  box-shadow: var(--shadow-glow, 0 8px 24px rgba(200, 115, 58, 0.3));
+}
+.btn-add-item:hover {
+  background: var(--color-accent-hover, #d4844e);
 }
 
-/* States */
+/* ── Loading ─────────────────────────────────────────────── */
 .loading-state {
+  flex: 1;
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 60px;
   justify-content: center;
-  color: #aaa;
-  font-size: 14px;
 }
 .spinner {
-  width: 20px;
-  height: 20px;
-  border: 2px solid #e2ddd6;
-  border-top-color: #c8733a;
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--color-border-medium, rgba(255, 255, 255, 0.12));
+  border-top-color: var(--color-accent, #c8733a);
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
 }
@@ -790,185 +881,243 @@ async function confirmDelete() {
   }
 }
 
-.empty-state {
-  text-align: center;
-  padding: 80px 20px;
-}
-.empty-icon {
-  font-size: 48px;
-  margin-bottom: 16px;
-}
-.empty-state h3 {
-  font-family: 'Fraunces', serif;
-  font-size: 20px;
-  color: #1a1a1a;
-  margin-bottom: 6px;
-}
-.empty-state p {
-  color: #aaa;
-  font-size: 14px;
-  margin-bottom: 20px;
+/* ── Layout ──────────────────────────────────────────────── */
+.menu-layout {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 16px;
+  flex: 1;
+  min-height: 0;
 }
 
-/* Categories */
-.categories-list {
+/* ── Sidebar ─────────────────────────────────────────────── */
+.sidebar {
+  background: var(--color-bg-surface, #161616);
+  border: 1px solid var(--color-border-subtle, rgba(255, 255, 255, 0.07));
+  border-radius: var(--radius-card, 10px);
+  padding: 16px 12px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 4px;
+  align-self: start;
 }
-
-.category-block {
-  background: white;
-  border: 1.5px solid #ede9e2;
-  border-radius: 12px;
-  overflow: hidden;
-  transition: box-shadow 0.2s;
+.sidebar-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--color-text-muted, rgba(255, 255, 255, 0.35));
+  padding: 0 8px;
+  margin-bottom: 6px;
 }
-.category-block:hover {
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+.category-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  overflow-y: auto;
 }
-
-.category-header {
+.category-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 14px 16px;
-  border-bottom: 1.5px solid #f0ece5;
-  background: #fdfcfa;
+  gap: 8px;
+  padding: 9px 10px;
+  border-radius: 7px;
+  cursor: pointer;
+  transition:
+    background 0.12s,
+    color 0.12s;
+  color: var(--color-text-secondary, rgba(255, 255, 255, 0.55));
+  position: relative;
 }
-.collapsed .category-header {
-  border-bottom: none;
+.category-item:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--color-text-primary, #fff);
 }
-
-.collapse-btn {
+.category-item:hover .cat-actions {
+  opacity: 1;
+}
+.category-item.active {
+  background: var(--color-accent-muted, rgba(200, 115, 58, 0.12));
+  border: 1px solid var(--color-accent-border, rgba(200, 115, 58, 0.25));
+  color: var(--color-accent, #c8733a);
+}
+.category-item.active .cat-count {
+  color: rgba(200, 115, 58, 0.6);
+}
+.cat-name {
+  flex: 1;
+  font-size: 13.5px;
+  font-weight: 500;
+}
+.cat-count {
+  font-size: 12px;
+  color: var(--color-text-faint, rgba(255, 255, 255, 0.2));
+}
+.cat-actions {
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+.cat-action-btn {
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
   background: none;
   border: none;
+  color: var(--color-text-muted, rgba(255, 255, 255, 0.35));
   cursor: pointer;
-  width: 24px;
-  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #aaa;
-  flex-shrink: 0;
+  transition:
+    background 0.12s,
+    color 0.12s;
 }
-.collapse-arrow {
-  display: inline-block;
-  transition: transform 0.2s;
-  font-size: 14px;
+.cat-action-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--color-text-primary, #fff);
 }
-.collapse-arrow.rotated {
-  transform: rotate(-90deg);
-}
-
-.category-info {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
-}
-.category-name {
-  font-size: 15px;
-  font-weight: 600;
-  color: #1a1a1a;
-}
-.category-count {
-  font-size: 12px;
-  color: #bbb;
-  background: #f0ece5;
-  padding: 2px 8px;
-  border-radius: 99px;
+.cat-action-btn--danger:hover {
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
 }
 
-.category-status {
-  display: flex;
-  align-items: center;
-}
-.toggle-btn {
-  padding: 4px 12px;
-  border-radius: 99px;
-  border: 1.5px solid #e2ddd6;
-  font-size: 11px;
-  font-weight: 600;
-  color: #aaa;
-  background: white;
-  cursor: pointer;
-  transition: all 0.15s;
-  font-family: 'DM Sans', sans-serif;
-}
-.toggle-btn.active {
-  border-color: #4ade80;
-  color: #16a34a;
-  background: #f0fdf4;
-}
-
-.category-actions {
-  display: flex;
-  gap: 6px;
-}
-
-.btn-add-item {
-  padding: 6px 14px;
-  background: #f5f3ef;
-  border: 1.5px solid #e2ddd6;
+.btn-add-category {
+  margin-top: 8px;
+  padding: 9px 12px;
+  background: var(--color-bg-elevated, #0e0e0e);
+  border: 1px dashed var(--color-border-medium, rgba(255, 255, 255, 0.12));
   border-radius: 7px;
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: 600;
-  color: #666;
+  font-family: var(--font-body, 'DM Sans', sans-serif);
+  color: var(--color-text-muted, rgba(255, 255, 255, 0.35));
   cursor: pointer;
-  transition: all 0.15s;
-  font-family: 'DM Sans', sans-serif;
-  white-space: nowrap;
+  transition:
+    border-color 0.15s,
+    color 0.15s;
+  width: 100%;
+  text-align: center;
 }
-.btn-add-item:hover {
-  background: #c8733a;
-  border-color: #c8733a;
-  color: white;
+.btn-add-category:hover {
+  border-color: var(--color-accent-border-strong, rgba(200, 115, 58, 0.45));
+  color: var(--color-accent, #c8733a);
 }
 
-/* Items grid */
+/* ── Items Area ───────────────────────────────────────────── */
+.items-area {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 0;
+}
+
+/* ── Search ──────────────────────────────────────────────── */
+.search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.search-icon {
+  position: absolute;
+  left: 14px;
+  color: var(--color-text-muted, rgba(255, 255, 255, 0.35));
+  pointer-events: none;
+}
+.search-input {
+  width: 100%;
+  padding: 12px 40px 12px 42px;
+  background: var(--color-bg-surface, #161616);
+  border: 1px solid var(--color-border-subtle, rgba(255, 255, 255, 0.07));
+  border-radius: var(--radius-card, 10px);
+  font-size: 14px;
+  font-family: var(--font-body, 'DM Sans', sans-serif);
+  color: var(--color-text-primary, #fff);
+  outline: none;
+  transition: border-color 0.15s;
+}
+.search-input::placeholder {
+  color: var(--color-text-muted, rgba(255, 255, 255, 0.35));
+}
+.search-input:focus {
+  border-color: var(--color-border-medium, rgba(255, 255, 255, 0.12));
+}
+.search-clear {
+  position: absolute;
+  right: 12px;
+  background: none;
+  border: none;
+  color: var(--color-text-muted, rgba(255, 255, 255, 0.35));
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 4px;
+  border-radius: 4px;
+  transition: color 0.12s;
+}
+.search-clear:hover {
+  color: var(--color-text-primary, #fff);
+}
+
+/* ── Empty ───────────────────────────────────────────────── */
+.empty-state {
+  padding: 60px 20px;
+  text-align: center;
+  color: var(--color-text-muted, rgba(255, 255, 255, 0.35));
+  font-size: 13.5px;
+}
+.link-btn {
+  background: none;
+  border: none;
+  color: var(--color-accent, #c8733a);
+  cursor: pointer;
+  font-size: inherit;
+  font-family: inherit;
+  text-decoration: underline;
+  padding: 0;
+}
+
+/* ── Items Grid ──────────────────────────────────────────── */
 .items-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 12px;
-  padding: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 10px;
 }
-
-.items-empty {
-  grid-column: 1/-1;
-  text-align: center;
-  padding: 24px;
-  color: #bbb;
-  font-size: 13px;
-}
-
 .item-card {
-  border: 1.5px solid #ede9e2;
-  border-radius: 10px;
+  background: var(--color-bg-surface, #161616);
+  border: 1px solid var(--color-border-subtle, rgba(255, 255, 255, 0.07));
+  border-radius: var(--radius-card, 10px);
   overflow: hidden;
-  background: white;
-  transition: all 0.15s;
-  position: relative;
+  transition:
+    border-color 0.15s,
+    transform 0.15s;
 }
 .item-card:hover {
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.07);
-  border-color: #d6cfc4;
+  border-color: var(--color-border-medium, rgba(255, 255, 255, 0.12));
+  transform: translateY(-1px);
 }
-.item-card.unavailable {
-  opacity: 0.6;
+.item-card--unavailable {
+  opacity: 0.55;
 }
 
+/* Image */
 .item-image-wrap {
   position: relative;
-  height: 120px;
-  background: #f5f3ef;
+  width: 100%;
+  height: 150px;
+  background: var(--color-bg-elevated, #0e0e0e);
   overflow: hidden;
+  flex-shrink: 0;
 }
 .item-image {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform 0.3s ease;
+}
+.item-card:hover .item-image {
+  transform: scale(1.04);
 }
 .item-image-placeholder {
   width: 100%;
@@ -976,96 +1125,151 @@ async function confirmDelete() {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 28px;
-  color: #ccc;
+  color: var(--color-text-faint, rgba(255, 255, 255, 0.15));
+  background: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 10px,
+    rgba(255, 255, 255, 0.015) 10px,
+    rgba(255, 255, 255, 0.015) 20px
+  );
 }
-.unavailable-overlay {
+.item-image-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.45);
+  background: rgba(0, 0, 0, 0.55);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
+}
+.item-image-overlay span {
   font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.7);
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 4px 12px;
+  border-radius: 999px;
 }
 
-.item-body {
-  padding: 10px 12px;
+.item-card-body {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+}
+.item-main {
+  flex: 1;
+  min-width: 0;
+}
+.item-name-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 5px;
+  flex-wrap: wrap;
 }
 .item-name {
-  font-size: 13.5px;
-  font-weight: 600;
-  color: #1a1a1a;
-  margin-bottom: 3px;
-  line-height: 1.3;
+  font-family: var(--font-display, 'Fraunces', serif);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-text-primary, #fff);
+  letter-spacing: -0.2px;
+}
+.sold-out-badge {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted, rgba(255, 255, 255, 0.35));
+  background: var(--color-bg-elevated, #0e0e0e);
+  border: 1px solid var(--color-border-medium, rgba(255, 255, 255, 0.12));
+  padding: 2px 8px;
+  border-radius: 999px;
 }
 .item-desc {
-  font-size: 11.5px;
-  color: #aaa;
-  line-height: 1.4;
-  margin-bottom: 8px;
+  font-size: 12.5px;
+  color: var(--color-text-secondary, rgba(255, 255, 255, 0.55));
+  line-height: 1.5;
+  margin-bottom: 10px;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
-.item-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 6px;
-}
 .item-price {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 700;
-  color: #c8733a;
+  color: var(--color-accent, #c8733a);
 }
-.item-actions {
+
+/* Controls */
+.item-controls {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
+  flex-shrink: 0;
+  padding-top: 2px;
 }
-
-.avail-toggle {
-  padding: 3px 8px;
-  border-radius: 99px;
-  border: 1px solid #e2ddd6;
-  font-size: 10px;
-  font-weight: 700;
-  color: #aaa;
-  background: white;
+.ctrl-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--color-border-medium, rgba(255, 255, 255, 0.12));
+  background: var(--color-bg-elevated, #0e0e0e);
+  color: var(--color-text-muted, rgba(255, 255, 255, 0.35));
   cursor: pointer;
-  transition: all 0.15s;
-  font-family: 'DM Sans', sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background 0.12s,
+    border-color 0.12s,
+    color 0.12s;
 }
-.avail-toggle.on {
-  border-color: #4ade80;
-  color: #16a34a;
-  background: #f0fdf4;
+.ctrl-btn--avail.ctrl-btn--on {
+  background: rgba(74, 222, 128, 0.1);
+  border-color: rgba(74, 222, 128, 0.3);
+  color: #4ade80;
+}
+.ctrl-btn--avail.ctrl-btn--off:hover {
+  background: rgba(74, 222, 128, 0.08);
+  border-color: rgba(74, 222, 128, 0.2);
+  color: #4ade80;
+}
+.ctrl-btn--edit:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--color-border-bright, rgba(255, 255, 255, 0.22));
+  color: var(--color-text-primary, #fff);
+}
+.ctrl-btn--delete:hover {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #ef4444;
 }
 
-/* ── Modals ───────────────────────────────── */
+/* ── Modals ──────────────────────────────────────────────── */
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(0, 0, 0, 0.6);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
   padding: 16px;
-  backdrop-filter: blur(2px);
+  backdrop-filter: blur(4px);
 }
 .modal {
-  background: white;
-  border-radius: 14px;
+  background: var(--color-bg-surface, #161616);
+  border: 1px solid var(--color-border-medium, rgba(255, 255, 255, 0.12));
+  border-radius: var(--radius-panel, 16px);
   width: 100%;
   max-width: 440px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-float, 0 24px 56px rgba(0, 0, 0, 0.5));
   overflow: hidden;
   animation: modal-in 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
@@ -1073,13 +1277,13 @@ async function confirmDelete() {
   max-width: 540px;
 }
 .modal-sm {
-  max-width: 360px;
+  max-width: 380px;
 }
 
 @keyframes modal-in {
   from {
     opacity: 0;
-    transform: scale(0.95) translateY(8px);
+    transform: scale(0.95) translateY(10px);
   }
   to {
     opacity: 1;
@@ -1092,42 +1296,42 @@ async function confirmDelete() {
   align-items: center;
   justify-content: space-between;
   padding: 20px 24px 16px;
-  border-bottom: 1px solid #f0ece5;
+  border-bottom: 1px solid var(--color-border-subtle, rgba(255, 255, 255, 0.07));
 }
 .modal-title {
-  font-family: 'Fraunces', serif;
-  font-size: 19px;
+  font-family: var(--font-display, 'Fraunces', serif);
+  font-size: 18px;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--color-text-primary, #fff);
 }
 .modal-close {
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
   background: none;
-  border: none;
-  color: #aaa;
-  font-size: 16px;
+  border: 1px solid var(--color-border-medium, rgba(255, 255, 255, 0.12));
+  color: var(--color-text-muted, rgba(255, 255, 255, 0.35));
   cursor: pointer;
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.15s;
+  transition:
+    background 0.12s,
+    color 0.12s;
 }
 .modal-close:hover {
-  background: #f5f3ef;
-  color: #333;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--color-text-primary, #fff);
 }
 
 .modal-error {
-  margin: 0 24px;
-  margin-top: 12px;
+  margin: 12px 24px 0;
   padding: 10px 14px;
-  background: #fff5f5;
-  border: 1px solid #fecaca;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.2);
   border-radius: 8px;
   font-size: 13px;
-  color: #dc2626;
+  color: #f87171;
 }
 
 .modal-body {
@@ -1137,14 +1341,16 @@ async function confirmDelete() {
   gap: 16px;
   max-height: 60vh;
   overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-medium, rgba(255, 255, 255, 0.12)) transparent;
 }
 .modal-footer {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
   padding: 16px 24px;
-  border-top: 1px solid #f0ece5;
-  background: #fdfcfa;
+  border-top: 1px solid var(--color-border-subtle, rgba(255, 255, 255, 0.07));
+  background: var(--color-bg-elevated, #0e0e0e);
 }
 
 /* Fields */
@@ -1159,51 +1365,53 @@ async function confirmDelete() {
   gap: 14px;
 }
 .field-label {
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 600;
-  color: #444;
+  color: var(--color-text-secondary, rgba(255, 255, 255, 0.55));
 }
 .optional {
   font-weight: 400;
-  color: #bbb;
+  color: var(--color-text-muted, rgba(255, 255, 255, 0.35));
 }
 .field-input {
   width: 100%;
   padding: 9px 13px;
-  border: 1.5px solid #e2ddd6;
+  background: var(--color-bg-elevated, #0e0e0e);
+  border: 1px solid var(--color-border-medium, rgba(255, 255, 255, 0.12));
   border-radius: 8px;
   font-size: 14px;
-  font-family: 'DM Sans', sans-serif;
-  color: #1a1a1a;
-  background: #fdfcfa;
+  font-family: var(--font-body, 'DM Sans', sans-serif);
+  color: var(--color-text-primary, #fff);
   outline: none;
   transition:
-    border-color 0.2s,
-    box-shadow 0.2s;
+    border-color 0.15s,
+    box-shadow 0.15s;
   appearance: none;
 }
+.field-input::placeholder {
+  color: var(--color-text-muted, rgba(255, 255, 255, 0.3));
+}
 .field-input:focus {
-  border-color: #c8733a;
-  box-shadow: 0 0 0 3px rgba(200, 115, 58, 0.1);
-  background: white;
+  border-color: var(--color-accent-border-strong, rgba(200, 115, 58, 0.45));
+  box-shadow: 0 0 0 3px rgba(200, 115, 58, 0.08);
 }
 .field-textarea {
   resize: vertical;
-  min-height: 60px;
+  min-height: 64px;
 }
 
 .price-wrap {
   display: flex;
 }
 .currency-sym {
-  padding: 9px 11px;
-  background: #f4f0ea;
-  border: 1.5px solid #e2ddd6;
+  padding: 9px 12px;
+  background: var(--color-bg-base, #111);
+  border: 1px solid var(--color-border-medium, rgba(255, 255, 255, 0.12));
   border-right: none;
   border-radius: 8px 0 0 8px;
   font-size: 14px;
   font-weight: 600;
-  color: #666;
+  color: var(--color-text-muted, rgba(255, 255, 255, 0.35));
 }
 .price-input {
   border-radius: 0 8px 8px 0 !important;
@@ -1211,21 +1419,22 @@ async function confirmDelete() {
 
 /* Image upload */
 .image-upload-area {
-  height: 140px;
-  border: 2px dashed #d6cfc4;
+  height: 130px;
+  border: 1.5px dashed var(--color-border-medium, rgba(255, 255, 255, 0.12));
   border-radius: 10px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #fdfcfa;
+  background: var(--color-bg-elevated, #0e0e0e);
   overflow: hidden;
   position: relative;
-  transition: border-color 0.2s;
+  transition: border-color 0.15s;
 }
-.image-upload-area:hover,
+.image-upload-area:hover {
+  border-color: var(--color-accent-border-strong, rgba(200, 115, 58, 0.45));
+}
 .image-upload-area.has-image {
-  border-color: #c8733a;
   border-style: solid;
 }
 .upload-preview {
@@ -1237,17 +1446,13 @@ async function confirmDelete() {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  color: #aaa;
+  gap: 6px;
+  color: var(--color-text-muted, rgba(255, 255, 255, 0.35));
   font-size: 12px;
-}
-.upload-icon-lg {
-  font-size: 22px;
-  color: #c8733a;
 }
 .upload-hint {
   font-size: 10px;
-  color: #ccc;
+  color: var(--color-text-faint, rgba(255, 255, 255, 0.2));
 }
 .remove-image {
   position: absolute;
@@ -1256,11 +1461,10 @@ async function confirmDelete() {
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  background: rgba(0, 0, 0, 0.5);
-  color: white;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
   border: none;
   cursor: pointer;
-  font-size: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1269,7 +1473,6 @@ async function confirmDelete() {
   display: none;
 }
 
-/* Availability toggle */
 .availability-row {
   display: flex;
   gap: 8px;
@@ -1277,31 +1480,118 @@ async function confirmDelete() {
 .avail-big {
   flex: 1;
   padding: 9px;
-  border: 1.5px solid #e2ddd6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid var(--color-border-medium, rgba(255, 255, 255, 0.12));
   border-radius: 8px;
   font-size: 13px;
   font-weight: 600;
-  color: #aaa;
-  background: white;
+  color: var(--color-text-muted, rgba(255, 255, 255, 0.35));
+  background: var(--color-bg-elevated, #0e0e0e);
   cursor: pointer;
   transition: all 0.15s;
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-body, 'DM Sans', sans-serif);
 }
 .avail-big.on {
-  border-color: #4ade80;
-  color: #16a34a;
-  background: #f0fdf4;
+  border-color: rgba(74, 222, 128, 0.35);
+  color: #4ade80;
+  background: rgba(74, 222, 128, 0.07);
 }
 .avail-big.off {
-  border-color: #fca5a5;
-  color: #dc2626;
-  background: #fff5f5;
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #f87171;
+  background: rgba(239, 68, 68, 0.07);
 }
 
-/* Delete warning */
+/* Buttons */
+.btn-primary {
+  padding: 9px 20px;
+  background: var(--color-accent, #c8733a);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 13.5px;
+  font-weight: 600;
+  font-family: var(--font-body, 'DM Sans', sans-serif);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-primary:hover:not(:disabled) {
+  background: var(--color-accent-hover, #d4844e);
+}
+.btn-primary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn-ghost {
+  padding: 9px 18px;
+  background: transparent;
+  color: var(--color-text-secondary, rgba(255, 255, 255, 0.55));
+  border: 1px solid var(--color-border-medium, rgba(255, 255, 255, 0.12));
+  border-radius: 8px;
+  font-size: 13.5px;
+  font-weight: 600;
+  font-family: var(--font-body, 'DM Sans', sans-serif);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btn-ghost:hover {
+  border-color: var(--color-border-bright, rgba(255, 255, 255, 0.22));
+  color: var(--color-text-primary, #fff);
+}
+
+.btn-danger {
+  padding: 9px 20px;
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: 8px;
+  font-size: 13.5px;
+  font-weight: 600;
+  font-family: var(--font-body, 'DM Sans', sans-serif);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.btn-danger:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.25);
+}
+.btn-danger:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 .delete-warning {
   font-size: 14px;
-  color: #555;
+  color: var(--color-text-secondary, rgba(255, 255, 255, 0.55));
   line-height: 1.6;
+}
+.delete-warning strong {
+  color: var(--color-text-primary, #fff);
+}
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .menu-layout {
+    grid-template-columns: 1fr;
+  }
+  .sidebar {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-self: auto;
+  }
+  .category-list {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .items-grid {
+    grid-template-columns: 1fr;
+  }
+  .field-row {
+    grid-template-columns: 1fr;
+  }
 }
 </style>
