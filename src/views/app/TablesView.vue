@@ -6,7 +6,30 @@
         <h1 class="page-title">Tables</h1>
         <p class="page-subtitle">Manage tables and generate QR codes for ordering</p>
       </div>
-      <button class="btn-add" @click="openAddTable">+ Add Table</button>
+      <div class="header-right">
+        <!-- Limit badge -->
+        <div class="limit-badge" :class="{ 'limit-badge-warn': isAtLimit }">
+          <span class="limit-count"
+            >{{ tables.length }} / {{ tableLimit === Infinity ? '∞' : tableLimit }}</span
+          >
+          <span class="limit-plan">{{ planLabel }}</span>
+        </div>
+        <button class="btn-add" @click="openAddTable" :disabled="isAtLimit">+ Add Table</button>
+      </div>
+    </div>
+
+    <!-- At-limit warning banner -->
+    <div
+      v-if="isAtLimit && resolvedPlan !== 'pro' && resolvedPlan !== 'enterprise'"
+      class="limit-banner"
+    >
+      <span class="limit-banner-icon">⚠</span>
+      <div>
+        <strong>Table limit reached</strong> — your {{ planLabel }} plan allows up to
+        {{ tableLimit }} tables.
+        <RouterLink to="/app/settings" class="upgrade-link">Upgrade to Pro</RouterLink> for
+        unlimited tables.
+      </div>
     </div>
 
     <!-- Loading -->
@@ -201,10 +224,6 @@
 </template>
 
 <script setup>
-// ──────────────────────────────────────────────
-//  Logic remains almost identical — only minor cleanups
-// ──────────────────────────────────────────────
-
 import { ref, computed, watch, onMounted } from 'vue'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
@@ -216,6 +235,54 @@ const loading = ref(true)
 const tables = ref([])
 const restaurantId = ref(null)
 const restaurantSlug = ref('')
+
+// ── Plan enforcement ──────────────────────────────
+const restaurantPlan = ref(null)
+const trialEndsAt = ref(null)
+
+const LIMITS = {
+  trial: 15,
+  starter: 15,
+  pro: Infinity,
+  enterprise: Infinity,
+}
+
+const resolvedPlan = computed(() => {
+  const p = restaurantPlan.value
+  if (!p) return 'trial'
+  if (p === 'trial') {
+    if (trialEndsAt.value && new Date(trialEndsAt.value) < new Date()) return 'expired'
+    return 'trial'
+  }
+  return p
+})
+
+const tableLimit = computed(() => LIMITS[resolvedPlan.value] ?? 15)
+const isAtLimit = computed(() => tables.value.length >= tableLimit.value)
+const planLabel = computed(() => {
+  const map = {
+    trial: '14-day Trial',
+    starter: 'Starter',
+    pro: 'Pro',
+    enterprise: 'Enterprise',
+    expired: 'Expired',
+  }
+  return map[resolvedPlan.value] || 'Trial'
+})
+
+async function fetchPlan() {
+  if (!restaurantId.value) return
+  const { data } = await supabase
+    .from('restaurants')
+    .select('plan, trial_ends_at')
+    .eq('id', restaurantId.value)
+    .single()
+  if (data) {
+    restaurantPlan.value = data.plan
+    trialEndsAt.value = data.trial_ends_at
+  }
+}
+// ─────────────────────────────────────────────────
 
 const tableModal = ref({
   open: false,
@@ -294,7 +361,8 @@ onMounted(async () => {
 
   if (resto) restaurantSlug.value = resto.slug
 
-  await loadTables()
+  // Run plan fetch in parallel with table load (per auth reference pattern)
+  await Promise.all([fetchPlan(), loadTables()])
 })
 
 async function loadTables() {
@@ -308,7 +376,6 @@ async function loadTables() {
   tables.value = (data || []).map((t) => ({ ...t, _qr: null }))
   loading.value = false
 
-  // Generate QR codes asynchronously
   tables.value.forEach((table) => {
     generateQrDataUrl(fullOrderUrl(table.id)).then((qr) => {
       table._qr = qr
@@ -317,6 +384,8 @@ async function loadTables() {
 }
 
 function openAddTable() {
+  // Hard guard — safety net even if button was somehow clicked while disabled
+  if (isAtLimit.value) return
   tableModal.value = { open: true, editing: false, id: null, name: '', saving: false, error: '' }
   previewQr.value = ''
 }
@@ -338,6 +407,13 @@ async function saveTable() {
     m.error = 'Table name is required'
     return
   }
+
+  // Hard limit check in submit — never skip this (per auth reference doc)
+  if (!m.editing && isAtLimit.value) {
+    m.error = `You've reached the ${tableLimit.value}-table limit on your ${planLabel.value} plan. Upgrade to Pro for unlimited tables.`
+    return
+  }
+
   m.saving = true
   m.error = ''
 
@@ -389,7 +465,7 @@ async function downloadAllQrs() {
   for (const t of tables.value) {
     if (t._qr) {
       downloadQr(t)
-      await new Promise((r) => setTimeout(r, 180)) // prevent browser blocking
+      await new Promise((r) => setTimeout(r, 180))
     }
   }
 }
@@ -442,6 +518,80 @@ async function doDelete() {
   margin-top: 4px;
 }
 
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Limit badge */
+.limit-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+  padding: 6px 12px;
+  background: var(--color-bg-elevated, #1e1e1e);
+  border: 1px solid var(--color-border-subtle, rgba(255, 255, 255, 0.07));
+  border-radius: 8px;
+  transition: border-color 0.2s;
+}
+.limit-badge.limit-badge-warn {
+  border-color: rgba(239, 68, 68, 0.35);
+  background: rgba(239, 68, 68, 0.05);
+}
+.limit-count {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text-primary, #f0ece5);
+  font-family: var(--font-body, 'DM Sans', sans-serif);
+  line-height: 1;
+}
+.limit-badge.limit-badge-warn .limit-count {
+  color: #f87171;
+}
+.limit-plan {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-accent, #c8733a);
+  font-family: var(--font-body, 'DM Sans', sans-serif);
+}
+
+/* At-limit warning banner */
+.limit-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 18px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: 10px;
+  margin-bottom: 24px;
+  font-size: 14px;
+  color: var(--color-text-secondary, #888);
+  line-height: 1.5;
+  font-family: var(--font-body, 'DM Sans', sans-serif);
+}
+.limit-banner strong {
+  color: #f87171;
+}
+.limit-banner-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.upgrade-link {
+  color: var(--color-accent, #c8733a);
+  font-weight: 600;
+  text-decoration: none;
+  margin-left: 4px;
+}
+.upgrade-link:hover {
+  text-decoration: underline;
+}
+
 /* ── Buttons ────────────────────────────────────── */
 .btn-add {
   background: var(--color-accent);
@@ -455,10 +605,14 @@ async function doDelete() {
   transition: all 0.16s ease;
   white-space: nowrap;
 }
-
-.btn-add:hover {
+.btn-add:hover:not(:disabled) {
   background: var(--color-accent-hover);
   transform: translateY(-1px);
+}
+.btn-add:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
 }
 
 .btn-primary {
@@ -471,11 +625,9 @@ async function doDelete() {
   cursor: pointer;
   transition: all 0.16s;
 }
-
 .btn-primary:hover:not(:disabled) {
   background: var(--color-accent-hover);
 }
-
 .btn-primary:disabled {
   opacity: 0.5;
   cursor: not-allowed;
@@ -491,7 +643,6 @@ async function doDelete() {
   cursor: pointer;
   transition: all 0.16s;
 }
-
 .btn-ghost:hover {
   border-color: var(--color-accent);
   color: var(--color-accent);
@@ -507,7 +658,6 @@ async function doDelete() {
   cursor: pointer;
   transition: all 0.16s;
 }
-
 .btn-outline:hover {
   background: var(--color-accent-muted);
 }
@@ -522,7 +672,6 @@ async function doDelete() {
   cursor: pointer;
   transition: all 0.16s;
 }
-
 .btn-danger:hover:not(:disabled) {
   background: #dc2626;
 }
@@ -567,7 +716,6 @@ async function doDelete() {
   margin-bottom: 16px;
   color: var(--color-text-faint);
 }
-
 .empty-text {
   max-width: 360px;
   text-align: center;
@@ -591,13 +739,11 @@ async function doDelete() {
   transition: all 0.18s ease;
   box-shadow: var(--shadow-card);
 }
-
 .table-card:hover {
   transform: translateY(-4px);
   box-shadow: var(--shadow-float);
   border-color: var(--color-accent-border);
 }
-
 .table-card.inactive {
   opacity: 0.58;
   filter: grayscale(0.4);
@@ -613,7 +759,6 @@ async function doDelete() {
   cursor: pointer;
   height: 180px;
 }
-
 .qr-image {
   width: 130px;
   height: 130px;
@@ -622,13 +767,11 @@ async function doDelete() {
   padding: 8px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
 }
-
 .qr-placeholder {
   display: flex;
   align-items: center;
   justify-content: center;
 }
-
 .qr-overlay {
   position: absolute;
   inset: 0;
@@ -639,11 +782,9 @@ async function doDelete() {
   align-items: center;
   justify-content: center;
 }
-
 .qr-container:hover .qr-overlay {
   opacity: 1;
 }
-
 .qr-hint {
   color: white;
   font-size: 13px;
@@ -653,24 +794,24 @@ async function doDelete() {
   border-radius: var(--radius-pill);
 }
 
-/* Table info */
 .table-info {
   padding: 14px 16px;
 }
-
 .table-name-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 6px;
 }
-
 .table-name {
   font-size: 15px;
   font-weight: 600;
   color: var(--color-text-primary);
 }
-
+.table-actions {
+  display: flex;
+  gap: 6px;
+}
 .action-btn {
   width: 28px;
   height: 28px;
@@ -682,17 +823,14 @@ async function doDelete() {
   cursor: pointer;
   transition: all 0.14s;
 }
-
 .action-btn:hover {
   background: var(--color-bg-elevated);
   color: var(--color-text-secondary);
 }
-
 .action-btn.edit:hover {
   border-color: var(--color-accent-border);
   color: var(--color-accent);
 }
-
 .action-btn.delete:hover {
   border-color: rgba(239, 68, 68, 0.4);
   color: #ef4444;
@@ -705,14 +843,12 @@ async function doDelete() {
   word-break: break-all;
   line-height: 1.3;
 }
-
 .table-status-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
 }
-
 .status-pill {
   padding: 4px 12px;
   border-radius: var(--radius-pill);
@@ -724,13 +860,11 @@ async function doDelete() {
   cursor: pointer;
   transition: all 0.16s;
 }
-
 .status-pill.active {
   background: rgba(74, 222, 128, 0.12);
   border-color: #4ade80;
   color: #4ade80;
 }
-
 .btn-download {
   background: var(--color-bg-elevated);
   border: 1px solid var(--color-border-medium);
@@ -742,7 +876,6 @@ async function doDelete() {
   cursor: pointer;
   transition: all 0.16s;
 }
-
 .btn-download:hover {
   background: var(--color-accent-muted);
   border-color: var(--color-accent-border);
@@ -761,23 +894,19 @@ async function doDelete() {
   gap: 20px;
   margin-bottom: 40px;
 }
-
 .print-content {
   display: flex;
   align-items: center;
   gap: 14px;
 }
-
 .print-icon {
   font-size: 28px;
 }
-
 .print-title {
   font-size: 15px;
   font-weight: 600;
   color: var(--color-text-primary);
 }
-
 .print-subtitle {
   font-size: 13px;
   color: var(--color-text-muted);
@@ -795,7 +924,6 @@ async function doDelete() {
   z-index: 1000;
   padding: 20px;
 }
-
 .modal {
   background: var(--color-bg-surface);
   border-radius: var(--radius-panel);
@@ -805,11 +933,9 @@ async function doDelete() {
   border: 1px solid var(--color-border-subtle);
   overflow: hidden;
 }
-
 .modal-qr {
   max-width: 420px;
 }
-
 .modal-sm {
   max-width: 380px;
 }
@@ -821,13 +947,11 @@ async function doDelete() {
   padding: 20px 24px;
   border-bottom: 1px solid var(--color-border-subtle);
 }
-
 .modal-title {
   font-family: var(--font-display);
   font-size: 22px;
   font-weight: 700;
 }
-
 .modal-close-btn {
   background: none;
   border: none;
@@ -842,7 +966,6 @@ async function doDelete() {
   border-radius: 8px;
   transition: all 0.16s;
 }
-
 .modal-close-btn:hover {
   background: var(--color-bg-elevated);
   color: var(--color-text-primary);
@@ -857,11 +980,9 @@ async function doDelete() {
   color: #f87171;
   font-size: 14px;
 }
-
 .modal-body {
   padding: 24px;
 }
-
 .qr-body {
   display: flex;
   flex-direction: column;
@@ -869,7 +990,6 @@ async function doDelete() {
   text-align: center;
   padding: 20px 24px 8px;
 }
-
 .qr-large {
   width: 220px;
   height: 220px;
@@ -879,7 +999,6 @@ async function doDelete() {
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
   margin-bottom: 16px;
 }
-
 .qr-url {
   font-size: 12px;
   color: var(--color-text-muted);
@@ -887,15 +1006,12 @@ async function doDelete() {
   margin: 8px 0 16px;
   max-width: 100%;
 }
-
-.qr-hint-text,
-.qr-instructions {
+.qr-hint-text {
   color: var(--color-text-secondary);
   font-size: 14px;
   line-height: 1.5;
   max-width: 340px;
 }
-
 .modal-footer {
   display: flex;
   justify-content: flex-end;
@@ -905,11 +1021,9 @@ async function doDelete() {
   background: var(--color-bg-elevated);
 }
 
-/* Form elements */
 .form-group {
   margin-bottom: 20px;
 }
-
 .form-label {
   font-size: 13px;
   font-weight: 600;
@@ -917,7 +1031,6 @@ async function doDelete() {
   margin-bottom: 8px;
   display: block;
 }
-
 .form-input {
   width: 100%;
   padding: 12px 14px;
@@ -928,7 +1041,6 @@ async function doDelete() {
   font-size: 15px;
   transition: all 0.16s;
 }
-
 .form-input:focus {
   outline: none;
   border-color: var(--color-accent);
@@ -941,7 +1053,6 @@ async function doDelete() {
   gap: 8px;
   margin-bottom: 12px;
 }
-
 .chip {
   padding: 6px 14px;
   border-radius: var(--radius-pill);
@@ -952,19 +1063,16 @@ async function doDelete() {
   cursor: pointer;
   transition: all 0.14s;
 }
-
 .chip:hover {
   border-color: var(--color-accent-border);
   color: var(--color-accent);
 }
-
 .chip-active {
   background: var(--color-accent);
   border-color: var(--color-accent);
   color: white;
 }
 
-/* QR Preview in add modal */
 .qr-preview-section {
   margin-top: 20px;
   background: var(--color-bg-elevated);
@@ -973,7 +1081,6 @@ async function doDelete() {
   padding: 16px;
   text-align: center;
 }
-
 .qr-preview-label {
   font-size: 11px;
   font-weight: 700;
@@ -982,7 +1089,6 @@ async function doDelete() {
   color: var(--color-text-muted);
   margin-bottom: 12px;
 }
-
 .qr-preview {
   width: 140px;
   height: 140px;
@@ -991,7 +1097,6 @@ async function doDelete() {
   padding: 10px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
 }
-
 .preview-url {
   margin-top: 12px;
   font-size: 11px;

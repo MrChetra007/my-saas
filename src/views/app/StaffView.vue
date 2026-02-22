@@ -6,7 +6,32 @@
         <h1 class="page-title">Staff</h1>
         <p class="page-subtitle">Manage team members and their permissions</p>
       </div>
-      <button class="btn-invite" @click="openInviteModal">+ Invite Staff</button>
+      <div class="header-right">
+        <div class="limit-badge" :class="{ 'limit-reached': isAtLimit }">
+          <Users :size="14" />
+          <span>{{ staffList.length }} / {{ staffLimit }} staff</span>
+          <span v-if="planLabel" class="plan-tag">{{ planLabel }}</span>
+        </div>
+        <button
+          class="btn-add"
+          @click="openAddModal"
+          :disabled="isAtLimit"
+          :title="isAtLimit ? 'Staff limit reached for your plan' : ''"
+        >
+          <UserPlus :size="16" />
+          Add Staff
+        </button>
+      </div>
+    </div>
+
+    <!-- Limit warning banner -->
+    <div v-if="isAtLimit" class="limit-banner">
+      <AlertCircle :size="16" />
+      <span
+        >You've reached the <strong>{{ staffLimit }}-staff limit</strong> on your
+        {{ planLabel }} plan.</span
+      >
+      <a href="/app/settings" class="upgrade-link">Upgrade to Pro →</a>
     </div>
 
     <!-- Loading -->
@@ -17,10 +42,13 @@
 
     <!-- Empty -->
     <div v-else-if="staffList.length === 0" class="empty-state">
-      <div class="empty-icon">👥</div>
+      <Users :size="64" class="empty-icon" />
       <h3>No staff members yet</h3>
-      <p class="empty-text">Invite team members to manage kitchen, cashier, and waiter tasks</p>
-      <button class="btn-invite" @click="openInviteModal">+ Invite Staff</button>
+      <p class="empty-text">Add team members to manage kitchen, cashier, and waiter tasks</p>
+      <button class="btn-add" @click="openAddModal" :disabled="isAtLimit">
+        <UserPlus :size="16" />
+        Add Staff
+      </button>
     </div>
 
     <!-- Staff list -->
@@ -58,8 +86,8 @@
                 </span>
               </td>
               <td class="td-actions">
-                <button class="action-btn edit" title="Edit" @click="openEditModal(member)">
-                  ✎
+                <button class="action-btn" title="Edit" @click="openEditModal(member)">
+                  <Pencil :size="15" />
                 </button>
                 <button
                   class="action-btn"
@@ -67,10 +95,11 @@
                   @click="toggleActive(member)"
                   :title="member.is_active ? 'Deactivate' : 'Reactivate'"
                 >
-                  {{ member.is_active ? '⏻' : '↻' }}
+                  <PowerOff v-if="member.is_active" :size="15" />
+                  <RefreshCw v-else :size="15" />
                 </button>
                 <button class="action-btn remove" title="Remove" @click="confirmRemove(member)">
-                  ✕
+                  <Trash2 :size="15" />
                 </button>
               </td>
             </tr>
@@ -78,7 +107,7 @@
         </table>
       </div>
 
-      <!-- Mobile: Cards with icon-only actions -->
+      <!-- Mobile: Cards -->
       <div v-else class="staff-cards">
         <div v-for="member in staffList" :key="member.id" class="staff-card">
           <div class="card-top">
@@ -93,70 +122,73 @@
               {{ member.is_active ? 'Active' : 'Inactive' }}
             </span>
           </div>
-
           <div class="card-role">
             <span class="role-badge" :class="`role-${member.role}`">
               {{ roleLabel(member.role) }}
             </span>
           </div>
-
           <div class="card-actions">
-            <button class="action-btn mobile" title="Edit" @click="openEditModal(member)">✎</button>
+            <button class="action-btn mobile" title="Edit" @click="openEditModal(member)">
+              <Pencil :size="17" />
+            </button>
             <button
               class="action-btn mobile"
               :class="member.is_active ? 'deactivate' : 'activate'"
               @click="toggleActive(member)"
               :title="member.is_active ? 'Deactivate' : 'Reactivate'"
             >
-              {{ member.is_active ? '⏻' : '↻' }}
+              <PowerOff v-if="member.is_active" :size="17" />
+              <RefreshCw v-else :size="17" />
             </button>
             <button class="action-btn mobile remove" title="Remove" @click="confirmRemove(member)">
-              ✕
+              <Trash2 :size="17" />
             </button>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Invite Modal -->
+    <!-- Add Staff Modal -->
     <Teleport to="body">
-      <div v-if="inviteModal.open" class="modal-backdrop" @click.self="closeInviteModal">
+      <div v-if="addModal.open" class="modal-backdrop" @click.self="closeAddModal">
         <div class="modal">
           <div class="modal-header">
-            <h2 class="modal-title">Invite Staff Member</h2>
-            <button class="modal-close-btn" @click="closeInviteModal">×</button>
+            <h2 class="modal-title">Add Staff Member</h2>
+            <button class="modal-close-btn" @click="closeAddModal">
+              <X :size="20" />
+            </button>
           </div>
           <div class="modal-body">
-            <div v-if="inviteModal.error" class="modal-error">{{ inviteModal.error }}</div>
+            <div v-if="addModal.error" class="modal-error">{{ addModal.error }}</div>
 
             <div class="form-group">
               <label class="form-label">Full Name</label>
               <input
-                v-model="inviteModal.form.fullName"
+                v-model="addModal.form.fullName"
                 class="form-input"
                 type="text"
                 placeholder="e.g. Priya Nair"
-                :disabled="inviteModal.submitting"
+                :disabled="addModal.submitting"
               />
             </div>
 
             <div class="form-group">
               <label class="form-label">Email Address</label>
               <input
-                v-model="inviteModal.form.email"
+                v-model="addModal.form.email"
                 class="form-input"
                 type="email"
                 placeholder="e.g. priya@yourrestaurant.com"
-                :disabled="inviteModal.submitting"
+                :disabled="addModal.submitting"
               />
             </div>
 
             <div class="form-group">
               <label class="form-label">Role</label>
               <select
-                v-model="inviteModal.form.role"
+                v-model="addModal.form.role"
                 class="form-select"
-                :disabled="inviteModal.submitting"
+                :disabled="addModal.submitting"
               >
                 <option value="" disabled>Select role</option>
                 <option value="kitchen">Kitchen Staff</option>
@@ -166,32 +198,32 @@
             </div>
 
             <div class="form-group">
-              <label class="form-label">Temporary Password (optional)</label>
+              <label class="form-label">Password</label>
               <input
-                v-model="inviteModal.form.password"
+                v-model="addModal.form.password"
                 class="form-input"
                 type="text"
                 placeholder="Auto-generated if blank"
-                :disabled="inviteModal.submitting"
+                :disabled="addModal.submitting"
               />
             </div>
 
-            <div v-if="inviteModal.form.role" class="role-description">
-              {{ roleDescription(inviteModal.form.role) }}
+            <div v-if="addModal.form.role" class="role-description">
+              {{ roleDescription(addModal.form.role) }}
             </div>
           </div>
           <div class="modal-footer">
-            <button class="btn-ghost" @click="closeInviteModal" :disabled="inviteModal.submitting">
+            <button class="btn-ghost" @click="closeAddModal" :disabled="addModal.submitting">
               Cancel
             </button>
             <button
               class="btn-primary"
-              @click="inviteStaff"
-              :disabled="
-                inviteModal.submitting || !inviteModal.form.email || !inviteModal.form.role
-              "
+              @click="addStaff"
+              :disabled="addModal.submitting || !addModal.form.email || !addModal.form.role"
             >
-              {{ inviteModal.submitting ? 'Inviting…' : 'Send Invite' }}
+              <Loader2 v-if="addModal.submitting" :size="15" class="spin-icon" />
+              <UserPlus v-else :size="15" />
+              {{ addModal.submitting ? 'Adding…' : 'Add Staff' }}
             </button>
           </div>
         </div>
@@ -204,11 +236,12 @@
         <div class="modal">
           <div class="modal-header">
             <h2 class="modal-title">Edit Staff Member</h2>
-            <button class="modal-close-btn" @click="closeEditModal">×</button>
+            <button class="modal-close-btn" @click="closeEditModal">
+              <X :size="20" />
+            </button>
           </div>
           <div class="modal-body">
             <div v-if="editModal.error" class="modal-error">{{ editModal.error }}</div>
-
             <div class="form-group">
               <label class="form-label">Full Name</label>
               <input
@@ -218,7 +251,6 @@
                 :disabled="editModal.submitting"
               />
             </div>
-
             <div class="form-group">
               <label class="form-label">Role</label>
               <select
@@ -231,7 +263,6 @@
                 <option value="waiter">Waiter</option>
               </select>
             </div>
-
             <div class="form-group">
               <label class="form-label">Status</label>
               <select
@@ -253,6 +284,8 @@
               @click="saveEdit"
               :disabled="editModal.submitting || !editModal.form.fullName || !editModal.form.role"
             >
+              <Loader2 v-if="editModal.submitting" :size="15" class="spin-icon" />
+              <Check v-else :size="15" />
               {{ editModal.submitting ? 'Saving…' : 'Save Changes' }}
             </button>
           </div>
@@ -266,7 +299,9 @@
         <div class="modal modal-sm">
           <div class="modal-header">
             <h2 class="modal-title">Remove Staff Member?</h2>
-            <button class="modal-close-btn" @click="confirm.open = false">×</button>
+            <button class="modal-close-btn" @click="confirm.open = false">
+              <X :size="20" />
+            </button>
           </div>
           <div class="modal-body">
             <p class="confirm-text">
@@ -281,6 +316,8 @@
               @click="removeStaff(confirm.member)"
               :disabled="confirm.submitting"
             >
+              <Loader2 v-if="confirm.submitting" :size="15" class="spin-icon" />
+              <Trash2 v-else :size="15" />
               {{ confirm.submitting ? 'Removing…' : 'Remove' }}
             </button>
           </div>
@@ -291,7 +328,19 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import {
+  Users,
+  UserPlus,
+  Pencil,
+  PowerOff,
+  RefreshCw,
+  Trash2,
+  X,
+  Check,
+  Loader2,
+  AlertCircle,
+} from 'lucide-vue-next'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
 
@@ -299,10 +348,47 @@ const authStore = useAuthStore()
 
 const loading = ref(true)
 const staffList = ref([])
-
+const restaurantPlan = ref(null)
+const trialEndsAt = ref(null)
 const isMobile = ref(window.innerWidth <= 768)
 
-const inviteModal = ref({
+// ── Plan Limits ───────────────────────────────────
+const STAFF_LIMITS = {
+  trial: 3,
+  starter: 3,
+  pro: 10,
+  enterprise: Infinity,
+}
+
+const resolvedPlan = computed(() => {
+  const plan = restaurantPlan.value
+  if (!plan || plan === 'expired') return 'starter'
+  if (plan === 'trial') {
+    if (trialEndsAt.value && new Date(trialEndsAt.value) < new Date()) return 'starter'
+    return 'trial'
+  }
+  return plan
+})
+
+const staffLimit = computed(() => STAFF_LIMITS[resolvedPlan.value] ?? 3)
+
+const planLabel = computed(
+  () =>
+    ({
+      trial: 'Trial',
+      starter: 'Starter',
+      pro: 'Pro',
+      enterprise: 'Enterprise',
+    })[resolvedPlan.value] || '',
+)
+
+const isAtLimit = computed(() => {
+  if (staffLimit.value === Infinity) return false
+  return staffList.value.length >= staffLimit.value
+})
+
+// ── Modals ────────────────────────────────────────
+const addModal = ref({
   open: false,
   submitting: false,
   error: '',
@@ -325,13 +411,27 @@ function resizeListener() {
 
 onMounted(() => {
   window.addEventListener('resize', resizeListener)
+  fetchPlan()
   fetchStaff()
 })
 
-onBeforeUnmount(() => {
-  window.removeEventListener('resize', resizeListener)
-})
+onBeforeUnmount(() => window.removeEventListener('resize', resizeListener))
 
+// ── Fetch plan ────────────────────────────────────
+async function fetchPlan() {
+  const { data } = await supabase
+    .from('restaurants')
+    .select('plan, trial_ends_at')
+    .eq('id', authStore.profile?.restaurant_id)
+    .single()
+
+  if (data) {
+    restaurantPlan.value = data.plan
+    trialEndsAt.value = data.trial_ends_at
+  }
+}
+
+// ── Fetch staff ───────────────────────────────────
 async function fetchStaff() {
   loading.value = true
   const { data, error } = await supabase
@@ -345,8 +445,10 @@ async function fetchStaff() {
   loading.value = false
 }
 
-function openInviteModal() {
-  inviteModal.value = {
+// ── Add Staff (via Edge Function — no session hijack) ─────
+function openAddModal() {
+  if (isAtLimit.value) return
+  addModal.value = {
     open: true,
     submitting: false,
     error: '',
@@ -354,60 +456,56 @@ function openInviteModal() {
   }
 }
 
-function closeInviteModal() {
-  inviteModal.value.open = false
-  inviteModal.value.error = ''
+function closeAddModal() {
+  addModal.value.open = false
+  addModal.value.error = ''
 }
 
-async function inviteStaff() {
-  const m = inviteModal.value
+async function addStaff() {
+  const m = addModal.value
+
+  if (isAtLimit.value) {
+    m.error = `You've reached the ${staffLimit.value}-staff limit on your ${planLabel.value} plan. Upgrade to add more.`
+    return
+  }
+
   m.submitting = true
   m.error = ''
 
   try {
     const password = m.form.password.trim() || crypto.randomUUID().slice(0, 12)
 
-    const { data: authData, error: signUpErr } = await supabase.auth.signUp({
-      email: m.form.email.trim(),
-      password,
-      options: { data: { full_name: m.form.fullName.trim() } },
+    const { data, error } = await supabase.functions.invoke('create-staff-user', {
+      body: {
+        email: m.form.email.trim(),
+        password,
+        full_name: m.form.fullName.trim(),
+        role: m.form.role,
+        restaurant_id: authStore.profile.restaurant_id,
+      },
     })
 
-    if (signUpErr) throw signUpErr
-    if (!authData.user) throw new Error('User creation failed')
+    if (error) throw new Error(error.message)
+    if (data?.error) throw new Error(data.error)
 
-    const { error: rpcErr } = await supabase.rpc('create_staff_profile', {
-      p_user_id: authData.user.id,
-      p_email: m.form.email.trim(),
-      p_full_name: m.form.fullName.trim(),
-      p_role: m.form.role,
-      p_restaurant_id: authStore.profile.restaurant_id,
-    })
-
-    if (rpcErr) throw rpcErr
-
-    alert(`Staff invited!\nEmail: ${m.form.email}\nPassword: ${password}`)
-
+    alert(`Staff added!\nEmail: ${m.form.email}\nPassword: ${password}`)
     m.open = false
     await fetchStaff()
   } catch (err) {
-    m.error = err.message || 'Failed to invite staff'
+    m.error = err.message || 'Failed to add staff'
   } finally {
     m.submitting = false
   }
 }
 
+// ── Edit ──────────────────────────────────────────
 function openEditModal(member) {
   editModal.value = {
     open: true,
     submitting: false,
     error: '',
     member,
-    form: {
-      fullName: member.full_name || '',
-      role: member.role,
-      isActive: member.is_active,
-    },
+    form: { fullName: member.full_name || '', role: member.role, isActive: member.is_active },
   }
 }
 
@@ -424,16 +522,11 @@ async function saveEdit() {
   try {
     const { error } = await supabase
       .from('users')
-      .update({
-        full_name: e.form.fullName.trim(),
-        role: e.form.role,
-        is_active: e.form.isActive,
-      })
+      .update({ full_name: e.form.fullName.trim(), role: e.form.role, is_active: e.form.isActive })
       .eq('id', e.member.id)
 
     if (error) throw error
 
-    // Update local list
     const idx = staffList.value.findIndex((m) => m.id === e.member.id)
     if (idx !== -1) {
       staffList.value[idx] = {
@@ -443,7 +536,6 @@ async function saveEdit() {
         is_active: e.form.isActive,
       }
     }
-
     e.open = false
   } catch (err) {
     e.error = err.message || 'Failed to update'
@@ -452,10 +544,10 @@ async function saveEdit() {
   }
 }
 
+// ── Toggle / Remove ───────────────────────────────
 async function toggleActive(member) {
   const newState = !member.is_active
   const { error } = await supabase.from('users').update({ is_active: newState }).eq('id', member.id)
-
   if (!error) member.is_active = newState
 }
 
@@ -465,7 +557,11 @@ function confirmRemove(member) {
 
 async function removeStaff(member) {
   confirm.value.submitting = true
-  const { error } = await supabase.from('users').delete().eq('id', member.id)
+
+  const { error } = await supabase.functions.invoke('delete-staff-user', {
+    body: { user_id: member.id },
+  })
+
   if (!error) {
     staffList.value = staffList.value.filter((m) => m.id !== member.id)
     confirm.value.open = false
@@ -473,6 +569,7 @@ async function removeStaff(member) {
   confirm.value.submitting = false
 }
 
+// ── Helpers ───────────────────────────────────────
 function initials(str) {
   if (!str) return '?'
   return str
@@ -485,11 +582,8 @@ function initials(str) {
 
 function getAvatarColor(email) {
   let hash = 0
-  for (let i = 0; i < email.length; i++) {
-    hash = email.charCodeAt(i) + ((hash << 5) - hash)
-  }
-  const hue = Math.abs(hash) % 360
-  return `hsl(${hue}, 70%, 55%)`
+  for (let i = 0; i < email.length; i++) hash = email.charCodeAt(i) + ((hash << 5) - hash)
+  return `hsl(${Math.abs(hash) % 360}, 70%, 55%)`
 }
 
 function roleLabel(role) {
@@ -517,7 +611,7 @@ function roleDescription(role) {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 32px;
+  margin-bottom: 24px;
   flex-wrap: wrap;
   gap: 16px;
 }
@@ -535,7 +629,76 @@ function roleDescription(role) {
   margin-top: 4px;
 }
 
-.btn-invite {
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* ── Limit badge ─────────────────────────────────── */
+.limit-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  font-size: 13px;
+  font-weight: 600;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-subtle);
+  color: var(--color-text-secondary);
+}
+
+.limit-badge.limit-reached {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #f87171;
+}
+
+.plan-tag {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  background: var(--color-accent-muted);
+  color: var(--color-accent);
+}
+
+/* ── Limit banner ────────────────────────────────── */
+.limit-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 18px;
+  border-radius: 10px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #f87171;
+  font-size: 14px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.upgrade-link {
+  margin-left: auto;
+  color: var(--color-accent);
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.upgrade-link:hover {
+  text-decoration: underline;
+}
+
+/* ── Add button ──────────────────────────────────── */
+.btn-add {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   background: var(--color-accent);
   color: white;
   border: none;
@@ -547,8 +710,12 @@ function roleDescription(role) {
   transition: all 0.16s ease;
 }
 
-.btn-invite:hover {
+.btn-add:hover:not(:disabled) {
   background: var(--color-accent-hover);
+}
+.btn-add:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 /* ── States ─────────────────────────────────────── */
@@ -560,6 +727,12 @@ function roleDescription(role) {
   align-items: center;
   justify-content: center;
   color: var(--color-text-muted);
+  gap: 8px;
+}
+
+.empty-icon {
+  color: var(--color-text-faint);
+  margin-bottom: 8px;
 }
 
 .spinner {
@@ -576,18 +749,15 @@ function roleDescription(role) {
     transform: rotate(360deg);
   }
 }
-
-.empty-icon {
-  font-size: 64px;
-  margin-bottom: 16px;
-  color: var(--color-text-faint);
+.spin-icon {
+  animation: spin 1s linear infinite;
 }
 
 .empty-text {
   color: var(--color-text-secondary);
   text-align: center;
   max-width: 360px;
-  margin: 12px 0 24px;
+  margin: 4px 0 16px;
 }
 
 /* ── Desktop Table ──────────────────────────────── */
@@ -652,7 +822,6 @@ function roleDescription(role) {
   font-weight: 600;
   color: var(--color-text-primary);
 }
-
 .member-email {
   font-size: 13px;
   color: var(--color-text-muted);
@@ -699,7 +868,7 @@ function roleDescription(role) {
   justify-content: flex-end;
 }
 
-/* ── Common Action Button ───────────────────────── */
+/* ── Action Button ──────────────────────────────── */
 .action-btn {
   width: 36px;
   height: 36px;
@@ -707,7 +876,6 @@ function roleDescription(role) {
   border: 1px solid var(--color-border-subtle);
   background: var(--color-bg-elevated);
   color: var(--color-text-muted);
-  font-size: 16px;
   cursor: pointer;
   transition: all 0.14s;
   display: flex;
@@ -755,15 +923,12 @@ function roleDescription(role) {
   gap: 12px;
   margin-bottom: 12px;
 }
-
 .card-info {
   flex: 1;
 }
-
 .card-role {
   margin-bottom: 16px;
 }
-
 .card-actions {
   display: flex;
   justify-content: space-between;
@@ -773,7 +938,6 @@ function roleDescription(role) {
 .action-btn.mobile {
   width: 44px;
   height: 44px;
-  font-size: 18px;
   flex: 1;
   max-width: 44px;
 }
@@ -822,7 +986,6 @@ function roleDescription(role) {
 .modal-close-btn {
   background: none;
   border: none;
-  font-size: 24px;
   color: var(--color-text-muted);
   cursor: pointer;
   width: 36px;
@@ -916,6 +1079,9 @@ function roleDescription(role) {
 }
 
 .btn-primary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   background: var(--color-accent);
   color: white;
   border: none;
@@ -928,8 +1094,15 @@ function roleDescription(role) {
 .btn-primary:hover:not(:disabled) {
   background: var(--color-accent-hover);
 }
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 
 .btn-danger {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   background: #ef4444;
   color: white;
   border: none;
@@ -948,20 +1121,31 @@ function roleDescription(role) {
   line-height: 1.6;
 }
 
-/* Mobile tweaks */
+/* ── Mobile tweaks ──────────────────────────────── */
 @media (max-width: 768px) {
   .page-header {
     flex-direction: column;
     align-items: flex-start;
   }
-
-  .btn-invite {
+  .header-right {
     width: 100%;
+    justify-content: space-between;
   }
-
+  .btn-add {
+    flex: 1;
+    justify-content: center;
+  }
   .status-pill.mobile {
     font-size: 12px;
     padding: 4px 10px;
+  }
+  .limit-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .upgrade-link {
+    margin-left: 0;
   }
 }
 </style>
