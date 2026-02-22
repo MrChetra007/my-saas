@@ -1,44 +1,84 @@
 <template>
   <div class="view-page">
     <div class="view-header">
-      <div>
+      <div class="header-content">
         <h1 class="view-title">Ready to Pay</h1>
-        <p class="view-sub">Mark orders as paid when customer settles the bill.</p>
+        <p class="view-subtitle">Mark orders as paid when customer settles the bill</p>
       </div>
-      <!-- Today's revenue counter -->
-      <div class="revenue-box">
-        <span class="revenue-label">Today's Revenue</span>
-        <span class="revenue-value">{{ formatCurrency(todayRevenue) }}</span>
+      <div class="revenue-card">
+        <div class="revenue-icon-wrap">
+          <TrendingUp class="revenue-icon" />
+        </div>
+        <div class="revenue-info">
+          <span class="revenue-label">Today's Revenue</span>
+          <span class="revenue-value">{{ formatCurrency(todayRevenue) }}</span>
+        </div>
       </div>
     </div>
 
-    <div v-if="orders.length === 0" class="empty">No orders ready for payment.</div>
+    <!-- Empty State -->
+    <div v-if="orders.length === 0" class="empty-state">
+      <div class="empty-icon-wrap">
+        <Banknote class="empty-icon" />
+      </div>
+      <h3 class="empty-title">No orders ready</h3>
+      <p class="empty-subtitle">Orders marked "ready" will appear here for payment</p>
+    </div>
 
-    <div class="orders-list">
+    <!-- Orders List -->
+    <div v-else class="orders-list">
       <div v-for="order in orders" :key="order.id" class="order-card">
-        <div class="order-top">
-          <div>
-            <span class="table-name">{{ order.tables?.name ?? 'Table' }}</span>
-            <span class="order-time">{{ formatTime(order.created_at) }}</span>
+        <!-- Card Header -->
+        <div class="order-header">
+          <div class="table-info">
+            <div class="table-icon-wrap">
+              <Armchair class="table-icon" />
+            </div>
+            <div class="table-details">
+              <span class="table-name">{{ order.tables?.name ?? 'Unknown Table' }}</span>
+              <span class="order-meta">
+                <Clock class="meta-icon" />
+                {{ formatTime(order.created_at) }}
+                <span class="order-id">#{{ order.id.slice(-6).toUpperCase() }}</span>
+              </span>
+            </div>
           </div>
-          <span class="order-total">{{ formatCurrency(orderTotal(order)) }}</span>
+          <div class="order-total-wrap">
+            <span class="total-label">Total</span>
+            <span class="total-value">{{ formatCurrency(orderTotal(order)) }}</span>
+          </div>
         </div>
 
-        <ul class="items">
-          <li v-for="item in order.order_items" :key="item.id">
+        <!-- Order Items -->
+        <div class="order-items">
+          <div v-for="item in order.order_items" :key="item.id" class="item-row">
             <div class="item-main">
-              <span class="qty">{{ item.quantity }}×</span>
-              <span class="item-name">{{ item.menu_items?.name }}</span>
+              <span class="item-qty">{{ item.quantity }}×</span>
+              <div class="item-details">
+                <span class="item-name">{{ item.menu_items?.name ?? 'Unknown Item' }}</span>
+                <span v-if="item.notes" class="item-note">
+                  <MessageSquare class="note-icon" />
+                  {{ item.notes }}
+                </span>
+              </div>
               <span class="item-price">{{ formatCurrency(item.unit_price * item.quantity) }}</span>
             </div>
-            <!-- ✅ Show notes if present -->
-            <div class="item-note" v-if="item.notes">
-              <span class="note-icon">📝</span> {{ item.notes }}
-            </div>
-          </li>
-        </ul>
+          </div>
+        </div>
 
-        <button class="btn-paid" @click="markPaid(order.id)">Mark as Paid ✓</button>
+        <!-- Action Footer -->
+        <div class="order-footer">
+          <div class="order-stats">
+            <span class="stat-item">
+              <Hash class="stat-icon" />
+              {{ order.order_items?.length || 0 }} items
+            </span>
+          </div>
+          <button class="btn-paid" @click="markPaid(order.id)">
+            <CheckCircle2 class="btn-icon" />
+            Mark as Paid
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -48,6 +88,15 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
+import {
+  TrendingUp,
+  Banknote,
+  Armchair,
+  Clock,
+  CheckCircle2,
+  MessageSquare,
+  Hash,
+} from 'lucide-vue-next'
 
 const authStore = useAuthStore()
 const orders = ref([])
@@ -57,11 +106,20 @@ let channel = null
 function orderTotal(order) {
   return order.order_items?.reduce((sum, i) => sum + i.unit_price * i.quantity, 0) ?? 0
 }
+
 function formatCurrency(amount) {
-  return `$${Number(amount).toFixed(2)}`
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+  }).format(amount)
 }
+
 function formatTime(iso) {
-  return new Date(iso).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+  return new Date(iso).toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  })
 }
 
 async function fetchOrders() {
@@ -100,165 +158,480 @@ async function markPaid(id) {
 onMounted(async () => {
   await Promise.all([fetchOrders(), fetchTodayRevenue()])
   channel = supabase
-    .channel('cashier-orders')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, fetchOrders)
+    .channel('cashier-payment')
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'orders',
+        filter: `restaurant_id=eq.${authStore.profile?.restaurant_id}`,
+      },
+      () => {
+        fetchOrders()
+        fetchTodayRevenue()
+      },
+    )
     .subscribe()
 })
-onUnmounted(() => channel && supabase.removeChannel(channel))
+
+onUnmounted(() => {
+  if (channel) supabase.removeChannel(channel)
+})
 </script>
 
 <style scoped>
 .view-page {
-  padding: 2rem;
-  max-width: 760px;
+  padding: 24px;
+  max-width: var(--width-narrow);
   margin: 0 auto;
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-body);
+  color: var(--color-text-primary);
+  min-height: 100%;
+  padding-bottom: 32px;
 }
+
+@media (max-width: 640px) {
+  .view-page {
+    padding: 16px;
+    padding-bottom: 100px;
+  }
+}
+
+/* ── Header ── */
 .view-header {
   display: flex;
-  justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 1.5rem;
-  gap: 1rem;
+  justify-content: space-between;
+  margin-bottom: 28px;
+  gap: 16px;
+  flex-wrap: wrap;
 }
+
+.header-content {
+  flex: 1;
+}
+
 .view-title {
-  font-size: 1.5rem;
+  font-family: var(--font-display);
+  font-size: 28px;
   font-weight: 700;
-  color: #111827;
-  margin: 0 0 0.25rem;
+  color: var(--color-text-primary);
+  letter-spacing: -0.02em;
+  margin: 0 0 6px;
+  line-height: 1.2;
 }
-.view-sub {
-  font-size: 0.85rem;
-  color: #9ca3af;
+
+.view-subtitle {
+  font-size: 14px;
+  color: var(--color-text-secondary);
   margin: 0;
 }
 
-/* Revenue Box */
-.revenue-box {
-  background: #f0fdf4;
-  border: 1.5px solid #86efac;
-  border-radius: 12px;
-  padding: 0.75rem 1.25rem;
-  text-align: right;
-  flex-shrink: 0;
-}
-.revenue-label {
-  display: block;
-  font-size: 0.72rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: #16a34a;
-  margin-bottom: 0.2rem;
-}
-.revenue-value {
-  font-size: 1.3rem;
-  font-weight: 800;
-  color: #111827;
+.revenue-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  background: rgba(74, 222, 128, 0.08);
+  border: 1px solid rgba(74, 222, 128, 0.2);
+  border-radius: var(--radius-panel);
+  transition: all 0.2s ease;
 }
 
-.empty {
-  text-align: center;
-  padding: 3rem;
-  color: #9ca3af;
-  font-size: 0.95rem;
+.revenue-card:hover {
+  border-color: rgba(74, 222, 128, 0.35);
+  box-shadow: 0 8px 24px rgba(74, 222, 128, 0.12);
 }
+
+.revenue-icon-wrap {
+  width: 44px;
+  height: 44px;
+  background: rgba(74, 222, 128, 0.12);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.revenue-icon {
+  width: 22px;
+  height: 22px;
+  color: var(--color-status-success);
+}
+
+.revenue-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.revenue-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-status-success);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.revenue-value {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--color-status-success);
+  letter-spacing: -0.02em;
+}
+
+/* ── Empty State ── */
+.empty-state {
+  text-align: center;
+  padding: 80px 24px;
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-panel);
+}
+
+.empty-icon-wrap {
+  width: 72px;
+  height: 72px;
+  background: var(--color-accent-muted);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+}
+
+.empty-icon {
+  width: 36px;
+  height: 36px;
+  color: var(--color-accent);
+}
+
+.empty-title {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0 0 6px;
+}
+
+.empty-subtitle {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+/* ── Orders List ── */
 .orders-list {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 16px;
 }
 
 .order-card {
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 14px;
-  padding: 1.25rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-.order-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-}
-.table-name {
-  font-size: 1rem;
-  font-weight: 700;
-  color: #111827;
-  display: block;
-}
-.order-time {
-  font-size: 0.78rem;
-  color: #9ca3af;
-}
-.order-total {
-  font-size: 1.1rem;
-  font-weight: 800;
-  color: #111827;
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-panel);
+  overflow: hidden;
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow-card);
+  animation: var(--animate-float-in);
 }
 
-.items {
-  list-style: none;
+.order-card:hover {
+  border-color: var(--color-border-medium);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-float);
+}
+
+.order-card:nth-child(1) {
+  animation-delay: 0ms;
+}
+.order-card:nth-child(2) {
+  animation-delay: 50ms;
+}
+.order-card:nth-child(3) {
+  animation-delay: 100ms;
+}
+.order-card:nth-child(4) {
+  animation-delay: 150ms;
+}
+.order-card:nth-child(5) {
+  animation-delay: 200ms;
+}
+
+/* ── Order Header ── */
+.order-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px;
+  background: var(--color-bg-elevated);
+  border-bottom: 1px solid var(--color-border-subtle);
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.table-info {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.table-icon-wrap {
+  width: 44px;
+  height: 44px;
+  background: var(--color-accent-muted);
+  border: 1px solid var(--color-accent-border);
+  border-radius: var(--radius-card);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.table-icon {
+  width: 22px;
+  height: 22px;
+  color: var(--color-accent);
+}
+
+.table-details {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 4px;
 }
-.items li {
+
+.table-name {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.order-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.meta-icon {
+  width: 14px;
+  height: 14px;
+  opacity: 0.7;
+}
+
+.order-id {
+  font-family: monospace;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  letter-spacing: 0.02em;
+}
+
+.order-total-wrap {
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
+  align-items: flex-end;
+  gap: 2px;
 }
+
+.total-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.total-value {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--color-accent);
+  letter-spacing: -0.02em;
+}
+
+/* ── Order Items ── */
+.order-items {
+  padding: 8px 0;
+}
+
+.item-row {
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.item-row:last-child {
+  border-bottom: none;
+}
+
 .item-main {
   display: flex;
-  gap: 0.5rem;
-  align-items: center;
-  font-size: 0.88rem;
-  color: #374151;
-}
-.qty {
-  font-weight: 700;
-  color: #6b7280;
-  flex-shrink: 0;
-}
-.item-name {
-  flex: 1;
-}
-.item-price {
-  margin-left: auto;
-  color: #6b7280;
-  flex-shrink: 0;
+  align-items: flex-start;
+  gap: 14px;
 }
 
-/* ✅ Notes */
+.item-qty {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-accent);
+  min-width: 32px;
+  margin-top: 1px;
+}
+
+.item-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.item-name {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  line-height: 1.4;
+}
+
 .item-note {
   display: flex;
   align-items: center;
-  gap: 0.35rem;
-  font-size: 0.75rem;
-  color: #6366f1;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--color-text-muted);
   font-style: italic;
-  padding-left: 1.4rem;
-}
-.note-icon {
-  font-style: normal;
-  font-size: 0.7rem;
 }
 
+.note-icon {
+  width: 14px;
+  height: 14px;
+  opacity: 0.6;
+  flex-shrink: 0;
+}
+
+.item-price {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  min-width: 80px;
+  text-align: right;
+}
+
+/* ── Order Footer ── */
+.order-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: var(--color-bg-elevated);
+  border-top: 1px solid var(--color-border-subtle);
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.order-stats {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
+.stat-icon {
+  width: 14px;
+  height: 14px;
+  color: var(--color-text-muted);
+}
+
+/* ── Paid Button ── */
 .btn-paid {
-  background: #16a34a;
-  color: white;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--color-status-success);
+  color: #111827;
   border: none;
-  border-radius: 10px;
-  padding: 0.7rem;
-  font-size: 0.9rem;
+  border-radius: var(--radius-card);
+  padding: 12px 20px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   font-family: inherit;
-  transition: background 0.15s;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgba(74, 222, 128, 0.25);
 }
+
 .btn-paid:hover {
-  background: #15803d;
+  background: #22c55e;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(74, 222, 128, 0.35);
+}
+
+.btn-paid:active {
+  transform: translateY(0);
+}
+
+.btn-icon {
+  width: 18px;
+  height: 18px;
+}
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  .view-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .revenue-card {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .order-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .order-total-wrap {
+    width: 100%;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 12px;
+    border-top: 1px solid var(--color-border-subtle);
+  }
+
+  .item-main {
+    flex-wrap: wrap;
+  }
+
+  .item-price {
+    width: 100%;
+    text-align: left;
+    margin-left: 46px;
+    margin-top: 6px;
+  }
+
+  .order-footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .btn-paid {
+    width: 100%;
+    justify-content: center;
+  }
 }
 </style>
