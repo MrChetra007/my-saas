@@ -7,33 +7,41 @@
         <p class="page-subtitle">Manage your restaurant profile & preferences</p>
       </div>
       <button class="btn-save" @click="saveSettings" :disabled="saving || !isDirty">
-        <span v-if="saving" class="spinner" />
+        <Loader2 v-if="saving" :size="15" class="spin" />
+        <Save v-else :size="15" />
         {{ saving ? 'Saving…' : 'Save Changes' }}
       </button>
     </div>
 
     <!-- Upgrade success banner -->
     <div v-if="showUpgradedBanner" class="upgrade-banner">
-      <span class="banner-icon">🎉</span>
+      <PartyPopper :size="22" class="banner-icon" />
       <div>
         <strong>Welcome to {{ planDisplayName }}!</strong><br />
-        Your subscription is now active.
+        Your subscription is now active. Enjoy full access.
       </div>
-      <button class="banner-close" @click="showUpgradedBanner = false">×</button>
+      <button class="banner-close" @click="showUpgradedBanner = false">
+        <X :size="16" />
+      </button>
     </div>
 
     <!-- Loading -->
     <div v-if="loading" class="loading-state">
-      <div class="spinner" />
+      <Loader2 :size="32" class="spin" />
       <span>Loading settings…</span>
     </div>
 
     <template v-else>
-      <!-- Restaurant Profile -->
+      <!-- ── Restaurant Profile ───────────────────── -->
       <div class="section-card">
         <div class="section-header">
-          <h2 class="section-title">Restaurant Profile</h2>
-          <p class="section-desc">This information appears on your customer ordering page.</p>
+          <div class="section-header-left">
+            <Store :size="18" class="section-icon" />
+            <div>
+              <h2 class="section-title">Restaurant Profile</h2>
+              <p class="section-desc">This information appears on your customer ordering page.</p>
+            </div>
+          </div>
         </div>
 
         <div class="section-body">
@@ -42,22 +50,9 @@
             <div class="logo-preview">
               <img v-if="form.logoUrl" :src="form.logoUrl" alt="Logo" class="logo-img" />
               <div v-else class="logo-placeholder">
-                <svg
-                  width="32"
-                  height="32"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                >
-                  <path
-                    d="M3 7V5a2 2 0 012-2h6a2 2 0 012 2v2M7 21H5a2 2 0 01-2-2V7m14 14h2a2 2 0 002-2V7"
-                  />
-                  <circle cx="12" cy="12" r="3" />
-                </svg>
+                <ImageIcon :size="32" />
               </div>
             </div>
-
             <div class="logo-actions">
               <label class="btn-upload">
                 <input
@@ -67,12 +62,13 @@
                   @change="handleLogoUpload"
                   :disabled="uploadingLogo"
                 />
-                <span v-if="uploadingLogo" class="spinner spinner-sm" />
+                <Loader2 v-if="uploadingLogo" :size="14" class="spin" />
+                <Upload v-else :size="14" />
                 {{ uploadingLogo ? 'Uploading…' : form.logoUrl ? 'Replace Logo' : 'Upload Logo' }}
               </label>
-
-              <button v-if="form.logoUrl" class="btn-remove" @click="removeLogo">Remove</button>
-
+              <button v-if="form.logoUrl" class="btn-remove" @click="removeLogo">
+                <Trash2 :size="13" /> Remove
+              </button>
               <p class="logo-hint">Recommended: 512×512 PNG or JPG, max 2MB</p>
             </div>
           </div>
@@ -92,7 +88,7 @@
             <div class="form-group">
               <label class="form-label">URL Slug</label>
               <div class="slug-wrapper">
-                <span class="slug-prefix">yourdomain.com/order/</span>
+                <span class="slug-prefix">qrder.com/order/</span>
                 <input
                   v-model="form.slug"
                   class="form-input slug-input"
@@ -100,7 +96,9 @@
                   @input="markDirty"
                 />
               </div>
-              <p class="form-hint warning">Changing this will break existing QR codes and links.</p>
+              <p class="form-hint warning">
+                <AlertTriangle :size="11" /> Changing this will break existing QR codes.
+              </p>
             </div>
 
             <div class="form-group full-width">
@@ -116,11 +114,16 @@
         </div>
       </div>
 
-      <!-- Regional Settings -->
+      <!-- ── Regional Settings ────────────────────── -->
       <div class="section-card">
         <div class="section-header">
-          <h2 class="section-title">Regional Settings</h2>
-          <p class="section-desc">How prices, dates and times appear to customers.</p>
+          <div class="section-header-left">
+            <Globe :size="18" class="section-icon" />
+            <div>
+              <h2 class="section-title">Regional Settings</h2>
+              <p class="section-desc">How prices, dates and times appear to customers.</p>
+            </div>
+          </div>
         </div>
 
         <div class="section-body">
@@ -133,7 +136,6 @@
                 </option>
               </select>
             </div>
-
             <div class="form-group">
               <label class="form-label">Timezone</label>
               <select v-model="form.timezone" class="form-select" @change="markDirty">
@@ -143,26 +145,34 @@
               </select>
             </div>
           </div>
-
           <div class="preview-card">
-            <span class="preview-label">Price Example</span>
+            <span class="preview-label">Price Preview</span>
             <span class="preview-value">{{ currencyPreview }}</span>
           </div>
         </div>
       </div>
 
-      <!-- Subscription & Billing -->
+      <!-- ── Subscription & Billing ──────────────── -->
       <div class="section-card">
         <div class="section-header">
-          <h2 class="section-title">Subscription & Billing</h2>
-          <p class="section-desc">Manage your plan and billing details.</p>
+          <div class="section-header-left">
+            <CreditCard :size="18" class="section-icon" />
+            <div>
+              <h2 class="section-title">Subscription & Billing</h2>
+              <p class="section-desc">Manage your plan and billing details.</p>
+            </div>
+          </div>
         </div>
 
         <div class="section-body">
-          <!-- Plan Status -->
+          <!-- Plan Status Card -->
           <div class="plan-card" :class="`plan-${planStatus}`">
             <div class="plan-left">
-              <div class="plan-icon">{{ planIcon }}</div>
+              <div class="plan-icon-wrap">
+                <Star v-if="hasActiveSubscription" :size="20" />
+                <Clock v-else-if="isOnTrial" :size="20" />
+                <LockIcon v-else :size="20" />
+              </div>
               <div>
                 <div class="plan-name">{{ planDisplayName }}</div>
                 <div class="plan-meta">{{ planMeta }}</div>
@@ -171,13 +181,12 @@
             <span class="plan-badge" :class="planStatus">{{ planBadgeLabel }}</span>
           </div>
 
-          <!-- Trial Countdown (if applicable) -->
+          <!-- Trial Countdown -->
           <div v-if="isOnTrial" class="trial-card">
             <div class="trial-header">
-              <span class="trial-title">Trial Period</span>
+              <span class="trial-title"> <Timer :size="14" /> Trial Period </span>
               <span class="trial-expires">Ends {{ formatDate(restaurant.trial_ends_at) }}</span>
             </div>
-
             <div class="trial-timer">
               <div class="timer-block">
                 <span class="timer-num">{{ trialTimeLeft.days }}</span>
@@ -194,40 +203,34 @@
                 <span class="timer-unit">min</span>
               </div>
             </div>
-
             <div class="trial-progress">
               <div class="progress-fill" :style="{ width: `${trialPercent}%` }" />
             </div>
-
             <div class="trial-labels">
               <span>Started</span>
               <span>{{ trialTotalDays }} / 14 days used</span>
               <span>Ends</span>
             </div>
-
-            <button class="btn-upgrade" @click="showPlanPicker = true">Upgrade Now</button>
+            <button class="btn-upgrade" @click="showPlanPicker = true">
+              <Zap :size="14" /> Upgrade Now
+            </button>
           </div>
 
           <!-- Expired -->
           <div v-else-if="planStatus === 'expired'" class="expired-card">
-            <svg
-              class="expired-icon"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-            >
-              <circle cx="12" cy="12" r="10" />
-              <path d="M12 8v4l3 3" />
-            </svg>
+            <div class="expired-icon-wrap">
+              <AlertCircle :size="28" />
+            </div>
             <div>
               <h3 class="expired-title">Trial Expired</h3>
               <p class="expired-text">
                 Your trial ended on {{ formatDate(restaurant.trial_ends_at) }}.<br />
-                Upgrade to continue using all features.
+                Choose a plan to continue using Qrder.
               </p>
             </div>
-            <button class="btn-upgrade" @click="showPlanPicker = true">Choose a Plan</button>
+            <button class="btn-upgrade" @click="showPlanPicker = true">
+              <Zap :size="14" /> Choose a Plan
+            </button>
           </div>
 
           <!-- Billing Details -->
@@ -236,17 +239,14 @@
               <span class="billing-key">Current Plan</span>
               <span class="billing-value">{{ planDisplayName }}</span>
             </div>
-
             <div class="billing-row" v-if="restaurant.trial_ends_at">
               <span class="billing-key">Trial Ends</span>
               <span class="billing-value">{{ formatDate(restaurant.trial_ends_at) }}</span>
             </div>
-
             <div class="billing-row" v-if="restaurant.lemonsqueezy_customer_id">
               <span class="billing-key">Customer ID</span>
               <span class="billing-value mono">{{ restaurant.lemonsqueezy_customer_id }}</span>
             </div>
-
             <div class="billing-row" v-if="restaurant.lemonsqueezy_subscription_id">
               <span class="billing-key">Subscription ID</span>
               <span class="billing-value mono">{{ restaurant.lemonsqueezy_subscription_id }}</span>
@@ -261,116 +261,162 @@
               @click="showPlanPicker = true"
               :disabled="checkoutLoading"
             >
-              <span v-if="checkoutLoading" class="spinner" />
+              <Loader2 v-if="checkoutLoading" :size="14" class="spin" />
+              <Zap v-else :size="14" />
               Upgrade Plan
             </button>
-
             <a
               v-if="hasActiveSubscription && restaurant.customer_portal_url"
               :href="restaurant.customer_portal_url"
               target="_blank"
               class="btn-portal"
             >
-              Manage Billing →
+              <ExternalLink :size="14" /> Manage Billing
             </a>
           </div>
 
           <div v-if="billingError" class="alert error">
-            {{ billingError }}
+            <AlertCircle :size="14" /> {{ billingError }}
           </div>
         </div>
       </div>
 
       <!-- Save Feedback -->
-      <div v-if="saveError" class="alert error">{{ saveError }}</div>
-      <div v-if="saveSuccess" class="alert success">{{ saveSuccess }}</div>
+      <div v-if="saveError" class="alert error"><AlertCircle :size="14" /> {{ saveError }}</div>
+      <div v-if="saveSuccess" class="alert success">
+        <CheckCircle2 :size="14" /> {{ saveSuccess }}
+      </div>
 
       <!-- Sticky Bottom Bar -->
       <div class="bottom-bar" v-if="isDirty">
         <button class="btn-save" @click="saveSettings" :disabled="saving">
-          <span v-if="saving" class="spinner" />
+          <Loader2 v-if="saving" :size="15" class="spin" />
+          <Save v-else :size="15" />
           {{ saving ? 'Saving…' : 'Save Changes' }}
         </button>
-        <button class="btn-discard" @click="discardChanges">Discard</button>
+        <button class="btn-discard" @click="discardChanges">
+          <RotateCcw :size="14" /> Discard
+        </button>
       </div>
     </template>
 
-    <!-- Plan Picker Modal -->
+    <!-- ── Plan Picker Modal ───────────────────────── -->
     <Teleport to="body">
-      <div v-if="showPlanPicker" class="modal-backdrop" @click.self="showPlanPicker = false">
-        <div class="modal modal-plan-picker">
-          <div class="modal-header">
-            <h2 class="modal-title">Choose Your Plan</h2>
-            <button class="modal-close-btn" @click="showPlanPicker = false">×</button>
-          </div>
-
-          <p class="modal-subtitle">Secure checkout powered by Lemon Squeezy. Cancel anytime.</p>
-
-          <div class="plan-options">
-            <!-- Starter -->
-            <div
-              class="plan-option"
-              :class="{ selected: selectedPlan === 'starter' }"
-              @click="selectedPlan = 'starter'"
-            >
-              <div class="plan-header">
-                <div>
-                  <h3 class="plan-name">Starter</h3>
-                  <div class="plan-price">$49<span>/mo</span></div>
+      <Transition name="modal">
+        <div v-if="showPlanPicker" class="modal-backdrop" @click.self="showPlanPicker = false">
+          <div class="modal-plan-picker">
+            <!-- Modal Header -->
+            <div class="picker-header">
+              <div class="picker-header-left">
+                <div class="picker-logo">
+                  <Zap :size="16" />
                 </div>
-                <div v-if="selectedPlan === 'starter'" class="plan-selected">✓</div>
+                <div>
+                  <h2 class="picker-title">Choose Your Plan</h2>
+                  <p class="picker-subtitle">Secure checkout via Lemon Squeezy · Cancel anytime</p>
+                </div>
               </div>
-
-              <ul class="plan-features">
-                <li>Up to 15 tables</li>
-                <li>Up to 3 staff accounts</li>
-                <li>Unlimited orders</li>
-                <li>Kitchen & waiter views</li>
-                <li>QR code ordering</li>
-                <li>Email support</li>
-              </ul>
+              <button class="picker-close" @click="showPlanPicker = false">
+                <X :size="16" />
+              </button>
             </div>
 
-            <!-- Pro (Featured) -->
-            <div
-              class="plan-option featured"
-              :class="{ selected: selectedPlan === 'pro' }"
-              @click="selectedPlan = 'pro'"
-            >
-              <div class="popular-badge">Most Popular</div>
+            <!-- Plan Cards -->
+            <div class="picker-body">
+              <div class="plan-options">
+                <!-- Starter -->
+                <div
+                  class="plan-option"
+                  :class="{ selected: selectedPlan === 'starter' }"
+                  @click="selectedPlan = 'starter'"
+                >
+                  <div class="option-top">
+                    <div class="option-name">Starter</div>
+                    <div class="option-price">
+                      <span class="price-dollar">$</span>29<span class="price-mo">/mo</span>
+                    </div>
+                    <p class="option-tagline">Perfect for small restaurants getting started.</p>
+                  </div>
 
-              <div class="plan-header">
-                <div>
-                  <h3 class="plan-name">Pro</h3>
-                  <div class="plan-price">$99<span>/mo</span></div>
+                  <ul class="option-features">
+                    <li><Check :size="13" /> Up to 15 tables</li>
+                    <li><Check :size="13" /> Up to 3 staff accounts</li>
+                    <li><Check :size="13" /> Unlimited orders</li>
+                    <li><Check :size="13" /> QR code ordering</li>
+                    <li><Check :size="13" /> Kitchen & cashier views</li>
+                    <li><Check :size="13" /> Menu management</li>
+                  </ul>
+
+                  <div class="option-select-indicator">
+                    <div class="radio-ring" :class="{ checked: selectedPlan === 'starter' }">
+                      <div v-if="selectedPlan === 'starter'" class="radio-dot" />
+                    </div>
+                    <span>{{ selectedPlan === 'starter' ? 'Selected' : 'Select Starter' }}</span>
+                  </div>
                 </div>
-                <div v-if="selectedPlan === 'pro'" class="plan-selected">✓</div>
+
+                <!-- Pro -->
+                <div
+                  class="plan-option plan-option-pro"
+                  :class="{ selected: selectedPlan === 'pro' }"
+                  @click="selectedPlan = 'pro'"
+                >
+                  <div class="pro-badge"><Star :size="10" /> Recommended</div>
+
+                  <div class="option-top">
+                    <div class="option-name option-name-pro">Pro</div>
+                    <div class="option-price option-price-pro">
+                      <span class="price-dollar">$</span>69<span class="price-mo">/mo</span>
+                    </div>
+                    <p class="option-tagline">
+                      For restaurants running their full operation digitally.
+                    </p>
+                  </div>
+
+                  <ul class="option-features">
+                    <li><Check :size="13" /> Unlimited tables</li>
+                    <li><Check :size="13" /> Up to 10 staff accounts</li>
+                    <li><Check :size="13" /> Unlimited orders</li>
+                    <li><Check :size="13" /> QR code ordering</li>
+                    <li><Check :size="13" /> All staff role views</li>
+                    <li><Check :size="13" /> Menu management</li>
+                    <li><Check :size="13" /> Analytics & charts</li>
+                    <li><Check :size="13" /> Promotions & discounts</li>
+                  </ul>
+
+                  <div class="option-select-indicator option-select-pro">
+                    <div
+                      class="radio-ring radio-ring-pro"
+                      :class="{ checked: selectedPlan === 'pro' }"
+                    >
+                      <div v-if="selectedPlan === 'pro'" class="radio-dot" />
+                    </div>
+                    <span>{{ selectedPlan === 'pro' ? 'Selected' : 'Select Pro' }}</span>
+                  </div>
+                </div>
               </div>
 
-              <ul class="plan-features">
-                <li>Unlimited tables</li>
-                <li>Up to 10 staff accounts</li>
-                <li>Unlimited orders</li>
-                <li>Full kitchen, cashier & waiter views</li>
-                <li>Analytics & reports</li>
-                <li>Promotions & discounts</li>
-                <li>Priority support</li>
-              </ul>
+              <!-- CTA -->
+              <button
+                class="btn-checkout"
+                @click="goToCheckout"
+                :disabled="!selectedPlan || checkoutLoading"
+              >
+                <Loader2 v-if="checkoutLoading" :size="16" class="spin" />
+                <template v-else>
+                  Continue to Checkout
+                  <ArrowRight :size="16" />
+                </template>
+              </button>
+
+              <p class="secure-note">
+                <Lock :size="12" /> Payments secured by Lemon Squeezy · Cancel anytime · No hidden
+                fees
+              </p>
             </div>
           </div>
-
-          <button
-            class="btn-checkout"
-            @click="goToCheckout"
-            :disabled="!selectedPlan || checkoutLoading"
-          >
-            <span v-if="checkoutLoading" class="spinner" />
-            Continue to Checkout →
-          </button>
-
-          <p class="secure-note">🔒 Secure payment • Cancel anytime</p>
         </div>
-      </div>
+      </Transition>
     </Teleport>
   </div>
 </template>
@@ -381,6 +427,34 @@ import { useRoute } from 'vue-router'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
 
+import {
+  Save,
+  Loader2,
+  X,
+  PartyPopper,
+  Store,
+  ImageIcon,
+  Upload,
+  Trash2,
+  Globe,
+  CreditCard,
+  Star,
+  Clock,
+  Lock,
+  AlertTriangle,
+  AlertCircle,
+  CheckCircle2,
+  Timer,
+  Zap,
+  ExternalLink,
+  RotateCcw,
+  Check,
+  ArrowRight,
+} from 'lucide-vue-next'
+
+// Alias Lock so it doesn't conflict with html attr
+const LockIcon = Lock
+
 const authStore = useAuthStore()
 const route = useRoute()
 
@@ -390,23 +464,13 @@ const uploadingLogo = ref(false)
 const isDirty = ref(false)
 const saveError = ref('')
 const saveSuccess = ref('')
-
 const checkoutLoading = ref(false)
 const billingError = ref('')
-
-// FIX: removed portalLoading — portal is now a plain <a> link, no loading state needed
-
-// Plan picker modal
 const showPlanPicker = ref(false)
-const selectedPlan = ref('pro') // default to Pro
-
-// Upgrade success banner (shown when returning from Lemon Squeezy with ?upgraded=true)
+const selectedPlan = ref('pro')
 const showUpgradedBanner = ref(false)
-
-// Raw restaurant row — used for read-only billing display
 const restaurant = ref({})
 
-// Editable form fields only
 const form = ref({
   name: '',
   slug: '',
@@ -416,7 +480,7 @@ const form = ref({
   timezone: 'UTC',
 })
 
-// ─── Snapshot for dirty detection + discard ───────────────────────────────────
+// ── Snapshot / dirty detection ─────────────────────
 let snapshot = ''
 function takeSnapshot() {
   snapshot = JSON.stringify(form.value)
@@ -425,16 +489,16 @@ function markDirty() {
   isDirty.value = JSON.stringify(form.value) !== snapshot
 }
 
-// ─── Live Countdown Timer ─────────────────────────────────────────────────────
+// ── Live countdown timer ───────────────────────────
 const now = ref(new Date())
 let timerInterval = null
-
 function startTimer() {
   timerInterval = setInterval(() => {
     now.value = new Date()
   }, 1000)
 }
 
+// ── Plan computed ──────────────────────────────────
 const isOnTrial = computed(() => {
   if (!restaurant.value.trial_ends_at) return false
   return new Date(restaurant.value.trial_ends_at) > now.value
@@ -442,25 +506,22 @@ const isOnTrial = computed(() => {
 
 const hasActiveSubscription = computed(() => {
   const plan = restaurant.value.plan
-  return plan && plan !== 'trial' && plan !== 'expired' && plan !== 'free' && plan !== null
+  return plan && !['trial', 'expired', 'free', null].includes(plan)
 })
 
-const trialMsLeft = computed(() => {
-  if (!restaurant.value.trial_ends_at) return 0
-  return Math.max(0, new Date(restaurant.value.trial_ends_at) - now.value)
-})
+const trialMsLeft = computed(() =>
+  Math.max(0, new Date(restaurant.value.trial_ends_at) - now.value),
+)
 
 const trialTimeLeft = computed(() => {
   const total = trialMsLeft.value
   const days = Math.floor(total / (1000 * 60 * 60 * 24))
   const hours = Math.floor((total % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
   const minutes = Math.floor((total % (1000 * 60 * 60)) / (1000 * 60))
-  const seconds = Math.floor((total % (1000 * 60)) / 1000)
   return {
     days: String(days).padStart(2, '0'),
     hours: String(hours).padStart(2, '0'),
     minutes: String(minutes).padStart(2, '0'),
-    seconds: String(seconds).padStart(2, '0'),
   }
 })
 
@@ -470,9 +531,7 @@ const trialTotalDays = computed(() => {
   return Math.min(14, Math.floor(elapsed / (1000 * 60 * 60 * 24)))
 })
 
-const trialPercent = computed(() => {
-  return Math.min(100, Math.round((trialTotalDays.value / 14) * 100))
-})
+const trialPercent = computed(() => Math.min(100, Math.round((trialTotalDays.value / 14) * 100)))
 
 const planStatus = computed(() => {
   if (hasActiveSubscription.value) return 'active'
@@ -481,13 +540,14 @@ const planStatus = computed(() => {
 })
 
 const planDisplayName = computed(() => {
-  const plan = restaurant.value.plan
-  if (!plan || plan === 'free') return 'Free'
-  if (plan === 'trial') return 'Trial'
-  if (plan === 'pro') return 'Pro'
-  if (plan === 'starter') return 'Starter'
-  if (plan === 'expired') return 'Expired'
-  return plan.charAt(0).toUpperCase() + plan.slice(1)
+  const map = {
+    trial: 'Trial',
+    starter: 'Starter',
+    pro: 'Pro',
+    enterprise: 'Enterprise',
+    expired: 'Expired',
+  }
+  return map[restaurant.value.plan] || 'Free'
 })
 
 const planMeta = computed(() => {
@@ -497,19 +557,13 @@ const planMeta = computed(() => {
   return 'Your trial has ended — upgrade to continue'
 })
 
-const planIcon = computed(() => {
-  if (hasActiveSubscription.value) return '⭐'
-  if (isOnTrial.value) return '⏳'
-  return '🔒'
-})
-
 const planBadgeLabel = computed(() => {
   if (hasActiveSubscription.value) return 'Active'
   if (isOnTrial.value) return 'Trial'
   return 'Expired'
 })
 
-// ─── Static Data ──────────────────────────────────────────────────────────────
+// ── Static data ────────────────────────────────────
 const currencies = [
   { code: 'USD', symbol: '$', name: 'US Dollar' },
   { code: 'EUR', symbol: '€', name: 'Euro' },
@@ -517,19 +571,17 @@ const currencies = [
   { code: 'JPY', symbol: '¥', name: 'Japanese Yen' },
   { code: 'AUD', symbol: 'A$', name: 'Australian Dollar' },
   { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar' },
-  { code: 'CHF', symbol: 'Fr', name: 'Swiss Franc' },
-  { code: 'CNY', symbol: '¥', name: 'Chinese Yuan' },
-  { code: 'INR', symbol: '₹', name: 'Indian Rupee' },
-  { code: 'MXN', symbol: '$', name: 'Mexican Peso' },
-  { code: 'BRL', symbol: 'R$', name: 'Brazilian Real' },
   { code: 'SGD', symbol: 'S$', name: 'Singapore Dollar' },
-  { code: 'HKD', symbol: 'HK$', name: 'Hong Kong Dollar' },
   { code: 'KHR', symbol: '៛', name: 'Cambodian Riel' },
   { code: 'THB', symbol: '฿', name: 'Thai Baht' },
   { code: 'PHP', symbol: '₱', name: 'Philippine Peso' },
   { code: 'VND', symbol: '₫', name: 'Vietnamese Dong' },
   { code: 'IDR', symbol: 'Rp', name: 'Indonesian Rupiah' },
   { code: 'MYR', symbol: 'RM', name: 'Malaysian Ringgit' },
+  { code: 'CNY', symbol: '¥', name: 'Chinese Yuan' },
+  { code: 'INR', symbol: '₹', name: 'Indian Rupee' },
+  { code: 'BRL', symbol: 'R$', name: 'Brazilian Real' },
+  { code: 'MXN', symbol: '$', name: 'Mexican Peso' },
 ]
 
 const timezones = [
@@ -573,17 +625,15 @@ function formatDate(iso) {
   })
 }
 
-// ─── Fetch ────────────────────────────────────────────────────────────────────
+// ── Fetch ──────────────────────────────────────────
 async function fetchSettings() {
   loading.value = true
-  const restaurantId = authStore.profile?.restaurant_id
-
   const { data, error } = await supabase
     .from('restaurants')
     .select(
       'name, slug, address, logo_url, currency, timezone, plan, trial_ends_at, lemonsqueezy_customer_id, lemonsqueezy_subscription_id, customer_portal_url, created_at',
     )
-    .eq('id', restaurantId)
+    .eq('id', authStore.profile?.restaurant_id)
     .single()
 
   if (!error && data) {
@@ -597,16 +647,14 @@ async function fetchSettings() {
       timezone: data.timezone || 'UTC',
     }
   }
-
   takeSnapshot()
   loading.value = false
 }
 
-// ─── Logo Upload ──────────────────────────────────────────────────────────────
+// ── Logo upload ────────────────────────────────────
 async function handleLogoUpload(event) {
   const file = event.target.files?.[0]
   if (!file) return
-
   if (file.size > 2 * 1024 * 1024) {
     saveError.value = 'Logo must be under 2MB.'
     return
@@ -614,7 +662,6 @@ async function handleLogoUpload(event) {
 
   uploadingLogo.value = true
   saveError.value = ''
-
   const restaurantId = authStore.profile?.restaurant_id
   const ext = file.name.split('.').pop()
   const path = `${restaurantId}/logo.${ext}`
@@ -622,7 +669,6 @@ async function handleLogoUpload(event) {
   const { error: uploadErr } = await supabase.storage
     .from('restaurant-assets')
     .upload(path, file, { upsert: true })
-
   if (uploadErr) {
     saveError.value = 'Upload failed: ' + uploadErr.message
     uploadingLogo.value = false
@@ -640,18 +686,15 @@ function removeLogo() {
   markDirty()
 }
 
-// ─── Save ─────────────────────────────────────────────────────────────────────
+// ── Save ───────────────────────────────────────────
 async function saveSettings() {
   if (!form.value.name.trim()) {
     saveError.value = 'Restaurant name is required.'
     return
   }
-
   saving.value = true
   saveError.value = ''
   saveSuccess.value = ''
-
-  const restaurantId = authStore.profile?.restaurant_id
 
   const { error } = await supabase
     .from('restaurants')
@@ -663,12 +706,12 @@ async function saveSettings() {
       currency: form.value.currency,
       timezone: form.value.timezone,
     })
-    .eq('id', restaurantId)
+    .eq('id', authStore.profile?.restaurant_id)
 
   if (error) {
     saveError.value = 'Failed to save: ' + error.message
   } else {
-    saveSuccess.value = '✅ Settings saved successfully.'
+    saveSuccess.value = 'Settings saved successfully.'
     takeSnapshot()
     isDirty.value = false
     await authStore.fetchProfile()
@@ -676,7 +719,6 @@ async function saveSettings() {
       saveSuccess.value = ''
     }, 3000)
   }
-
   saving.value = false
 }
 
@@ -687,59 +729,16 @@ function discardChanges() {
   saveSuccess.value = ''
 }
 
-// ─── Lemon Squeezy: Checkout ──────────────────────────────────────────────────
-// FIX: body now only sends { plan } — Edge Function authenticates the user
-// itself via the auth token and handles redirect URLs via APP_URL env var.
-// Removed: restaurantId, successUrl, cancelUrl from body.
+// ── Checkout ───────────────────────────────────────
 async function goToCheckout() {
-  const { data } = await supabase.auth.getSession()
-  console.log(data.session)
   if (!selectedPlan.value) return
   billingError.value = ''
   checkoutLoading.value = true
-
   try {
     const { data, error } = await supabase.functions.invoke('create-checkout-session', {
       body: { plan: selectedPlan.value },
     })
-
     if (error) throw error
-
-    if (data?.url) {
-      window.location.href = data.url
-    } else {
-      throw new Error('No checkout URL returned from Edge Function.')
-    }
-  } catch (err) {
-    console.error('Checkout error:', err)
-    billingError.value = 'Could not start checkout. Please try again or contact support.'
-    checkoutLoading.value = false
-  }
-
-  // Note: don't set checkoutLoading = false on success — page is redirecting
-}
-
-/*
-async function goToCheckout() {
-  if (!selectedPlan.value) return
-
-  // Verify session before calling Edge Function
-  const { data: sessionData } = await supabase.auth.getSession()
-  if (!sessionData.session) {
-    billingError.value = 'Your session has expired. Please log in again.'
-    return
-  }
-
-  billingError.value = ''
-  checkoutLoading.value = true
-
-  try {
-    const { data, error } = await supabase.functions.invoke('create-checkout-session', {
-      body: { plan: selectedPlan.value },
-    })
-
-    if (error) throw error
-
     if (data?.url) {
       window.location.href = data.url
     } else {
@@ -747,27 +746,19 @@ async function goToCheckout() {
     }
   } catch (err) {
     console.error('Checkout error:', err)
-    billingError.value = 'Could not start checkout. Please try again.'
+    billingError.value = 'Could not start checkout. Please try again or contact support.'
     checkoutLoading.value = false
   }
 }
-  */
 
-// FIX: goToPortal() removed entirely.
-// Lemon Squeezy portal is a plain URL stored in restaurant.customer_portal_url.
-// The <a> tag in the template handles this directly — no Edge Function needed.
-
-// ─── Lifecycle ────────────────────────────────────────────────────────────────
+// ── Lifecycle ──────────────────────────────────────
 onMounted(async () => {
+  if (!authStore.profile) await authStore.fetchProfile()
   await fetchSettings()
   startTimer()
-
-  // Show success banner if returning from Lemon Squeezy Checkout
   if (route.query.upgraded === 'true') {
     showUpgradedBanner.value = true
-    // Refetch so plan/billing fields update immediately
     await fetchSettings()
-    // Clean the query param from URL without navigation
     window.history.replaceState({}, '', '/app/settings')
   }
 })
@@ -784,7 +775,17 @@ onUnmounted(() => {
   margin: 0 auto;
 }
 
-/* Header */
+/* ── Spin animation ── */
+.spin {
+  animation: spin 0.9s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ── Header ── */
 .page-header {
   display: flex;
   align-items: center;
@@ -793,7 +794,6 @@ onUnmounted(() => {
   flex-wrap: wrap;
   gap: 16px;
 }
-
 .page-title {
   font-family: var(--font-display);
   font-size: 28px;
@@ -801,14 +801,17 @@ onUnmounted(() => {
   letter-spacing: -0.4px;
   margin: 0;
 }
-
 .page-subtitle {
   color: var(--color-text-secondary);
   font-size: 14px;
   margin-top: 4px;
 }
 
+/* ── Buttons ── */
 .btn-save {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
   background: var(--color-accent);
   color: white;
   border: none;
@@ -819,45 +822,68 @@ onUnmounted(() => {
   cursor: pointer;
   transition: all 0.16s;
   min-width: 140px;
+  justify-content: center;
 }
-
 .btn-save:hover:not(:disabled) {
   background: var(--color-accent-hover);
+  transform: translateY(-1px);
 }
-
 .btn-save:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
+  transform: none;
 }
 
-/* Upgrade Banner */
+.btn-discard {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: transparent;
+  border: 1px solid var(--color-border-medium);
+  color: var(--color-text-secondary);
+  padding: 10px 18px;
+  border-radius: var(--radius-pill);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.16s;
+}
+.btn-discard:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+/* ── Upgrade banner ── */
 .upgrade-banner {
-  background: rgba(74, 222, 128, 0.15);
-  border: 1px solid rgba(74, 222, 128, 0.3);
+  background: rgba(74, 222, 128, 0.1);
+  border: 1px solid rgba(74, 222, 128, 0.25);
   border-radius: var(--radius-panel);
   padding: 16px 20px;
   margin-bottom: 24px;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   color: #4ade80;
   font-size: 14px;
 }
-
 .banner-icon {
-  font-size: 24px;
+  flex-shrink: 0;
 }
-
 .banner-close {
   margin-left: auto;
   background: none;
   border: none;
   color: #4ade80;
-  font-size: 18px;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  opacity: 0.7;
+  transition: opacity 0.14s;
+}
+.banner-close:hover {
+  opacity: 1;
 }
 
-/* Loading */
+/* ── Loading ── */
 .loading-state {
   min-height: 60vh;
   display: flex;
@@ -868,22 +894,7 @@ onUnmounted(() => {
   gap: 16px;
 }
 
-.spinner {
-  width: 32px;
-  height: 32px;
-  border: 4px solid var(--color-border-subtle);
-  border-top-color: var(--color-accent);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-.spinner-sm {
-  width: 20px;
-  height: 20px;
-  border-width: 3px;
-}
-
-/* Section Cards */
+/* ── Section Cards ── */
 .section-card {
   background: var(--color-bg-surface);
   border: 1px solid var(--color-border-subtle);
@@ -892,30 +903,36 @@ onUnmounted(() => {
   overflow: hidden;
   box-shadow: var(--shadow-card);
 }
-
 .section-header {
   padding: 20px 24px;
   border-bottom: 1px solid var(--color-border-subtle);
 }
-
+.section-header-left {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+.section-icon {
+  color: var(--color-accent);
+  flex-shrink: 0;
+  margin-top: 3px;
+}
 .section-title {
   font-family: var(--font-display);
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 700;
-  margin: 0 0 4px;
+  margin: 0 0 3px;
 }
-
 .section-desc {
   color: var(--color-text-secondary);
-  font-size: 14px;
+  font-size: 13px;
   margin: 0;
 }
-
 .section-body {
   padding: 24px;
 }
 
-/* Logo Group */
+/* ── Logo ── */
 .logo-group {
   display: flex;
   align-items: center;
@@ -924,10 +941,9 @@ onUnmounted(() => {
   padding-bottom: 24px;
   border-bottom: 1px solid var(--color-border-subtle);
 }
-
 .logo-preview {
-  width: 100px;
-  height: 100px;
+  width: 96px;
+  height: 96px;
   border-radius: 12px;
   border: 2px solid var(--color-border-medium);
   background: var(--color-bg-elevated);
@@ -937,452 +953,477 @@ onUnmounted(() => {
   justify-content: center;
   flex-shrink: 0;
 }
-
 .logo-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
-
 .logo-placeholder {
   color: var(--color-text-muted);
-  font-size: 40px;
 }
-
 .logo-actions {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
 }
-
 .btn-upload {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 18px;
+  padding: 9px 16px;
   background: var(--color-bg-elevated);
   border: 1px solid var(--color-border-medium);
   color: var(--color-text-secondary);
   border-radius: var(--radius-pill);
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.14s;
 }
-
 .btn-upload:hover {
   background: var(--color-accent-muted);
   border-color: var(--color-accent-border);
   color: var(--color-accent);
 }
-
 .btn-remove {
-  margin-left: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   background: transparent;
   border: none;
   color: #ef4444;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
+  padding: 4px 0;
+  opacity: 0.8;
+  transition: opacity 0.14s;
 }
-
+.btn-remove:hover {
+  opacity: 1;
+}
 .logo-hint {
   font-size: 12px;
   color: var(--color-text-muted);
-  margin-top: 8px;
 }
 
-/* Form */
+/* ── Form ── */
 .form-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 20px;
 }
-
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 7px;
 }
-
 .full-width {
   grid-column: 1 / -1;
 }
-
 .form-label {
   font-size: 13px;
   font-weight: 600;
   color: var(--color-text-secondary);
 }
-
 .required {
   color: #ef4444;
 }
-
 .form-input,
 .form-select {
-  padding: 12px 14px;
+  padding: 11px 14px;
   background: var(--color-bg-elevated);
   border: 1px solid var(--color-border-medium);
   border-radius: 8px;
   color: var(--color-text-primary);
-  font-size: 15px;
+  font-size: 14px;
   transition: all 0.16s;
+  font-family: inherit;
 }
-
 .form-input:focus,
 .form-select:focus {
   outline: none;
   border-color: var(--color-accent);
   box-shadow: 0 0 0 3px var(--color-accent-muted);
 }
-
 .slug-wrapper {
   display: flex;
   align-items: center;
   border: 1px solid var(--color-border-medium);
   border-radius: 8px;
   overflow: hidden;
+  transition:
+    border-color 0.16s,
+    box-shadow 0.16s;
 }
-
+.slug-wrapper:focus-within {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px var(--color-accent-muted);
+}
 .slug-prefix {
   background: var(--color-bg-elevated);
   color: var(--color-text-muted);
-  padding: 12px 14px;
-  font-size: 14px;
+  padding: 11px 12px;
+  font-size: 13px;
   white-space: nowrap;
   border-right: 1px solid var(--color-border-medium);
 }
-
 .slug-input {
   flex: 1;
   border: none;
   border-radius: 0;
+  box-shadow: none !important;
 }
-
+.slug-input:focus {
+  outline: none;
+  box-shadow: none;
+}
 .form-hint {
+  display: flex;
+  align-items: center;
+  gap: 5px;
   font-size: 12px;
   color: var(--color-text-muted);
-  margin-top: 6px;
 }
-
 .warning {
   color: #facc15;
 }
 
-/* Preview */
+/* ── Preview ── */
 .preview-card {
   background: var(--color-bg-elevated);
   border: 1px solid var(--color-border-subtle);
   border-radius: 8px;
-  padding: 12px 16px;
+  padding: 11px 16px;
   margin-top: 16px;
   display: flex;
   align-items: center;
   gap: 12px;
 }
-
 .preview-label {
-  font-size: 12px;
-  font-weight: 600;
+  font-size: 11px;
+  font-weight: 700;
   color: var(--color-text-secondary);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.06em;
 }
-
 .preview-value {
   font-size: 16px;
   font-weight: 700;
   color: var(--color-text-primary);
 }
 
-/* Plan Card */
+/* ── Plan Status Card ── */
 .plan-card {
   background: var(--color-bg-elevated);
   border: 1px solid var(--color-border-subtle);
   border-radius: var(--radius-panel);
-  padding: 20px;
+  padding: 18px 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
+  gap: 12px;
 }
-
 .plan-card.plan-trial {
   border-color: var(--color-accent-border);
   background: var(--color-accent-muted);
 }
-
 .plan-card.plan-active {
-  border-color: #4ade80;
-  background: rgba(74, 222, 128, 0.08);
+  border-color: rgba(74, 222, 128, 0.35);
+  background: rgba(74, 222, 128, 0.07);
 }
-
 .plan-card.plan-expired {
-  border-color: #ef4444;
-  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.35);
+  background: rgba(239, 68, 68, 0.07);
 }
-
 .plan-left {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 14px;
 }
-
-.plan-icon {
-  font-size: 32px;
+.plan-icon-wrap {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: var(--color-bg-surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-accent);
+  flex-shrink: 0;
+  border: 1px solid var(--color-border-subtle);
 }
-
+.plan-card.plan-active .plan-icon-wrap {
+  color: #4ade80;
+}
+.plan-card.plan-expired .plan-icon-wrap {
+  color: #ef4444;
+}
 .plan-name {
   font-family: var(--font-display);
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 700;
-  margin-bottom: 4px;
+  margin-bottom: 3px;
 }
-
 .plan-meta {
   color: var(--color-text-secondary);
-  font-size: 14px;
-}
-
-.plan-badge {
-  padding: 6px 14px;
-  border-radius: var(--radius-pill);
   font-size: 13px;
-  font-weight: 600;
 }
-
-.plan-trial .plan-badge {
+.plan-badge {
+  padding: 5px 12px;
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  letter-spacing: 0.03em;
+}
+.plan-badge.trial {
   background: var(--color-accent);
   color: white;
 }
-.plan-active .plan-badge {
+.plan-badge.active {
   background: #4ade80;
-  color: white;
+  color: #052e16;
 }
-.plan-expired .plan-badge {
+.plan-badge.expired {
   background: #ef4444;
   color: white;
 }
 
-/* Trial Card */
+/* ── Trial Card ── */
 .trial-card {
   background: var(--color-bg-elevated);
   border: 1px solid var(--color-accent-border);
   border-radius: var(--radius-panel);
   padding: 20px;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
-
 .trial-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 16px;
 }
-
 .trial-title {
-  font-size: 16px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--color-accent);
 }
-
 .trial-expires {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--color-text-secondary);
 }
-
 .trial-timer {
   display: flex;
   align-items: center;
   gap: 8px;
   margin-bottom: 16px;
 }
-
 .timer-block {
   background: var(--color-bg-surface);
   border: 1px solid var(--color-border-subtle);
   border-radius: 8px;
-  padding: 8px 12px;
-  min-width: 60px;
+  padding: 8px 14px;
+  min-width: 64px;
   text-align: center;
+  display: flex;
+  flex-direction: column;
 }
-
 .timer-num {
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 700;
   color: var(--color-text-primary);
+  line-height: 1;
 }
-
 .timer-unit {
-  font-size: 11px;
+  font-size: 10px;
   color: var(--color-text-secondary);
   text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-top: 3px;
 }
-
 .timer-colon {
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 700;
   color: var(--color-text-muted);
 }
-
 .trial-progress {
-  height: 8px;
+  height: 6px;
   background: var(--color-bg-surface);
   border-radius: var(--radius-pill);
   overflow: hidden;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
-
 .progress-fill {
   height: 100%;
   background: var(--color-accent);
-  transition: width 0.3s ease;
+  transition: width 0.5s ease;
 }
-
 .trial-labels {
   display: flex;
   justify-content: space-between;
-  font-size: 12px;
+  font-size: 11px;
   color: var(--color-text-secondary);
+  margin-bottom: 16px;
 }
 
-/* Expired Card */
+/* ── Upgrade / action buttons ── */
+.btn-upgrade {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: var(--color-accent);
+  color: white;
+  border: none;
+  padding: 11px 22px;
+  border-radius: var(--radius-pill);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.16s;
+}
+.btn-upgrade:hover:not(:disabled) {
+  background: var(--color-accent-hover);
+  transform: translateY(-1px);
+}
+.btn-upgrade:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ── Expired card ── */
 .expired-card {
-  background: rgba(239, 68, 68, 0.08);
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  background: rgba(239, 68, 68, 0.07);
+  border: 1px solid rgba(239, 68, 68, 0.25);
   border-radius: var(--radius-panel);
   padding: 20px;
   display: flex;
   align-items: center;
   gap: 16px;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
 }
-
-.expired-icon {
-  width: 48px;
-  height: 48px;
+.expired-icon-wrap {
   color: #ef4444;
+  flex-shrink: 0;
 }
-
 .expired-title {
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 700;
   color: #ef4444;
   margin: 0 0 4px;
 }
-
 .expired-text {
   color: var(--color-text-secondary);
   margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
 }
 
-/* Billing Details */
+/* ── Billing details ── */
 .billing-details {
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
-
 .billing-row {
   display: flex;
   justify-content: space-between;
-  padding: 12px 0;
+  align-items: center;
+  padding: 11px 0;
   border-bottom: 1px solid var(--color-border-subtle);
 }
-
 .billing-row:last-child {
   border-bottom: none;
 }
-
 .billing-key {
   color: var(--color-text-secondary);
+  font-size: 14px;
   font-weight: 500;
 }
-
 .billing-value {
   font-weight: 600;
   color: var(--color-text-primary);
+  font-size: 14px;
 }
-
 .mono {
   font-family: monospace;
-  font-size: 13px;
+  font-size: 12px;
   color: var(--color-text-muted);
 }
 
-/* Billing Actions */
+/* ── Billing actions ── */
 .billing-actions {
   display: flex;
   gap: 12px;
   flex-wrap: wrap;
 }
-
-.btn-upgrade {
-  background: var(--color-accent);
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: var(--radius-pill);
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.16s;
-}
-
-.btn-upgrade:hover:not(:disabled) {
-  background: var(--color-accent-hover);
-  transform: translateY(-1px);
-}
-
 .btn-portal {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
   background: var(--color-bg-elevated);
   border: 1px solid var(--color-border-medium);
   color: var(--color-text-secondary);
-  padding: 12px 24px;
+  padding: 11px 22px;
   border-radius: var(--radius-pill);
+  font-size: 14px;
   font-weight: 600;
   text-decoration: none;
   transition: all 0.16s;
 }
-
 .btn-portal:hover {
   background: var(--color-accent-muted);
   border-color: var(--color-accent-border);
   color: var(--color-accent);
 }
 
-/* Alerts */
+/* ── Alerts ── */
 .alert {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   padding: 12px 16px;
   border-radius: 8px;
   font-size: 14px;
-  margin-bottom: 16px;
+  margin-top: 16px;
 }
-
 .alert.error {
-  background: rgba(239, 68, 68, 0.12);
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.25);
   color: #f87171;
 }
-
 .alert.success {
-  background: rgba(74, 222, 128, 0.12);
-  border: 1px solid rgba(74, 222, 128, 0.3);
+  background: rgba(74, 222, 128, 0.1);
+  border: 1px solid rgba(74, 222, 128, 0.25);
   color: #4ade80;
 }
 
-/* Bottom Bar */
+/* ── Bottom bar ── */
 .bottom-bar {
   position: sticky;
   bottom: 0;
   background: var(--color-bg-base);
   border-top: 1px solid var(--color-border-subtle);
-  padding: 16px 0;
+  padding: 14px 0;
   display: flex;
-  gap: 12px;
+  gap: 10px;
   z-index: 10;
 }
 
-/* Plan Picker Modal */
+/* ═══════════════════════════════════════════════════
+   PLAN PICKER MODAL
+═══════════════════════════════════════════════════ */
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(5px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1392,169 +1433,332 @@ onUnmounted(() => {
 
 .modal-plan-picker {
   background: var(--color-bg-surface);
-  border-radius: var(--radius-panel);
+  border-radius: 20px;
   width: 100%;
-  max-width: 620px;
+  max-width: 640px;
   border: 1px solid var(--color-border-subtle);
-  box-shadow: var(--shadow-float);
+  box-shadow: 0 32px 80px rgba(0, 0, 0, 0.6);
   overflow: hidden;
 }
 
-.modal-subtitle {
-  color: var(--color-text-secondary);
-  font-size: 14px;
-  margin: -12px 24px 24px;
+/* Picker Header */
+.picker-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 22px 28px;
+  border-bottom: 1px solid var(--color-border-subtle);
+  background: var(--color-bg-elevated);
+}
+.picker-header-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.picker-logo {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: var(--color-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  flex-shrink: 0;
+}
+.picker-title {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0 0 2px;
+  color: var(--color-text-primary);
+}
+.picker-subtitle {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+.picker-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border-subtle);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.14s;
+  flex-shrink: 0;
+}
+.picker-close:hover {
+  background: var(--color-bg-elevated);
+  color: var(--color-text-primary);
 }
 
+/* Picker Body */
+.picker-body {
+  padding: 24px 28px 28px;
+}
+
+/* Plan options grid */
 .plan-options {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
-  padding: 0 24px 24px;
+  gap: 14px;
+  margin-bottom: 20px;
 }
 
 .plan-option {
   background: var(--color-bg-elevated);
   border: 2px solid var(--color-border-subtle);
-  border-radius: 12px;
+  border-radius: 14px;
   padding: 20px;
   cursor: pointer;
   transition: all 0.18s;
   position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
-
 .plan-option:hover {
   border-color: var(--color-accent-border);
-  transform: translateY(-4px);
+  transform: translateY(-2px);
 }
-
 .plan-option.selected {
   border-color: var(--color-accent);
-  background: var(--color-accent-muted);
 }
 
-.featured {
+/* Pro card styling */
+.plan-option-pro {
+  border-color: rgba(200, 115, 58, 0.3);
+  background: rgba(200, 115, 58, 0.04);
+}
+.plan-option-pro.selected {
   border-color: var(--color-accent);
-  background: rgba(200, 115, 58, 0.08);
 }
 
-.popular-badge {
+/* Pro badge */
+.pro-badge {
   position: absolute;
-  top: -12px;
+  top: -11px;
   left: 50%;
   transform: translateX(-50%);
   background: var(--color-accent);
   color: white;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
-  padding: 4px 12px;
+  padding: 3px 12px;
   border-radius: var(--radius-pill);
   white-space: nowrap;
-}
-
-.plan-header {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 16px;
+  align-items: center;
+  gap: 4px;
+  letter-spacing: 0.04em;
 }
 
-.plan-name {
+/* Option top section */
+.option-top {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.option-name {
   font-family: var(--font-display);
   font-size: 20px;
   font-weight: 700;
-  margin-bottom: 4px;
+  color: var(--color-text-primary);
+}
+.option-name-pro {
+  color: var(--color-accent);
 }
 
-.plan-price {
+.option-price {
   font-family: var(--font-display);
-  font-size: 28px;
+  font-size: 34px;
   font-weight: 800;
-  letter-spacing: -1px;
+  color: var(--color-text-primary);
+  letter-spacing: -1.5px;
+  line-height: 1;
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
 }
-
-.plan-price span {
+.option-price-pro {
+  color: var(--color-accent);
+}
+.price-dollar {
+  font-size: 18px;
+  font-weight: 700;
+  margin-top: 6px;
+}
+.price-mo {
   font-size: 14px;
   font-weight: 500;
   color: var(--color-text-secondary);
+  align-self: flex-end;
+  margin-bottom: 4px;
+  margin-left: 2px;
 }
 
-.plan-selected {
-  width: 24px;
-  height: 24px;
-  background: var(--color-accent);
-  color: white;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 14px;
+.option-tagline {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+  margin-top: 4px;
 }
 
-.plan-features {
+/* Features list */
+.option-features {
   list-style: none;
   padding: 0;
   margin: 0;
   display: flex;
   flex-direction: column;
+  gap: 7px;
+  flex: 1;
+}
+.option-features li {
+  display: flex;
+  align-items: center;
   gap: 8px;
-  font-size: 14px;
+  font-size: 13px;
   color: var(--color-text-secondary);
 }
-
-.plan-features li::before {
-  content: '✓';
+.option-features li svg {
   color: var(--color-accent);
-  margin-right: 8px;
-  font-weight: 700;
+  flex-shrink: 0;
 }
 
+/* Select indicator */
+.option-select-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  margin-top: 4px;
+  padding-top: 14px;
+  border-top: 1px solid var(--color-border-subtle);
+}
+.option-select-pro {
+  color: var(--color-accent);
+}
+
+.radio-ring {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid var(--color-border-medium);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.14s;
+  flex-shrink: 0;
+}
+.radio-ring.checked {
+  border-color: var(--color-accent);
+}
+.radio-ring-pro.checked {
+  border-color: var(--color-accent);
+}
+.radio-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-accent);
+}
+
+/* Checkout button */
 .btn-checkout {
   width: 100%;
-  margin: 0 24px 24px;
   padding: 14px;
   background: var(--color-accent);
   color: white;
   border: none;
   border-radius: var(--radius-pill);
-  font-size: 16px;
-  font-weight: 600;
+  font-size: 15px;
+  font-weight: 700;
   cursor: pointer;
   transition: all 0.16s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  letter-spacing: -0.1px;
 }
-
 .btn-checkout:hover:not(:disabled) {
   background: var(--color-accent-hover);
+  transform: translateY(-1px);
+}
+.btn-checkout:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
 }
 
+/* Secure note */
 .secure-note {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   text-align: center;
   color: var(--color-text-muted);
-  font-size: 13px;
-  margin: 0 24px 24px;
+  font-size: 12px;
+  margin-top: 12px;
+}
+.secure-note svg {
+  color: var(--color-accent);
+  flex-shrink: 0;
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-  .page-header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
+/* ── Modal transition ── */
+.modal-enter-active,
+.modal-leave-active {
+  transition: opacity 0.2s;
+}
+.modal-enter-active .modal-plan-picker,
+.modal-leave-active .modal-plan-picker {
+  transition:
+    transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1),
+    opacity 0.2s;
+}
+.modal-enter-from,
+.modal-leave-to {
+  opacity: 0;
+}
+.modal-enter-from .modal-plan-picker {
+  transform: scale(0.94) translateY(10px);
+  opacity: 0;
+}
+.modal-leave-to .modal-plan-picker {
+  transform: scale(0.97);
+  opacity: 0;
+}
 
-  .stats-grid,
-  .form-grid,
+/* ── Responsive ── */
+@media (max-width: 640px) {
   .plan-options {
     grid-template-columns: 1fr;
   }
-
+  .picker-header {
+    padding: 18px 20px;
+  }
+  .picker-body {
+    padding: 20px;
+  }
   .logo-group {
     flex-direction: column;
     align-items: flex-start;
   }
-
   .bottom-bar {
-    padding: 16px;
+    padding: 14px 0;
+  }
+  .expired-card {
+    flex-direction: column;
   }
 }
 </style>

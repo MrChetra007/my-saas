@@ -7,7 +7,7 @@
         <div class="logo-mark">
           <CircleDot :size="16" />
         </div>
-        <span class="logo-text" v-show="!sidebarCollapsed">RestaurantOS</span>
+        <span class="logo-text" v-show="!sidebarCollapsed">QrderOS</span>
       </div>
 
       <!-- Restaurant badge -->

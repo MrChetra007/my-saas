@@ -882,6 +882,7 @@ function formatCurrency(amount) {
   grid-template-columns: 2fr 1fr;
   gap: 24px;
   margin-bottom: 24px;
+  margin-top: 24px;
 }
 
 @media (max-width: 1024px) {

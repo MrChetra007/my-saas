@@ -9,7 +9,7 @@
         <div class="nav-logo">
           <span style="font-size: 20px">🍽️</span>
           <span class="logo-text">
-            <span class="logo-white">Restaurant</span><span class="logo-orange">OS</span>
+            <span class="logo-white">Qrder</span><span class="logo-orange">OS</span>
           </span>
         </div>
         <div class="nav-links">
@@ -458,10 +458,6 @@
             <RouterLink to="/signup" class="pricing-btn primary">Start free trial</RouterLink>
           </div>
         </div>
-        <p class="pricing-note">
-          Multiple locations?
-          <a href="mailto:hello@restaurantos.io" class="pricing-contact">Contact us →</a>
-        </p>
       </div>
     </section>
 
@@ -546,7 +542,7 @@
       <div class="footer-inner">
         <div class="footer-logo">
           <span>🍽️</span>
-          <span class="logo-white">Restaurant</span><span class="logo-orange">OS</span>
+          <span class="logo-white">Qrder</span><span class="logo-orange">OS</span>
         </div>
         <div class="footer-links">
           <a href="#features" @click.prevent="scrollTo('features')" class="footer-link">Features</a>
@@ -558,7 +554,7 @@
           <RouterLink to="/signup" class="footer-link">Sign up</RouterLink>
         </div>
         <div class="footer-copy">
-          © {{ new Date().getFullYear() }} RestaurantOS. All rights reserved.
+          © {{ new Date().getFullYear() }} QrderOS. All rights reserved.
         </div>
       </div>
     </footer>
@@ -674,7 +670,7 @@ const starterFeatures = [
   'QR code ordering',
   'Kitchen & cashier views',
   'Menu management',
-  'Email support',
+  // 'Email support',
 ]
 const proFeatures = [
   'Unlimited tables',
@@ -685,7 +681,7 @@ const proFeatures = [
   'Menu management',
   'Analytics & charts',
   'Promotions & discounts',
-  'Priority support',
+  // 'Priority support',
 ]
 
 const faq = [
