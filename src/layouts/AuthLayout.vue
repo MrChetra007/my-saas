@@ -13,13 +13,54 @@
       <!-- Back button -->
       <button class="auth-back-btn" @click="goBack" aria-label="Go back to home">← Back</button>
 
-      <h1></h1>
       <!-- Logo -->
       <div class="auth-logo">
-        <span class="auth-logo-icon">🍽️</span>
-        <span class="auth-logo-text">
-          <span class="logo-white">Restaurant</span><span class="logo-orange">OS</span>
-        </span>
+        <div class="auth-logo-icon">
+          <svg width="18" height="18" viewBox="0 0 32 32" fill="none">
+            <rect x="2" y="2" width="10" height="10" rx="2" stroke="white" stroke-width="2" />
+            <rect x="5" y="5" width="4" height="4" rx="0.5" fill="white" />
+            <rect x="20" y="2" width="10" height="10" rx="2" stroke="white" stroke-width="2" />
+            <rect x="23" y="5" width="4" height="4" rx="0.5" fill="white" />
+            <rect x="2" y="20" width="10" height="10" rx="2" stroke="white" stroke-width="2" />
+            <rect x="5" y="23" width="4" height="4" rx="0.5" fill="white" />
+            <line
+              x1="22"
+              y1="21"
+              x2="22"
+              y2="30"
+              stroke="white"
+              stroke-width="2"
+              stroke-linecap="round"
+            />
+            <line
+              x1="26"
+              y1="21"
+              x2="26"
+              y2="30"
+              stroke="white"
+              stroke-width="2"
+              stroke-linecap="round"
+            />
+            <line
+              x1="30"
+              y1="21"
+              x2="30"
+              y2="30"
+              stroke="white"
+              stroke-width="2"
+              stroke-linecap="round"
+            />
+            <path
+              d="M22 21 Q22 25 26 27 Q30 25 30 21"
+              stroke="white"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              fill="none"
+            />
+          </svg>
+        </div>
+        <span class="auth-logo-wordmark">Qrder</span>
       </div>
 
       <!-- Card -->
@@ -28,7 +69,7 @@
       </div>
 
       <!-- Footer -->
-      <p class="auth-footer">© {{ new Date().getFullYear() }} RestaurantOS. All rights reserved.</p>
+      <p class="auth-footer">© {{ new Date().getFullYear() }} Qrder. All rights reserved.</p>
     </div>
   </div>
 </template>
@@ -62,7 +103,7 @@ const goBack = () => {
   position: absolute;
   top: 24px;
   left: -100px;
-  background: none;
+  background: rgba(255, 255, 255, 0.04);
   border: none;
   color: var(--color-text-secondary);
   font-size: 15px;
@@ -71,26 +112,22 @@ const goBack = () => {
   align-items: center;
   gap: 6px;
   padding: 8px 12px;
-  border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.04);
+  border-radius: var(--radius-pill);
   cursor: pointer;
   transition: all 0.2s ease;
   z-index: 2;
 }
-
 .auth-back-btn:hover {
   color: var(--color-text-primary);
   background: rgba(255, 255, 255, 0.06);
   transform: translateX(-2px);
 }
-
 .auth-back-btn:focus-visible {
   outline: 2px solid var(--color-accent-muted);
   outline-offset: 2px;
 }
 
-/* Rest of your existing styles remain unchanged */
-
+/* ── Background layers ──────────────────────────────────── */
 .ambient-glow {
   position: fixed;
   top: 40%;
@@ -103,7 +140,6 @@ const goBack = () => {
   z-index: 0;
   filter: blur(8px);
 }
-
 .noise {
   position: fixed;
   inset: 0;
@@ -113,7 +149,6 @@ const goBack = () => {
   pointer-events: none;
   z-index: 0;
 }
-
 .auth-grid {
   position: fixed;
   inset: 0;
@@ -125,6 +160,7 @@ const goBack = () => {
   mask-image: radial-gradient(ellipse 60% 60% at 50% 50%, black 30%, transparent 100%);
 }
 
+/* ── Wrapper ─────────────────────────────────────────────── */
 .auth-wrapper {
   position: relative;
   z-index: 1;
@@ -136,38 +172,34 @@ const goBack = () => {
   gap: 20px;
 }
 
+/* ── Logo ────────────────────────────────────────────────── */
 .auth-logo {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   animation: fade-down 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
   animation-delay: 0.05s;
 }
-
 .auth-logo-icon {
-  font-size: 20px;
-}
-
-.auth-logo-text {
+  width: 36px;
+  height: 36px;
+  background: var(--color-accent);
+  border-radius: 9px;
   display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: var(--shadow-glow);
 }
-
-.logo-white {
+.auth-logo-wordmark {
   font-family: var(--font-display);
-  font-size: 18px;
-  font-weight: 700;
+  font-size: 22px;
+  font-weight: 800;
   color: var(--color-text-primary);
-  letter-spacing: -0.3px;
+  letter-spacing: -0.5px;
 }
 
-.logo-orange {
-  font-family: var(--font-display);
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--color-accent);
-  letter-spacing: -0.3px;
-}
-
+/* ── Card ────────────────────────────────────────────────── */
 .auth-card {
   width: 100%;
   background: var(--color-bg-surface);
@@ -181,7 +213,6 @@ const goBack = () => {
   animation: card-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
   animation-delay: 0.1s;
 }
-
 .auth-card::before {
   content: '';
   display: block;
@@ -192,6 +223,7 @@ const goBack = () => {
   border-radius: 999px;
 }
 
+/* ── Footer ─────────────────────────────────────────────── */
 .auth-footer {
   font-size: 12px;
   color: var(--color-text-faint);
@@ -201,6 +233,7 @@ const goBack = () => {
   animation-delay: 0.2s;
 }
 
+/* ── Animations ─────────────────────────────────────────── */
 @keyframes card-in {
   from {
     opacity: 0;
@@ -211,7 +244,6 @@ const goBack = () => {
     transform: translateY(0) scale(1);
   }
 }
-
 @keyframes fade-down {
   from {
     opacity: 0;
@@ -222,7 +254,6 @@ const goBack = () => {
     transform: translateY(0);
   }
 }
-
 @keyframes fade-up {
   from {
     opacity: 0;
@@ -234,12 +265,12 @@ const goBack = () => {
   }
 }
 
+/* ── Responsive ─────────────────────────────────────────── */
 @media (max-width: 480px) {
   .auth-card {
     padding: 28px 22px 26px;
     border-radius: var(--radius-card);
   }
-
   .auth-back-btn {
     top: 16px;
     left: 16px;

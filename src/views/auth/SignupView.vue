@@ -1,23 +1,5 @@
 <template>
   <AuthLayout>
-    <!-- Brand mark -->
-    <div class="brand">
-      <div class="brand-icon">
-        <svg
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="1.8"
-        >
-          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" />
-          <circle cx="12" cy="12" r="4" />
-        </svg>
-      </div>
-      <span class="brand-name">RestoOS</span>
-    </div>
-
     <!-- Heading -->
     <div class="heading">
       <h1>Create your account</h1>

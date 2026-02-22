@@ -1,16 +1,58 @@
 <template>
   <div class="landing">
-    <!-- Noise overlay -->
+    <!-- Grain overlay -->
     <div class="noise fixed inset-0 z-0 pointer-events-none opacity-45" />
 
     <!-- ── Nav ─────────────────────────────────────── -->
     <nav class="nav" :class="{ scrolled: scrolled }">
       <div class="nav-inner">
         <div class="nav-logo">
-          <span style="font-size: 20px">🍽️</span>
-          <span class="logo-text">
-            <span class="logo-white">Qrder</span><span class="logo-orange">OS</span>
-          </span>
+          <div class="qrder-icon">
+            <svg width="22" height="22" viewBox="0 0 32 32" fill="none">
+              <rect x="2" y="2" width="10" height="10" rx="2" stroke="white" stroke-width="2" />
+              <rect x="5" y="5" width="4" height="4" rx="0.5" fill="white" />
+              <rect x="20" y="2" width="10" height="10" rx="2" stroke="white" stroke-width="2" />
+              <rect x="23" y="5" width="4" height="4" rx="0.5" fill="white" />
+              <rect x="2" y="20" width="10" height="10" rx="2" stroke="white" stroke-width="2" />
+              <rect x="5" y="23" width="4" height="4" rx="0.5" fill="white" />
+              <line
+                x1="22"
+                y1="21"
+                x2="22"
+                y2="30"
+                stroke="white"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+              <line
+                x1="26"
+                y1="21"
+                x2="26"
+                y2="30"
+                stroke="white"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+              <line
+                x1="30"
+                y1="21"
+                x2="30"
+                y2="30"
+                stroke="white"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+              <path
+                d="M22 21 Q22 25 26 27 Q30 25 30 21"
+                stroke="white"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                fill="none"
+              />
+            </svg>
+          </div>
+          <span class="logo-wordmark">Qrder</span>
         </div>
         <div class="nav-links">
           <a href="#features" class="nav-link" @click.prevent="scrollTo('features')">Features</a>
@@ -82,13 +124,13 @@
       <div class="hero-bg-img" />
       <div class="hero-overlay" />
       <div class="hero-inner">
-        <!-- Left -->
         <div class="hero-left">
           <div class="badge">
             <span class="badge-dot" />
             No app download required
           </div>
           <h1 class="hero-title">Your restaurant,<br /><em>fully digital.</em></h1>
+          <p class="hero-tagline">SCAN · ORDER · DONE</p>
           <p class="hero-body">
             QR ordering, live kitchen display, staff dashboards — all in one platform built for
             modern restaurants.
@@ -155,7 +197,7 @@
                 <path d="M16 10a4 4 0 01-8 0" />
               </svg>
             </button>
-            <p class="order-note">Powered by RestaurantOS QR</p>
+            <p class="order-note">Powered by Qrder · SCAN · ORDER · DONE</p>
           </div>
         </div>
       </div>
@@ -199,7 +241,77 @@
                 <span class="phone-dot" /><span class="phone-dot" /><span class="phone-dot" />
               </div>
               <div class="phone-body">
-                <div class="phone-restaurant">🍽️ Bella Italia</div>
+                <div class="phone-restaurant">
+                  <div class="phone-brand-icon">
+                    <svg width="11" height="11" viewBox="0 0 32 32" fill="none">
+                      <rect
+                        x="2"
+                        y="2"
+                        width="10"
+                        height="10"
+                        rx="2"
+                        stroke="white"
+                        stroke-width="2.5"
+                      />
+                      <rect x="5" y="5" width="4" height="4" rx="0.5" fill="white" />
+                      <rect
+                        x="20"
+                        y="2"
+                        width="10"
+                        height="10"
+                        rx="2"
+                        stroke="white"
+                        stroke-width="2.5"
+                      />
+                      <rect x="23" y="5" width="4" height="4" rx="0.5" fill="white" />
+                      <rect
+                        x="2"
+                        y="20"
+                        width="10"
+                        height="10"
+                        rx="2"
+                        stroke="white"
+                        stroke-width="2.5"
+                      />
+                      <rect x="5" y="23" width="4" height="4" rx="0.5" fill="white" />
+                      <line
+                        x1="22"
+                        y1="21"
+                        x2="22"
+                        y2="30"
+                        stroke="white"
+                        stroke-width="2.5"
+                        stroke-linecap="round"
+                      />
+                      <line
+                        x1="26"
+                        y1="21"
+                        x2="26"
+                        y2="30"
+                        stroke="white"
+                        stroke-width="2.5"
+                        stroke-linecap="round"
+                      />
+                      <line
+                        x1="30"
+                        y1="21"
+                        x2="30"
+                        y2="30"
+                        stroke="white"
+                        stroke-width="2.5"
+                        stroke-linecap="round"
+                      />
+                      <path
+                        d="M22 21 Q22 25 26 27 Q30 25 30 21"
+                        stroke="white"
+                        stroke-width="2.5"
+                        stroke-linecap="round"
+                        fill="none"
+                      />
+                    </svg>
+                  </div>
+                  Bella Italia
+                </div>
                 <span class="phone-table-tag">Table 7</span>
                 <div class="phone-cats">
                   <span class="cat active">All</span>
@@ -512,7 +624,55 @@
     <section class="cta-section">
       <div class="cta-glow" />
       <div class="cta-panel">
+        <div class="cta-logo-wrap">
+          <div class="cta-icon">
+            <svg width="30" height="30" viewBox="0 0 32 32" fill="none">
+              <rect x="2" y="2" width="10" height="10" rx="2" stroke="white" stroke-width="2" />
+              <rect x="5" y="5" width="4" height="4" rx="0.5" fill="white" />
+              <rect x="20" y="2" width="10" height="10" rx="2" stroke="white" stroke-width="2" />
+              <rect x="23" y="5" width="4" height="4" rx="0.5" fill="white" />
+              <rect x="2" y="20" width="10" height="10" rx="2" stroke="white" stroke-width="2" />
+              <rect x="5" y="23" width="4" height="4" rx="0.5" fill="white" />
+              <line
+                x1="22"
+                y1="21"
+                x2="22"
+                y2="30"
+                stroke="white"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+              <line
+                x1="26"
+                y1="21"
+                x2="26"
+                y2="30"
+                stroke="white"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+              <line
+                x1="30"
+                y1="21"
+                x2="30"
+                y2="30"
+                stroke="white"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+              <path
+                d="M22 21 Q22 25 26 27 Q30 25 30 21"
+                stroke="white"
+                stroke-width="2"
+                stroke-linecap="round"
+                fill="none"
+              />
+            </svg>
+          </div>
+          <span class="cta-wordmark">Qrder</span>
+        </div>
         <h2 class="cta-title">Ready to simplify service?</h2>
+        <p class="cta-tagline">SCAN · ORDER · DONE</p>
         <p class="cta-body">Start your 14-day free trial. Setup takes under 10 minutes.</p>
         <div class="cta-actions">
           <RouterLink to="/signup" class="btn-pill btn-lg">
@@ -541,8 +701,51 @@
     <footer class="footer">
       <div class="footer-inner">
         <div class="footer-logo">
-          <span>🍽️</span>
-          <span class="logo-white">Qrder</span><span class="logo-orange">OS</span>
+          <div class="footer-icon">
+            <svg width="14" height="14" viewBox="0 0 32 32" fill="none">
+              <rect x="2" y="2" width="10" height="10" rx="2" stroke="white" stroke-width="2.5" />
+              <rect x="5" y="5" width="4" height="4" rx="0.5" fill="white" />
+              <rect x="20" y="2" width="10" height="10" rx="2" stroke="white" stroke-width="2.5" />
+              <rect x="23" y="5" width="4" height="4" rx="0.5" fill="white" />
+              <rect x="2" y="20" width="10" height="10" rx="2" stroke="white" stroke-width="2.5" />
+              <rect x="5" y="23" width="4" height="4" rx="0.5" fill="white" />
+              <line
+                x1="22"
+                y1="21"
+                x2="22"
+                y2="30"
+                stroke="white"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+              <line
+                x1="26"
+                y1="21"
+                x2="26"
+                y2="30"
+                stroke="white"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+              <line
+                x1="30"
+                y1="21"
+                x2="30"
+                y2="30"
+                stroke="white"
+                stroke-width="2"
+                stroke-linecap="round"
+              />
+              <path
+                d="M22 21 Q22 25 26 27 Q30 25 30 21"
+                stroke="white"
+                stroke-width="2"
+                stroke-linecap="round"
+                fill="none"
+              />
+            </svg>
+          </div>
+          <span class="footer-wordmark">Qrder</span>
         </div>
         <div class="footer-links">
           <a href="#features" @click.prevent="scrollTo('features')" class="footer-link">Features</a>
@@ -553,9 +756,7 @@
           <RouterLink to="/login" class="footer-link">Login</RouterLink>
           <RouterLink to="/signup" class="footer-link">Sign up</RouterLink>
         </div>
-        <div class="footer-copy">
-          © {{ new Date().getFullYear() }} QrderOS. All rights reserved.
-        </div>
+        <div class="footer-copy">© {{ new Date().getFullYear() }} Qrder. All rights reserved.</div>
       </div>
     </footer>
   </div>
@@ -577,7 +778,6 @@ function scrollTo(id) {
 onMounted(() => window.addEventListener('scroll', handleScroll))
 onUnmounted(() => window.removeEventListener('scroll', handleScroll))
 
-// ── Data ──────────────────────────────────────────────────
 const orderItems = [
   { qty: 1, name: 'Nasi Goreng', price: '$12.00' },
   { qty: 2, name: 'Teh Tarik', price: '$5.00' },
@@ -600,9 +800,9 @@ const steps = [
   },
   {
     num: '03',
-    title: 'Enjoy',
+    title: 'Done',
     body: 'Kitchen prepares, marks ready, cashier closes the tab. End-to-end seamless.',
-    icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,
+    icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,
   },
 ]
 
@@ -639,7 +839,6 @@ const kitchenOrders = [
 
 const chartBars = [32, 48, 41, 60, 55, 70, 65, 80, 75, 90, 85, 100]
 const chartLabels = ['9am', '11am', '1pm', '3pm', '5pm', '7pm']
-
 const analyticsStats = [
   { value: '142', label: 'Orders today' },
   { value: '$20.0', label: 'Avg. order' },
@@ -649,7 +848,7 @@ const analyticsStats = [
 const testimonials = [
   {
     quote:
-      'RestaurantOS completely changed how our floor runs. Orders go straight to the kitchen and our staff can actually focus on guests instead of running paper tickets.',
+      'Qrder completely changed how our floor runs. Orders go straight to the kitchen and our staff can actually focus on guests instead of running paper tickets.',
     name: 'Amirah Yusof',
     role: 'Owner, Warung Amirah — KL',
     initials: 'AY',
@@ -670,7 +869,6 @@ const starterFeatures = [
   'QR code ordering',
   'Kitchen & cashier views',
   'Menu management',
-  // 'Email support',
 ]
 const proFeatures = [
   'Unlimited tables',
@@ -681,7 +879,6 @@ const proFeatures = [
   'Menu management',
   'Analytics & charts',
   'Promotions & discounts',
-  // 'Priority support',
 ]
 
 const faq = [
@@ -713,11 +910,24 @@ const faq = [
 </script>
 
 <style scoped>
-/*
-  All color, font, spacing, radius, and shadow values come from
-  CSS custom properties defined in src/assets/main.css @theme.
-  Nothing is hard-coded here — change the token, change everything.
-*/
+/* ── Brand icon ─────────────────────────────────────────── */
+.qrder-icon {
+  width: 36px;
+  height: 36px;
+  background: var(--color-accent);
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.logo-wordmark {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--color-text-primary);
+  letter-spacing: -0.5px;
+}
 
 /* ── Nav ──────────────────────────────────────────────── */
 .nav {
@@ -747,25 +957,9 @@ const faq = [
 .nav-logo {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   flex-shrink: 0;
-}
-.logo-text {
-  display: flex;
-}
-.logo-white {
-  font-family: var(--font-display);
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--color-text-primary);
-  letter-spacing: -0.3px;
-}
-.logo-orange {
-  font-family: var(--font-display);
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--color-accent);
-  letter-spacing: -0.3px;
+  text-decoration: none;
 }
 .nav-links {
   display: flex;
@@ -803,7 +997,6 @@ const faq = [
   color: var(--color-text-primary);
   background: var(--color-border-subtle);
 }
-
 .btn-pill {
   font-family: var(--font-body);
   font-size: 14px;
@@ -829,7 +1022,6 @@ const faq = [
   font-size: 15px;
   padding: 13px 26px;
 }
-
 .btn-ghost-lg {
   font-family: var(--font-body);
   font-size: 15px;
@@ -849,7 +1041,6 @@ const faq = [
   border-color: var(--color-border-bright);
   transform: translateY(-2px);
 }
-
 .nav-mobile-btn {
   display: none;
   background: none;
@@ -898,7 +1089,7 @@ const faq = [
   position: absolute;
   inset: 0;
   z-index: 0;
-  background: url('https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=1600&q=80')
+  background: url('https://images.unsplash.com/photo-1556742393-d75f468bfcb0?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDF8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')
     center/cover no-repeat;
   filter: brightness(0.35);
 }
@@ -930,7 +1121,6 @@ const faq = [
   flex-direction: column;
   gap: 24px;
 }
-
 .badge {
   display: inline-flex;
   align-items: center;
@@ -951,7 +1141,6 @@ const faq = [
   background: var(--color-accent);
   animation: var(--animate-pulse-dot);
 }
-
 .hero-title {
   font-family: var(--font-display);
   font-size: clamp(44px, 6vw, 72px);
@@ -963,6 +1152,13 @@ const faq = [
 .hero-title em {
   font-style: italic;
   color: var(--color-accent);
+}
+.hero-tagline {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: var(--color-accent);
+  margin-top: -8px;
 }
 .hero-body {
   font-size: 17px;
@@ -1097,6 +1293,7 @@ const faq = [
   text-align: center;
   font-size: 11px;
   color: var(--color-text-faint);
+  letter-spacing: 0.05em;
 }
 
 /* ── Sections ─────────────────────────────────────────── */
@@ -1119,7 +1316,6 @@ const faq = [
 .section-inner-narrow {
   max-width: var(--width-narrow);
 }
-
 .section-label {
   font-size: 11px;
   font-weight: 700;
@@ -1290,6 +1486,19 @@ const faq = [
   font-size: 15px;
   font-weight: 700;
   color: var(--color-text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.phone-brand-icon {
+  width: 24px;
+  height: 24px;
+  background: var(--color-accent);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 .phone-table-tag {
   display: inline-block;
@@ -1755,19 +1964,6 @@ const faq = [
   transform: translateY(-2px);
   box-shadow: var(--shadow-glow);
 }
-.pricing-note {
-  font-size: 14px;
-  color: var(--color-text-muted);
-  text-align: center;
-}
-.pricing-contact {
-  color: var(--color-accent);
-  text-decoration: none;
-  font-weight: 600;
-}
-.pricing-contact:hover {
-  text-decoration: underline;
-}
 
 /* ── FAQ ──────────────────────────────────────────────── */
 .faq-list {
@@ -1843,6 +2039,29 @@ const faq = [
   text-align: center;
   backdrop-filter: blur(10px);
 }
+.cta-logo-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+.cta-icon {
+  width: 56px;
+  height: 56px;
+  background: var(--color-accent);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-glow);
+}
+.cta-wordmark {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--color-text-primary);
+  letter-spacing: -0.5px;
+}
 .cta-title {
   font-family: var(--font-display);
   font-size: clamp(36px, 5vw, 56px);
@@ -1850,6 +2069,13 @@ const faq = [
   letter-spacing: -0.04em;
   color: var(--color-text-primary);
   line-height: 1.05;
+}
+.cta-tagline {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: var(--color-accent);
+  margin-top: -8px;
 }
 .cta-body {
   font-size: 16px;
@@ -1889,9 +2115,22 @@ const faq = [
   align-items: center;
   gap: 8px;
   flex-shrink: 0;
+}
+.footer-icon {
+  width: 28px;
+  height: 28px;
+  background: var(--color-accent);
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.footer-wordmark {
   font-family: var(--font-display);
   font-size: 17px;
-  font-weight: 700;
+  font-weight: 800;
+  color: var(--color-text-primary);
+  letter-spacing: -0.3px;
 }
 .footer-links {
   display: flex;

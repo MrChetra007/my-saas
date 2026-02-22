@@ -69,7 +69,7 @@ async function handleLogin() {
 }
 
 function openResetModal() {
-  resetEmail.value = email.value // pre-fill with whatever they typed
+  resetEmail.value = email.value
   resetSent.value = false
   resetError.value = ''
   showResetModal.value = true
@@ -103,24 +103,6 @@ async function handleForgotPassword() {
 
 <template>
   <AuthLayout>
-    <!-- Brand mark -->
-    <div class="brand">
-      <div class="brand-icon">
-        <svg
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="1.8"
-        >
-          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" />
-          <path d="M8 12c0-2.21 1.79-4 4-4s4 1.79 4 4-1.79 4-4 4-4-1.79-4-4z" />
-        </svg>
-      </div>
-      <span class="brand-name">RestoOS</span>
-    </div>
-
     <!-- Heading -->
     <div class="heading">
       <h1>Welcome back</h1>
@@ -196,7 +178,6 @@ async function handleForgotPassword() {
             @click="showPassword = !showPassword"
             :aria-label="showPassword ? 'Hide password' : 'Show password'"
           >
-            <!-- Eye open -->
             <svg
               v-if="!showPassword"
               width="16"
@@ -209,7 +190,6 @@ async function handleForgotPassword() {
               <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
               <circle cx="12" cy="12" r="3" />
             </svg>
-            <!-- Eye closed -->
             <svg
               v-else
               width="16"
@@ -389,53 +369,23 @@ async function handleForgotPassword() {
 </template>
 
 <style scoped>
-/* ── Brand ── */
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 32px;
-}
-
-.brand-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: var(--radius-sm, 6px);
-  background: var(--accent-20, rgba(200, 115, 58, 0.2));
-  border: 1px solid var(--accent-30, rgba(200, 115, 58, 0.3));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--accent, #c8733a);
-}
-
-.brand-name {
-  font-family: var(--font-display, 'Fraunces', serif);
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--text-primary, #f0ece5);
-  letter-spacing: -0.01em;
-}
-
 /* ── Heading ── */
 .heading {
   margin-bottom: 28px;
 }
-
 .heading h1 {
-  font-family: var(--font-display, 'Fraunces', serif);
+  font-family: var(--font-display);
   font-size: 28px;
   font-weight: 700;
-  color: var(--text-primary, #f0ece5);
+  color: var(--color-text-primary);
   letter-spacing: -0.02em;
   line-height: 1.1;
   margin-bottom: 6px;
 }
-
 .heading p {
-  font-family: var(--font-body, 'DM Sans', sans-serif);
+  font-family: var(--font-body);
   font-size: 14px;
-  color: var(--text-secondary, #888888);
+  color: var(--color-text-muted);
   line-height: 1.5;
 }
 
@@ -448,13 +398,12 @@ async function handleForgotPassword() {
   padding: 12px 14px;
   background: rgba(239, 68, 68, 0.08);
   border: 1px solid rgba(239, 68, 68, 0.25);
-  border-radius: var(--radius, 10px);
-  color: var(--danger, #ef4444);
+  border-radius: var(--radius-card);
+  color: #ef4444;
   font-size: 13px;
-  font-family: var(--font-body, 'DM Sans', sans-serif);
+  font-family: var(--font-body);
   line-height: 1.4;
 }
-
 .error-banner svg {
   flex-shrink: 0;
 }
@@ -465,15 +414,14 @@ async function handleForgotPassword() {
   gap: 8px;
   margin-bottom: 20px;
   padding: 12px 14px;
-  background: rgba(34, 197, 94, 0.08);
-  border: 1px solid rgba(34, 197, 94, 0.25);
-  border-radius: var(--radius, 10px);
-  color: #22c55e;
+  background: rgba(74, 222, 128, 0.08);
+  border: 1px solid rgba(74, 222, 128, 0.25);
+  border-radius: var(--radius-card);
+  color: var(--color-status-success);
   font-size: 13px;
-  font-family: var(--font-body, 'DM Sans', sans-serif);
+  font-family: var(--font-body);
   line-height: 1.4;
 }
-
 .success-banner svg {
   flex-shrink: 0;
 }
@@ -491,43 +439,40 @@ async function handleForgotPassword() {
   flex-direction: column;
   gap: 7px;
 }
-
 .field label {
   font-size: 13px;
   font-weight: 500;
-  color: var(--text-secondary, #888888);
-  font-family: var(--font-body, 'DM Sans', sans-serif);
+  color: var(--color-text-secondary);
+  font-family: var(--font-body);
 }
-
 .label-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
-
 .forgot-link {
   background: none;
   border: none;
   padding: 0;
   font-size: 12px;
-  font-family: var(--font-body, 'DM Sans', sans-serif);
-  color: var(--accent, #c8733a);
+  font-family: var(--font-body);
+  color: var(--color-accent);
   cursor: pointer;
   transition: color 0.15s;
 }
 .forgot-link:hover {
-  color: var(--accent-400, #db8a60);
+  color: var(--color-accent-hover);
 }
 
 .field input {
   width: 100%;
   padding: 11px 14px;
-  background: var(--bg-card, #1e1e1e);
-  border: 1px solid var(--border-strong, #2a2a2a);
-  border-radius: var(--radius, 10px);
-  font-family: var(--font-body, 'DM Sans', sans-serif);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-medium);
+  border-radius: var(--radius-card);
+  font-family: var(--font-body);
   font-size: 14px;
-  color: var(--text-primary, #f0ece5);
+  color: var(--color-text-primary);
   outline: none;
   transition:
     border-color 0.15s,
@@ -535,29 +480,24 @@ async function handleForgotPassword() {
   -webkit-appearance: none;
   box-sizing: border-box;
 }
-
 .field input::placeholder {
-  color: var(--text-muted, #666666);
+  color: var(--color-text-faint);
 }
-
 .field input:hover {
-  border-color: rgba(255, 255, 255, 0.12);
+  border-color: var(--color-border-bright);
 }
-
 .field input:focus {
-  border-color: var(--accent-30, rgba(200, 115, 58, 0.3));
-  box-shadow: 0 0 0 3px var(--accent-10, rgba(200, 115, 58, 0.1));
+  border-color: var(--color-accent-border);
+  box-shadow: 0 0 0 3px var(--color-accent-muted);
 }
 
 /* ── Password input with toggle ── */
 .input-wrapper {
   position: relative;
 }
-
 .input-wrapper input {
   padding-right: 44px;
 }
-
 .toggle-password {
   position: absolute;
   right: 12px;
@@ -566,7 +506,7 @@ async function handleForgotPassword() {
   background: none;
   border: none;
   cursor: pointer;
-  color: var(--text-muted, #666666);
+  color: var(--color-text-faint);
   padding: 4px;
   display: flex;
   align-items: center;
@@ -574,17 +514,17 @@ async function handleForgotPassword() {
   transition: color 0.15s;
 }
 .toggle-password:hover {
-  color: var(--text-secondary, #888888);
+  color: var(--color-text-muted);
 }
 
 /* ── Submit button ── */
 .submit-btn {
   width: 100%;
   padding: 12px;
-  background: var(--accent, #c8733a);
+  background: var(--color-accent);
   border: none;
-  border-radius: var(--radius, 10px);
-  font-family: var(--font-body, 'DM Sans', sans-serif);
+  border-radius: var(--radius-card);
+  font-family: var(--font-body);
   font-size: 14px;
   font-weight: 600;
   color: #fff;
@@ -595,17 +535,13 @@ async function handleForgotPassword() {
     transform 0.1s;
   margin-top: 4px;
 }
-
 .submit-btn:hover:not(:disabled) {
-  background: var(--accent-400, #db8a60);
-  box-shadow: var(--shadow-glow, 0 0 20px rgba(200, 115, 58, 0.3));
+  background: var(--color-accent-hover);
+  box-shadow: var(--shadow-glow);
 }
-
 .submit-btn:active:not(:disabled) {
-  background: var(--accent-600, #b05d2e);
   transform: scale(0.99);
 }
-
 .submit-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
@@ -618,11 +554,9 @@ async function handleForgotPassword() {
   justify-content: center;
   gap: 8px;
 }
-
 .spinner {
   animation: spin 0.8s linear infinite;
 }
-
 @keyframes spin {
   from {
     transform: rotate(0deg);
@@ -639,19 +573,17 @@ async function handleForgotPassword() {
   gap: 12px;
   margin: 24px 0 20px;
 }
-
 .divider::before,
 .divider::after {
   content: '';
   flex: 1;
   height: 1px;
-  background: var(--border-strong, #2a2a2a);
+  background: var(--color-border-subtle);
 }
-
 .divider span {
   font-size: 12px;
-  font-family: var(--font-body, 'DM Sans', sans-serif);
-  color: var(--text-subtle, #555555);
+  font-family: var(--font-body);
+  color: var(--color-text-faint);
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
@@ -660,23 +592,20 @@ async function handleForgotPassword() {
 .signup-cta {
   text-align: center;
   font-size: 13px;
-  font-family: var(--font-body, 'DM Sans', sans-serif);
-  color: var(--text-secondary, #888888);
+  font-family: var(--font-body);
+  color: var(--color-text-muted);
 }
-
 .signup-cta a {
-  color: var(--accent, #c8733a);
+  color: var(--color-accent);
   text-decoration: none;
   font-weight: 500;
   transition: color 0.15s;
 }
 .signup-cta a:hover {
-  color: var(--accent-400, #db8a60);
+  color: var(--color-accent-hover);
 }
 
-/* ════════════════════════════════════════
-   Forgot Password Modal
-   ════════════════════════════════════════ */
+/* ── Modal ── */
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -689,12 +618,11 @@ async function handleForgotPassword() {
   z-index: 200;
   padding: 16px;
 }
-
 .modal {
   position: relative;
-  background: var(--bg-card, #1e1e1e);
-  border: 1px solid var(--border-strong, #2a2a2a);
-  border-radius: 14px;
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-panel);
   padding: 32px 28px 28px;
   width: 100%;
   max-width: 400px;
@@ -703,16 +631,14 @@ async function handleForgotPassword() {
   gap: 16px;
   box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
 }
-
-/* Close button */
 .modal-close {
   position: absolute;
   top: 14px;
   right: 14px;
-  background: var(--bg-hover, rgba(255, 255, 255, 0.04));
-  border: 1px solid var(--border-strong, #2a2a2a);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--color-border-subtle);
   border-radius: 6px;
-  color: var(--text-muted, #666);
+  color: var(--color-text-faint);
   width: 28px;
   height: 28px;
   display: flex;
@@ -725,50 +651,41 @@ async function handleForgotPassword() {
 }
 .modal-close:hover {
   background: rgba(255, 255, 255, 0.08);
-  color: var(--text-secondary, #888);
+  color: var(--color-text-muted);
 }
-
-/* Icon */
 .modal-icon {
   width: 40px;
   height: 40px;
   border-radius: 10px;
-  background: var(--accent-20, rgba(200, 115, 58, 0.15));
-  border: 1px solid var(--accent-30, rgba(200, 115, 58, 0.3));
+  background: var(--color-accent-muted);
+  border: 1px solid var(--color-accent-border);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--accent, #c8733a);
+  color: var(--color-accent);
 }
-
-/* Heading */
 .modal-heading h2 {
-  font-family: var(--font-display, 'Fraunces', serif);
+  font-family: var(--font-display);
   font-size: 20px;
   font-weight: 700;
-  color: var(--text-primary, #f0ece5);
+  color: var(--color-text-primary);
   letter-spacing: -0.02em;
   margin-bottom: 4px;
 }
-
 .modal-heading p {
-  font-family: var(--font-body, 'DM Sans', sans-serif);
+  font-family: var(--font-body);
   font-size: 13px;
-  color: var(--text-secondary, #888);
+  color: var(--color-text-muted);
   line-height: 1.5;
 }
-
-/* Override margin inside modal */
 .modal .error-banner,
 .modal .success-banner {
   margin-bottom: 0;
 }
-
 .modal .submit-btn {
   margin-top: 0;
 }
 
-/* Back link */
 .back-link {
   display: flex;
   align-items: center;
@@ -776,15 +693,15 @@ async function handleForgotPassword() {
   gap: 6px;
   background: none;
   border: none;
-  color: var(--text-secondary, #888);
-  font-family: var(--font-body, 'DM Sans', sans-serif);
+  color: var(--color-text-muted);
+  font-family: var(--font-body);
   font-size: 13px;
   cursor: pointer;
   transition: color 0.15s;
   padding: 4px 0 0;
 }
 .back-link:hover {
-  color: var(--text-primary, #f0ece5);
+  color: var(--color-text-primary);
 }
 
 /* ── Modal transition ── */
@@ -798,14 +715,12 @@ async function handleForgotPassword() {
 .modal-leave-to {
   opacity: 0;
 }
-
 .modal-enter-active .modal {
   animation: modal-slide-in 0.22s cubic-bezier(0.34, 1.4, 0.64, 1) both;
 }
 .modal-leave-active .modal {
   animation: modal-slide-out 0.15s ease both;
 }
-
 @keyframes modal-slide-in {
   from {
     transform: translateY(12px) scale(0.97);

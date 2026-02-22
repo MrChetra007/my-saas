@@ -139,6 +139,11 @@ function isTrialExpired(plan, trialEndsAt) {
 }
 
 router.beforeEach(async (to) => {
+  // If a Supabase ?code= lands on the wrong route, forward it to reset-password
+  if (to.query.code && to.path !== '/reset-password') {
+    return { path: '/reset-password', query: { code: to.query.code } }
+  }
+
   if (to.meta.public) return true
 
   const {

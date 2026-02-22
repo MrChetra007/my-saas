@@ -5,17 +5,63 @@
       <!-- Logo -->
       <div class="sidebar-logo">
         <div class="logo-mark">
-          <CircleDot :size="16" />
+          <img
+            v-if="restauranLogoUrl"
+            :src="restauranLogoUrl"
+            alt="Restaurant Logo"
+            style="width: 28px; height: 28px; border-radius: 6px; object-fit: cover"
+          />
+          <svg v-else width="16" height="16" viewBox="0 0 32 32" fill="none">
+            <rect x="2" y="2" width="10" height="10" rx="2" stroke="white" stroke-width="2" />
+            <rect x="5" y="5" width="4" height="4" rx="0.5" fill="white" />
+            <rect x="20" y="2" width="10" height="10" rx="2" stroke="white" stroke-width="2" />
+            <rect x="23" y="5" width="4" height="4" rx="0.5" fill="white" />
+            <rect x="2" y="20" width="10" height="10" rx="2" stroke="white" stroke-width="2" />
+            <rect x="5" y="23" width="4" height="4" rx="0.5" fill="white" />
+            <line
+              x1="22"
+              y1="21"
+              x2="22"
+              y2="30"
+              stroke="white"
+              stroke-width="2"
+              stroke-linecap="round"
+            />
+            <line
+              x1="26"
+              y1="21"
+              x2="26"
+              y2="30"
+              stroke="white"
+              stroke-width="2"
+              stroke-linecap="round"
+            />
+            <line
+              x1="30"
+              y1="21"
+              x2="30"
+              y2="30"
+              stroke="white"
+              stroke-width="2"
+              stroke-linecap="round"
+            />
+            <path
+              d="M22 21 Q22 25 26 27 Q30 25 30 21"
+              stroke="white"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              fill="none"
+            />
+          </svg>
         </div>
-        <span class="logo-text" v-show="!sidebarCollapsed">QrderOS</span>
+        <span class="logo-text" v-show="!sidebarCollapsed">{{ restaurantName }}</span>
       </div>
 
       <!-- Restaurant badge -->
       <div class="restaurant-badge" v-show="!sidebarCollapsed">
-        <div class="badge-avatar">{{ restaurantInitial }}</div>
         <div class="badge-info">
-          <span class="badge-name">{{ restaurantName }}</span>
-          <span class="badge-plan">{{ planLabel }}</span>
+          <span class="badge-plan text-center">{{ planLabel }}</span>
         </div>
       </div>
       <div class="restaurant-badge-mini" v-show="sidebarCollapsed">
@@ -26,14 +72,12 @@
       <nav class="sidebar-nav">
         <div class="nav-section-label" v-show="!sidebarCollapsed">Overview</div>
 
-        <!-- Dashboard -->
         <RouterLink to="/app/dashboard" class="nav-item" active-class="nav-active">
           <span class="nav-icon"><LayoutDashboard :size="16" /></span>
           <span class="nav-label" v-show="!sidebarCollapsed">Dashboard</span>
           <span class="nav-tooltip" v-show="sidebarCollapsed">Dashboard</span>
         </RouterLink>
 
-        <!-- Analytics — locked for Starter -->
         <component
           :is="canAccessAnalytics ? RouterLink : 'div'"
           v-bind="canAccessAnalytics ? { to: '/app/analytics' } : {}"
@@ -60,7 +104,6 @@
 
         <div class="nav-section-label" v-show="!sidebarCollapsed">Operations</div>
 
-        <!-- Orders -->
         <RouterLink to="/app/orders" class="nav-item" active-class="nav-active">
           <span class="nav-icon"><ClipboardList :size="16" /></span>
           <span class="nav-label" v-show="!sidebarCollapsed">Orders</span>
@@ -71,14 +114,12 @@
           <span class="nav-badge-dot" v-if="pendingCount > 0" v-show="sidebarCollapsed" />
         </RouterLink>
 
-        <!-- Order History -->
         <RouterLink to="/app/order-history" class="nav-item" active-class="nav-active">
           <span class="nav-icon"><History :size="16" /></span>
           <span class="nav-label" v-show="!sidebarCollapsed">Order History</span>
           <span class="nav-tooltip" v-show="sidebarCollapsed">Order History</span>
         </RouterLink>
 
-        <!-- Kitchen -->
         <RouterLink to="/app/kitchen" class="nav-item" active-class="nav-active">
           <span class="nav-icon"><ChefHat :size="16" /></span>
           <span class="nav-label" v-show="!sidebarCollapsed">Kitchen</span>
@@ -87,28 +128,24 @@
 
         <div class="nav-section-label" v-show="!sidebarCollapsed">Setup</div>
 
-        <!-- Menu -->
         <RouterLink to="/app/menu" class="nav-item" active-class="nav-active">
           <span class="nav-icon"><UtensilsCrossed :size="16" /></span>
           <span class="nav-label" v-show="!sidebarCollapsed">Menu</span>
           <span class="nav-tooltip" v-show="sidebarCollapsed">Menu</span>
         </RouterLink>
 
-        <!-- Tables -->
         <RouterLink to="/app/tables" class="nav-item" active-class="nav-active">
           <span class="nav-icon"><Table2 :size="16" /></span>
           <span class="nav-label" v-show="!sidebarCollapsed">Tables & QR</span>
           <span class="nav-tooltip" v-show="sidebarCollapsed">Tables</span>
         </RouterLink>
 
-        <!-- Staff -->
         <RouterLink to="/app/staff" class="nav-item" active-class="nav-active">
           <span class="nav-icon"><Users :size="16" /></span>
           <span class="nav-label" v-show="!sidebarCollapsed">Staff</span>
           <span class="nav-tooltip" v-show="sidebarCollapsed">Staff</span>
         </RouterLink>
 
-        <!-- Promotions — locked for Starter -->
         <component
           :is="canAccessPromotions ? RouterLink : 'div'"
           v-bind="canAccessPromotions ? { to: '/app/promotions' } : {}"
@@ -135,7 +172,6 @@
 
         <div class="nav-section-label" v-show="!sidebarCollapsed">Account</div>
 
-        <!-- Settings -->
         <RouterLink to="/app/settings" class="nav-item" active-class="nav-active">
           <span class="nav-icon"><Settings :size="16" /></span>
           <span class="nav-label" v-show="!sidebarCollapsed">Settings</span>
@@ -167,10 +203,10 @@
     <Transition name="toast">
       <div class="upgrade-toast" v-if="showUpgradeToast">
         <Lock :size="13" />
-        <span
-          ><strong>{{ lockedFeatureName }}</strong> is available on Pro.
-          <RouterLink to="/app/settings">Upgrade →</RouterLink></span
-        >
+        <span>
+          <strong>{{ lockedFeatureName }}</strong> is available on Pro.
+          <RouterLink to="/app/settings">Upgrade →</RouterLink>
+        </span>
         <button @click="showUpgradeToast = false"><X :size="13" /></button>
       </div>
     </Transition>
@@ -182,24 +218,17 @@
         <button class="mobile-menu-btn" @click="mobileOpen = !mobileOpen" aria-label="Open menu">
           <Menu :size="18" />
         </button>
-
         <div class="topbar-title">
           <span class="page-title">{{ currentPageTitle }}</span>
         </div>
-
         <div class="topbar-right">
-          <!-- Pending orders pill -->
           <button class="pending-pill" v-if="pendingCount > 0" @click="$router.push('/app/orders')">
             <span class="pill-dot" />
             {{ pendingCount }} pending
           </button>
-
-          <!-- Notifications -->
           <button class="icon-btn" aria-label="Notifications">
             <Bell :size="17" />
           </button>
-
-          <!-- User avatar -->
           <div class="user-avatar" :title="userName">{{ userInitial }}</div>
         </div>
       </header>
@@ -218,9 +247,7 @@ import { useRouter, useRoute, RouterLink } from 'vue-router'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
 
-// Lucide icons
 import {
-  CircleDot,
   LayoutDashboard,
   Activity,
   ClipboardList,
@@ -249,8 +276,8 @@ const mobileOpen = ref(false)
 const pendingCount = ref(0)
 const restaurantName = ref('')
 const restaurantPlan = ref('trial')
+const restauranLogoUrl = ref('')
 
-// Upgrade toast state
 const showUpgradeToast = ref(false)
 const lockedFeatureName = ref('')
 let toastTimer = null
@@ -262,17 +289,12 @@ function handleLockedClick(featureName) {
   toastTimer = setTimeout(() => (showUpgradeToast.value = false), 4000)
 }
 
-// ── Plan-based access ──────────────────────────────
-// trial  → can access Analytics + Promotions
-// starter → CANNOT access Analytics + Promotions
-// pro     → full access
-// enterprise → full access
-const canAccessAnalytics = computed(() => {
-  return ['trial', 'pro', 'enterprise'].includes(restaurantPlan.value)
-})
-const canAccessPromotions = computed(() => {
-  return ['trial', 'pro', 'enterprise'].includes(restaurantPlan.value)
-})
+const canAccessAnalytics = computed(() =>
+  ['trial', 'pro', 'enterprise'].includes(restaurantPlan.value),
+)
+const canAccessPromotions = computed(() =>
+  ['trial', 'pro', 'enterprise'].includes(restaurantPlan.value),
+)
 
 const pageTitles = {
   '/app/dashboard': 'Dashboard',
@@ -287,7 +309,7 @@ const pageTitles = {
   '/app/promotions': 'Promotions',
 }
 
-const currentPageTitle = computed(() => pageTitles[route.path] || 'RestaurantOS')
+const currentPageTitle = computed(() => pageTitles[route.path] || 'Qrder')
 const userName = computed(() => authStore.profile?.full_name || 'User')
 const userInitial = computed(() => userName.value.charAt(0).toUpperCase())
 const restaurantInitial = computed(() => restaurantName.value.charAt(0).toUpperCase() || 'R')
@@ -300,12 +322,13 @@ async function loadRestaurant() {
   if (!authStore.profile?.restaurant_id) return
   const { data } = await supabase
     .from('restaurants')
-    .select('name, plan')
+    .select('name, plan, logo_url')
     .eq('id', authStore.profile.restaurant_id)
     .single()
   if (data) {
     restaurantName.value = data.name
     restaurantPlan.value = data.plan
+    restauranLogoUrl.value = data.logo_url || ''
   }
 }
 
@@ -356,8 +379,6 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:wght@400;600;700&family=DM+Sans:wght@400;500;600&display=swap');
-
 *,
 *::before,
 *::after {
@@ -371,16 +392,16 @@ onUnmounted(() => {
   display: flex;
   height: 100vh;
   overflow: hidden;
-  background: var(--bg-deep, #111);
-  font-family: var(--font-body, 'DM Sans', sans-serif);
+  background: var(--color-bg-base);
+  font-family: var(--font-body);
 }
 
 /* ── Sidebar ── */
 .sidebar {
   width: 228px;
   min-width: 228px;
-  background: var(--bg-panel, #161616);
-  border-right: 1px solid var(--border, rgba(255, 255, 255, 0.07));
+  background: var(--color-bg-surface);
+  border-right: 1px solid var(--color-border-subtle);
   display: flex;
   flex-direction: column;
   transition:
@@ -401,40 +422,40 @@ onUnmounted(() => {
   align-items: center;
   gap: 10px;
   padding: 20px 16px 16px;
-  border-bottom: 1px solid var(--border, rgba(255, 255, 255, 0.07));
+  border-bottom: 1px solid var(--color-border-subtle);
   flex-shrink: 0;
 }
 .logo-mark {
-  width: 30px;
-  height: 30px;
-  border-radius: var(--radius-sm, 6px);
-  background: var(--accent-20, rgba(200, 115, 58, 0.2));
-  border: 1px solid var(--accent-30, rgba(200, 115, 58, 0.3));
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--color-accent);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--accent, #c8733a);
   flex-shrink: 0;
+  box-shadow: var(--shadow-glow);
 }
 .logo-text {
-  font-family: var(--font-display, 'Fraunces', serif);
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--text-primary, #f0ece5);
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--color-text-primary);
   white-space: nowrap;
-  letter-spacing: -0.3px;
+  letter-spacing: -0.4px;
 }
 
 /* Restaurant badge */
 .restaurant-badge {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 10px;
   padding: 10px 12px;
   margin: 10px 8px;
-  background: var(--bg-card, #1e1e1e);
-  border-radius: var(--radius, 10px);
-  border: 1px solid var(--border, rgba(255, 255, 255, 0.07));
+  background: var(--color-bg-elevated);
+  border-radius: var(--radius-card);
+  border: 1px solid var(--color-border-subtle);
   flex-shrink: 0;
 }
 .restaurant-badge-mini {
@@ -447,8 +468,8 @@ onUnmounted(() => {
 .badge-avatar {
   width: 30px;
   height: 30px;
-  border-radius: var(--radius-sm, 6px);
-  background: var(--accent, #c8733a);
+  border-radius: 6px;
+  background: var(--color-accent);
   color: #fff;
   font-size: 12px;
   font-weight: 700;
@@ -456,7 +477,7 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  font-family: var(--font-body, 'DM Sans', sans-serif);
+  font-family: var(--font-body);
 }
 .badge-info {
   display: flex;
@@ -468,19 +489,19 @@ onUnmounted(() => {
 .badge-name {
   font-size: 12px;
   font-weight: 600;
-  color: var(--text-primary, #f0ece5);
+  color: var(--color-text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-family: var(--font-body, 'DM Sans', sans-serif);
+  font-family: var(--font-body);
 }
 .badge-plan {
   font-size: 10px;
-  color: var(--accent, #c8733a);
+  color: var(--color-accent);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.07em;
-  font-family: var(--font-body, 'DM Sans', sans-serif);
+  font-family: var(--font-body);
 }
 
 /* Nav */
@@ -503,10 +524,10 @@ onUnmounted(() => {
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--text-subtle, #555);
+  color: var(--color-text-faint);
   padding: 14px 10px 5px;
   white-space: nowrap;
-  font-family: var(--font-body, 'DM Sans', sans-serif);
+  font-family: var(--font-body);
 }
 
 .nav-item {
@@ -514,12 +535,12 @@ onUnmounted(() => {
   align-items: center;
   gap: 10px;
   padding: 8px 10px;
-  border-radius: var(--radius-sm, 6px);
+  border-radius: 6px;
   text-decoration: none;
-  color: var(--text-muted, #666);
+  color: var(--color-text-muted);
   font-size: 13px;
   font-weight: 500;
-  font-family: var(--font-body, 'DM Sans', sans-serif);
+  font-family: var(--font-body);
   transition:
     background 0.12s,
     color 0.12s;
@@ -528,25 +549,24 @@ onUnmounted(() => {
   cursor: pointer;
 }
 .nav-item:hover {
-  background: var(--bg-hover, #252525);
-  color: var(--text-secondary, #888);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--color-text-secondary);
 }
 .nav-item.nav-active {
-  background: var(--accent-10, rgba(200, 115, 58, 0.1));
-  color: var(--accent-400, #db8a60);
+  background: var(--color-accent-muted);
+  color: var(--color-accent-hover);
 }
 .nav-item.nav-active .nav-icon {
-  color: var(--accent, #c8733a);
+  color: var(--color-accent);
 }
 
-/* Locked nav item */
 .nav-item.nav-locked {
   opacity: 0.4;
   cursor: not-allowed;
 }
 .nav-item.nav-locked:hover {
   background: transparent;
-  color: var(--text-muted, #666);
+  color: var(--color-text-muted);
 }
 .nav-item.nav-locked:hover .upgrade-tooltip {
   display: flex;
@@ -554,27 +574,26 @@ onUnmounted(() => {
 
 .lock-icon {
   margin-left: auto;
-  color: var(--text-subtle, #555);
+  color: var(--color-text-faint);
   flex-shrink: 0;
 }
 
-/* Upgrade tooltip (shown on hover of locked item, expanded sidebar) */
 .upgrade-tooltip {
   display: none;
   position: absolute;
   right: -4px;
   top: 50%;
   transform: translateY(-50%) translateX(100%);
-  background: var(--bg-card, #1e1e1e);
-  border: 1px solid var(--accent-30, rgba(200, 115, 58, 0.3));
-  color: var(--accent-400, #db8a60);
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-accent-border);
+  color: var(--color-accent-hover);
   font-size: 11px;
   font-weight: 600;
-  font-family: var(--font-body, 'DM Sans', sans-serif);
+  font-family: var(--font-body);
   padding: 5px 10px;
-  border-radius: var(--radius-sm, 6px);
+  border-radius: 6px;
   white-space: nowrap;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--shadow-card);
   z-index: 200;
   align-items: center;
   gap: 5px;
@@ -594,46 +613,44 @@ onUnmounted(() => {
   flex: 1;
 }
 
-/* Pending badge */
 .nav-badge {
-  background: var(--accent, #c8733a);
+  background: var(--color-accent);
   color: #fff;
   font-size: 10px;
   font-weight: 700;
   padding: 2px 6px;
-  border-radius: var(--radius-full, 9999px);
+  border-radius: var(--radius-pill);
   min-width: 18px;
   text-align: center;
-  font-family: var(--font-body, 'DM Sans', sans-serif);
+  font-family: var(--font-body);
   line-height: 1.4;
 }
 .nav-badge-dot {
   width: 6px;
   height: 6px;
-  background: var(--accent, #c8733a);
+  background: var(--color-accent);
   border-radius: 50%;
   position: absolute;
   top: 7px;
   right: 7px;
 }
 
-/* Tooltip when collapsed */
 .nav-tooltip {
   display: none;
   position: absolute;
   left: calc(100% + 10px);
   top: 50%;
   transform: translateY(-50%);
-  background: var(--bg-card, #1e1e1e);
-  color: var(--text-primary, #f0ece5);
+  background: var(--color-bg-surface);
+  color: var(--color-text-primary);
   font-size: 12px;
   font-weight: 500;
-  font-family: var(--font-body, 'DM Sans', sans-serif);
+  font-family: var(--font-body);
   padding: 5px 10px;
-  border-radius: var(--radius-sm, 6px);
+  border-radius: 6px;
   white-space: nowrap;
-  border: 1px solid var(--border-strong, #2a2a2a);
-  box-shadow: var(--shadow-card, 0 10px 30px rgba(0, 0, 0, 0.35));
+  border: 1px solid var(--color-border-medium);
+  box-shadow: var(--shadow-card);
   z-index: 100;
   pointer-events: none;
 }
@@ -648,10 +665,10 @@ onUnmounted(() => {
   justify-content: center;
   margin: 6px 8px;
   padding: 8px;
-  background: var(--bg-card, #1e1e1e);
-  border: 1px solid var(--border, rgba(255, 255, 255, 0.07));
-  border-radius: var(--radius-sm, 6px);
-  color: var(--text-muted, #666);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 6px;
+  color: var(--color-text-muted);
   cursor: pointer;
   transition:
     background 0.12s,
@@ -659,8 +676,8 @@ onUnmounted(() => {
   flex-shrink: 0;
 }
 .collapse-btn:hover {
-  background: var(--bg-hover, #252525);
-  color: var(--text-secondary, #888);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--color-text-secondary);
 }
 
 /* Sign out */
@@ -672,11 +689,11 @@ onUnmounted(() => {
   padding: 8px 10px;
   background: transparent;
   border: none;
-  border-radius: var(--radius-sm, 6px);
-  color: var(--text-subtle, #555);
+  border-radius: 6px;
+  color: var(--color-text-faint);
   font-size: 13px;
   font-weight: 500;
-  font-family: var(--font-body, 'DM Sans', sans-serif);
+  font-family: var(--font-body);
   cursor: pointer;
   transition:
     background 0.12s,
@@ -687,7 +704,7 @@ onUnmounted(() => {
 }
 .signout-btn:hover {
   background: rgba(239, 68, 68, 0.08);
-  color: var(--danger, #ef4444);
+  color: #ef4444;
 }
 
 /* ── Upgrade toast ── */
@@ -701,24 +718,24 @@ onUnmounted(() => {
   align-items: center;
   gap: 8px;
   padding: 10px 16px;
-  background: var(--bg-card, #1e1e1e);
-  border: 1px solid var(--accent-30, rgba(200, 115, 58, 0.35));
-  border-radius: var(--radius, 10px);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-accent-border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-float);
   font-size: 13px;
-  font-family: var(--font-body, 'DM Sans', sans-serif);
-  color: var(--text-secondary, #888);
+  font-family: var(--font-body);
+  color: var(--color-text-secondary);
   white-space: nowrap;
 }
 .upgrade-toast svg {
-  color: var(--accent, #c8733a);
+  color: var(--color-accent);
   flex-shrink: 0;
 }
 .upgrade-toast strong {
-  color: var(--text-primary, #f0ece5);
+  color: var(--color-text-primary);
 }
 .upgrade-toast a {
-  color: var(--accent, #c8733a);
+  color: var(--color-accent);
   text-decoration: none;
   font-weight: 600;
 }
@@ -728,7 +745,7 @@ onUnmounted(() => {
 .upgrade-toast button {
   background: none;
   border: none;
-  color: var(--text-subtle, #555);
+  color: var(--color-text-faint);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -738,10 +755,9 @@ onUnmounted(() => {
   transition: color 0.12s;
 }
 .upgrade-toast button:hover {
-  color: var(--text-secondary, #888);
+  color: var(--color-text-muted);
 }
 
-/* Toast transition */
 .toast-enter-active,
 .toast-leave-active {
   transition:
@@ -767,8 +783,8 @@ onUnmounted(() => {
 .topbar {
   height: 56px;
   min-height: 56px;
-  background: var(--bg-panel, #161616);
-  border-bottom: 1px solid var(--border, rgba(255, 255, 255, 0.07));
+  background: var(--color-bg-surface);
+  border-bottom: 1px solid var(--color-border-subtle);
   display: flex;
   align-items: center;
   padding: 0 20px;
@@ -782,17 +798,17 @@ onUnmounted(() => {
   justify-content: center;
   background: none;
   border: none;
-  color: var(--text-secondary, #888);
+  color: var(--color-text-secondary);
   cursor: pointer;
   padding: 6px;
-  border-radius: var(--radius-sm, 6px);
+  border-radius: 6px;
   transition:
     background 0.12s,
     color 0.12s;
 }
 .mobile-menu-btn:hover {
-  background: var(--bg-hover, #252525);
-  color: var(--text-primary, #f0ece5);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--color-text-primary);
 }
 
 .topbar-title {
@@ -800,10 +816,10 @@ onUnmounted(() => {
   min-width: 0;
 }
 .page-title {
-  font-family: var(--font-display, 'Fraunces', serif);
+  font-family: var(--font-display);
   font-size: 20px;
   font-weight: 700;
-  color: var(--text-primary, #f0ece5);
+  color: var(--color-text-primary);
   letter-spacing: -0.3px;
   white-space: nowrap;
   overflow: hidden;
@@ -822,48 +838,37 @@ onUnmounted(() => {
   align-items: center;
   gap: 6px;
   padding: 5px 12px;
-  background: var(--accent-10, rgba(200, 115, 58, 0.1));
-  border: 1px solid var(--accent-30, rgba(200, 115, 58, 0.3));
-  border-radius: var(--radius-full, 9999px);
+  background: var(--color-accent-muted);
+  border: 1px solid var(--color-accent-border);
+  border-radius: var(--radius-pill);
   font-size: 12px;
   font-weight: 600;
-  font-family: var(--font-body, 'DM Sans', sans-serif);
-  color: var(--accent-400, #db8a60);
+  font-family: var(--font-body);
+  color: var(--color-accent-hover);
   cursor: pointer;
   transition: background 0.15s;
   animation: pulse-border 2.5s ease infinite;
 }
 .pending-pill:hover {
-  background: var(--accent-20, rgba(200, 115, 58, 0.2));
+  background: var(--color-accent-border);
 }
 
 .pill-dot {
   width: 6px;
   height: 6px;
-  background: var(--accent, #c8733a);
+  background: var(--color-accent);
   border-radius: 50%;
-  animation: pulse-dot 1.5s ease infinite;
+  animation: var(--animate-pulse-dot);
   flex-shrink: 0;
 }
 
-@keyframes pulse-dot {
-  0%,
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.5;
-    transform: scale(0.75);
-  }
-}
 @keyframes pulse-border {
   0%,
   100% {
     box-shadow: 0 0 0 0 rgba(200, 115, 58, 0);
   }
   50% {
-    box-shadow: var(--shadow-glow, 0 0 20px rgba(200, 115, 58, 0.3));
+    box-shadow: var(--shadow-glow);
   }
 }
 
@@ -875,9 +880,9 @@ onUnmounted(() => {
   width: 34px;
   height: 34px;
   background: none;
-  border: 1px solid var(--border-strong, #2a2a2a);
-  border-radius: var(--radius-sm, 6px);
-  color: var(--text-muted, #666);
+  border: 1px solid var(--color-border-medium);
+  border-radius: 6px;
+  color: var(--color-text-muted);
   cursor: pointer;
   transition:
     background 0.12s,
@@ -885,22 +890,22 @@ onUnmounted(() => {
     border-color 0.12s;
 }
 .icon-btn:hover {
-  background: var(--bg-hover, #252525);
-  border-color: rgba(255, 255, 255, 0.12);
-  color: var(--text-secondary, #888);
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--color-border-bright);
+  color: var(--color-text-secondary);
 }
 
 /* User avatar */
 .user-avatar {
   width: 34px;
   height: 34px;
-  border-radius: var(--radius-full, 9999px);
-  background: var(--bg-card, #1e1e1e);
-  border: 1px solid var(--border-strong, #2a2a2a);
-  color: var(--text-primary, #f0ece5);
+  border-radius: var(--radius-pill);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-medium);
+  color: var(--color-text-primary);
   font-size: 12px;
   font-weight: 700;
-  font-family: var(--font-body, 'DM Sans', sans-serif);
+  font-family: var(--font-body);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -909,7 +914,7 @@ onUnmounted(() => {
   transition: border-color 0.12s;
 }
 .user-avatar:hover {
-  border-color: var(--accent-30, rgba(200, 115, 58, 0.3));
+  border-color: var(--color-accent-border);
 }
 
 /* ── Page content ── */
@@ -917,9 +922,9 @@ onUnmounted(() => {
   flex: 1;
   overflow-y: auto;
   padding: 28px;
-  background: var(--bg-deep, #111);
+  background: var(--color-bg-base);
   scrollbar-width: thin;
-  scrollbar-color: var(--border-strong, #2a2a2a) transparent;
+  scrollbar-color: var(--color-border-medium) transparent;
 }
 .page-content::-webkit-scrollbar {
   width: 5px;
@@ -928,7 +933,7 @@ onUnmounted(() => {
   background: transparent;
 }
 .page-content::-webkit-scrollbar-thumb {
-  background: var(--border-strong, #2a2a2a);
+  background: var(--color-border-medium);
   border-radius: 3px;
 }
 
