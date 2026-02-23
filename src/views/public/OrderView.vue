@@ -1,5 +1,13 @@
 <template>
   <div class="order-page">
+    <!-- ── Toast ──────────────────────────────── -->
+    <Transition name="toast">
+      <div v-if="toast.show" class="toast" :class="`toast--${toast.type}`">
+        <component :is="toast.icon" :size="15" />
+        <span>{{ toast.message }}</span>
+      </div>
+    </Transition>
+
     <!-- ── Loading ──────────────────────────── -->
     <div v-if="loading" class="full-center">
       <div class="spinner" />
@@ -88,16 +96,16 @@
             <div v-for="item in placedItems" :key="item.id" class="summary-item">
               <span class="summary-qty">×{{ item.quantity }}</span>
               <span class="summary-name">{{ item.name }}</span>
-              <span class="summary-price"
-                >{{ currencySymbol }}{{ (item.unit_price * item.quantity).toFixed(2) }}</span
-              >
+              <span class="summary-price">
+                {{ currencySymbol }}{{ (item.unit_price * item.quantity).toFixed(2) }}
+              </span>
             </div>
           </div>
           <div v-if="placedDiscountAmount > 0" class="summary-discount-row">
             <span>Discount</span>
-            <span class="summary-discount-val"
-              >−{{ currencySymbol }}{{ placedDiscountAmount.toFixed(2) }}</span
-            >
+            <span class="summary-discount-val">
+              −{{ currencySymbol }}{{ placedDiscountAmount.toFixed(2) }}
+            </span>
           </div>
           <div class="summary-total">
             <span>Total</span>
@@ -168,9 +176,8 @@
         </div>
       </div>
 
-      <!-- ── Menu content (infinite scroll) ── -->
+      <!-- ── Menu content ── -->
       <div class="menu-content" ref="menuContentEl">
-        <!-- ALL view: infinite scroll with category headers -->
         <template v-if="activeCatFilter === 'all'">
           <div
             v-for="cat in activeCategories"
@@ -224,8 +231,6 @@
               </div>
             </div>
           </div>
-
-          <!-- Infinite scroll sentinel -->
           <div ref="scrollSentinel" class="scroll-sentinel" />
           <div v-if="allItemsLoaded" class="end-of-menu">
             <ChefHat :size="20" class="end-icon" />
@@ -233,7 +238,6 @@
           </div>
         </template>
 
-        <!-- SINGLE CATEGORY view -->
         <template v-else>
           <div class="cat-section">
             <div class="items-list">
@@ -305,7 +309,6 @@
           <button class="modal-close-float" @click="itemModal.open = false">
             <X :size="14" />
           </button>
-
           <div class="item-modal-image">
             <img
               v-if="itemModal.item?.image_url"
@@ -316,7 +319,6 @@
               <Utensils :size="56" class="placeholder-icon-lg" />
             </div>
           </div>
-
           <div class="item-modal-body">
             <h3 class="item-modal-name">{{ itemModal.item?.name }}</h3>
             <p v-if="itemModal.item?.description" class="item-modal-desc">
@@ -325,7 +327,6 @@
             <div class="item-modal-price">
               {{ currencySymbol }}{{ Number(itemModal.item?.price).toFixed(2) }}
             </div>
-
             <div class="field-group">
               <label class="field-label"
                 >Special instructions <span class="optional">(optional)</span></label
@@ -337,16 +338,13 @@
                 rows="2"
               />
             </div>
-
             <div class="item-modal-footer">
               <div class="qty-control">
                 <button class="qty-btn" @click="itemModal.qty = Math.max(1, itemModal.qty - 1)">
                   <Minus :size="14" />
                 </button>
                 <span class="qty-val">{{ itemModal.qty }}</span>
-                <button class="qty-btn" @click="itemModal.qty++">
-                  <Plus :size="14" />
-                </button>
+                <button class="qty-btn" @click="itemModal.qty++"><Plus :size="14" /></button>
               </div>
               <button class="btn-add-to-cart" @click="confirmAddToCart">
                 Add {{ itemModal.qty }} — {{ currencySymbol
@@ -364,11 +362,8 @@
         <div class="modal modal-cart">
           <div class="modal-header">
             <h2 class="modal-title">Your Order</h2>
-            <button class="modal-close" @click="cartOpen = false">
-              <X :size="15" />
-            </button>
+            <button class="modal-close" @click="cartOpen = false"><X :size="15" /></button>
           </div>
-
           <div class="cart-body">
             <div v-for="(line, idx) in cart" :key="idx" class="cart-line">
               <div class="cart-line-info">
@@ -397,7 +392,6 @@
               />
             </div>
 
-            <!-- Auto promo banner -->
             <div v-if="autoPromo && !appliedPromo" class="auto-promo-banner">
               <Tag :size="14" />
               <div>
@@ -412,7 +406,6 @@
               </div>
             </div>
 
-            <!-- Promo code input -->
             <div v-if="!appliedPromo" class="promo-section">
               <div class="promo-input-row">
                 <input
@@ -435,7 +428,6 @@
               <p v-if="promoError" class="promo-error">{{ promoError }}</p>
             </div>
 
-            <!-- Applied promo tag -->
             <div v-if="appliedPromo" class="applied-promo-tag">
               <CheckCircle :size="16" class="applied-check" />
               <div class="applied-info">
@@ -513,6 +505,8 @@ import {
   ChefHat,
   ShoppingBag,
   Clock,
+  XCircle,
+  Flame,
 } from 'lucide-vue-next'
 
 const route = useRoute()
@@ -535,20 +529,85 @@ const cartOpen = ref(false)
 const menuContentEl = ref(null)
 const scrollSentinel = ref(null)
 
-// Infinite scroll state
-const visibleCatCount = ref(2) // start showing 2 categories
+const visibleCatCount = ref(2)
 const allItemsLoaded = computed(() => visibleCatCount.value >= activeCategories.value.length)
 
 let statusChannel = null
 let menuChannel = null
 let scrollObserver = null
 
-// ── Cart ─────────────────────────────────────
+// ── Toast ─────────────────────────────────────────────────────────────────────
+const toast = ref({ show: false, message: '', type: 'success', icon: CheckCircle })
+let toastTimer = null
+
+function showToast(message, type = 'success') {
+  if (toastTimer) clearTimeout(toastTimer)
+  const iconMap = {
+    success: CheckCircle,
+    error: XCircle,
+    info: Flame,
+    warning: Clock,
+  }
+  toast.value = { show: true, message, type, icon: iconMap[type] ?? CheckCircle }
+  toastTimer = setTimeout(() => (toast.value.show = false), 4000)
+}
+
+// ── Audio (Web Audio API — gentle chime, no file needed) ──────────────────────
+let audioCtx = null
+
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)()
+  return audioCtx
+}
+
+/**
+ * type: 'cooking' — soft two-tone ascending chime
+ * type: 'ready'   — brighter three-tone ascending chime (food is ready!)
+ * type: 'rejected'— single low note
+ */
+function playStatusChime(type = 'cooking') {
+  try {
+    const ctx = getAudioCtx()
+    const tonesMap = {
+      cooking: [
+        { freq: 523, start: 0, duration: 0.22 }, // C5
+        { freq: 659, start: 0.25, duration: 0.3 }, // E5
+      ],
+      ready: [
+        { freq: 523, start: 0, duration: 0.18 }, // C5
+        { freq: 659, start: 0.2, duration: 0.18 }, // E5
+        { freq: 784, start: 0.4, duration: 0.35 }, // G5
+      ],
+      rejected: [
+        { freq: 311, start: 0, duration: 0.4 }, // Eb4 — low, subdued
+      ],
+    }
+    const tones = tonesMap[type] || tonesMap.cooking
+    tones.forEach(({ freq, start, duration }) => {
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+      osc.connect(gain)
+      gain.connect(ctx.destination)
+      osc.type = 'sine'
+      osc.frequency.value = freq
+      const t = ctx.currentTime + start
+      gain.gain.setValueAtTime(0, t)
+      gain.gain.linearRampToValueAtTime(0.3, t + 0.015)
+      gain.gain.exponentialRampToValueAtTime(0.001, t + duration)
+      osc.start(t)
+      osc.stop(t + duration + 0.05)
+    })
+  } catch (e) {
+    console.warn('Chime failed:', e)
+  }
+}
+
+// ── Cart ──────────────────────────────────────────────────────────────────────
 const cart = ref([])
 const cartItemCount = computed(() => cart.value.reduce((n, l) => n + l.qty, 0))
 const cartSubtotal = computed(() => cart.value.reduce((n, l) => n + l.price * l.qty, 0))
 
-// ── Promotions ───────────────────────────────
+// ── Promotions ────────────────────────────────────────────────────────────────
 const promoInput = ref('')
 const appliedPromoCode = ref('')
 const promoError = ref('')
@@ -571,25 +630,24 @@ const placedTotal = computed(
     placedDiscountAmount.value,
 )
 
-// ── Currency ─────────────────────────────────
+// ── Currency ──────────────────────────────────────────────────────────────────
 const currencySymbol = computed(() => {
   const map = { USD: '$', EUR: '€', GBP: '£', KHR: '៛', THB: '฿', SGD: 'S$', AUD: 'A$', JPY: '¥' }
   return map[restaurant.value.currency] || '$'
 })
 
-// ── Categories ───────────────────────────────
+// ── Categories ────────────────────────────────────────────────────────────────
 const activeCategories = computed(() =>
   categories.value.filter((c) => c.is_active && c.items?.length > 0),
 )
 
-// For single-category filter view
 const filteredCategoryItems = computed(() => {
   if (activeCatFilter.value === 'all') return []
   const cat = activeCategories.value.find((c) => c.id === activeCatFilter.value)
   return cat?.items || []
 })
 
-// ── Status screen helpers ─────────────────────
+// ── Status screen helpers ─────────────────────────────────────────────────────
 const statusIcon = computed(() => {
   if (orderStatus.value === 'pending') return Clock
   if (orderStatus.value === 'cooking') return ChefHat
@@ -601,7 +659,7 @@ const statusIcon = computed(() => {
 const statusClass = computed(() => ({
   'status-pending': orderStatus.value === 'pending',
   'status-cooking': orderStatus.value === 'cooking',
-  'status-ready': orderStatus.value === 'ready' || orderStatus.value === 'paid',
+  'status-ready': ['ready', 'paid'].includes(orderStatus.value),
   'status-rejected': orderStatus.value === 'rejected',
 }))
 
@@ -622,7 +680,23 @@ const statusDesc = computed(() => {
   return 'Thank you for dining with us!'
 })
 
-// ── Cart helpers ──────────────────────────────
+// ── Status change handler (plays sound + toast) ───────────────────────────────
+function handleStatusChange(newStatus) {
+  orderStatus.value = newStatus
+
+  if (newStatus === 'cooking') {
+    playStatusChime('cooking')
+    showToast('Kitchen accepted your order — now cooking! 🍳', 'info')
+  } else if (newStatus === 'ready') {
+    playStatusChime('ready')
+    showToast('Your order is ready for pickup! 🎉', 'success')
+  } else if (newStatus === 'rejected') {
+    playStatusChime('rejected')
+    showToast('Your order was not accepted. Please ask staff.', 'error')
+  }
+}
+
+// ── Cart helpers ──────────────────────────────────────────────────────────────
 function cartCount(itemId) {
   return cart.value.filter((l) => l.itemId === itemId).reduce((n, l) => n + l.qty, 0)
 }
@@ -680,7 +754,7 @@ function resetOrder() {
   }
 }
 
-// ── Promotions ────────────────────────────────
+// ── Promotions ────────────────────────────────────────────────────────────────
 async function checkAutoPromotions() {
   const { data } = await supabase.rpc('get_active_auto_promotions', {
     p_restaurant_id: restaurant.value.id,
@@ -714,21 +788,19 @@ function removePromoCode() {
   promoError.value = ''
 }
 
-// ── Infinite scroll ───────────────────────────
+// ── Infinite scroll ───────────────────────────────────────────────────────────
 function setupInfiniteScroll() {
   if (!scrollSentinel.value) return
   scrollObserver = new IntersectionObserver(
     (entries) => {
-      if (entries[0].isIntersecting && !allItemsLoaded.value) {
-        visibleCatCount.value += 2
-      }
+      if (entries[0].isIntersecting && !allItemsLoaded.value) visibleCatCount.value += 2
     },
     { threshold: 0.1 },
   )
   scrollObserver.observe(scrollSentinel.value)
 }
 
-// ── Real-time menu availability ───────────────
+// ── Real-time menu availability ───────────────────────────────────────────────
 function subscribeToMenuAvailability(restaurantId) {
   menuChannel = supabase
     .channel(`menu-availability-${restaurantId}`)
@@ -750,9 +822,8 @@ function subscribeToMenuAvailability(restaurantId) {
               !updated.is_available &&
               itemModal.value.open &&
               itemModal.value.item?.id === updated.id
-            ) {
+            )
               itemModal.value.open = false
-            }
             if (!updated.is_available)
               cart.value = cart.value.filter((l) => l.itemId !== updated.id)
             break
@@ -763,7 +834,7 @@ function subscribeToMenuAvailability(restaurantId) {
     .subscribe()
 }
 
-// ── Load menu ─────────────────────────────────
+// ── Load menu ─────────────────────────────────────────────────────────────────
 onMounted(async () => {
   const slug = route.params.slug
   tableId.value = route.params.tableId
@@ -814,10 +885,8 @@ onMounted(async () => {
   }))
 
   loading.value = false
-
   subscribeToMenuAvailability(rest.id)
   await checkAutoPromotions()
-
   setTimeout(() => setupInfiniteScroll(), 400)
 })
 
@@ -825,9 +894,11 @@ onUnmounted(() => {
   if (statusChannel) supabase.removeChannel(statusChannel)
   if (menuChannel) supabase.removeChannel(menuChannel)
   if (scrollObserver) scrollObserver.disconnect()
+  if (audioCtx) audioCtx.close()
+  if (toastTimer) clearTimeout(toastTimer)
 })
 
-// ── Place order ───────────────────────────────
+// ── Place order ───────────────────────────────────────────────────────────────
 async function placeOrder() {
   if (cart.value.length === 0) return
   placing.value = true
@@ -850,7 +921,6 @@ async function placeOrder() {
       discount_code: appliedPromo.value ? appliedPromoCode.value : null,
       discount_amount: finalDiscount,
     })
-
     if (orderErr) throw orderErr
 
     const orderItemsPayload = cart.value.map((line) => ({
@@ -860,7 +930,6 @@ async function placeOrder() {
       unit_price: line.price,
       notes: line.notes || null,
     }))
-
     const { error: itemsError } = await supabase.from('order_items').insert(orderItemsPayload)
     if (itemsError) throw itemsError
 
@@ -878,13 +947,14 @@ async function placeOrder() {
     orderPlaced.value = true
     orderStatus.value = 'pending'
 
+    // Subscribe to order status changes — fires toast + chime on each transition
     statusChannel = supabase
       .channel(`order-${orderId}`)
       .on(
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'orders', filter: `id=eq.${orderId}` },
         (payload) => {
-          orderStatus.value = payload.new.status
+          handleStatusChange(payload.new.status)
         },
       )
       .subscribe()
@@ -907,6 +977,60 @@ async function placeOrder() {
   padding: 0;
 }
 
+/* ── Toast ───────────────────────────────────────────────── */
+.toast {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 18px;
+  border-radius: 999px;
+  font-size: 13.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(12px);
+  pointer-events: none;
+  font-family: 'DM Sans', sans-serif;
+}
+.toast--success {
+  background: rgba(74, 222, 128, 0.18);
+  border: 1px solid rgba(74, 222, 128, 0.35);
+  color: #4ade80;
+}
+.toast--error {
+  background: rgba(239, 68, 68, 0.18);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: #f87171;
+}
+.toast--info {
+  background: rgba(200, 115, 58, 0.18);
+  border: 1px solid rgba(200, 115, 58, 0.35);
+  color: #e08040;
+}
+.toast--warning {
+  background: rgba(250, 204, 21, 0.18);
+  border: 1px solid rgba(250, 204, 21, 0.35);
+  color: #facc15;
+}
+.toast-enter-active,
+.toast-leave-active {
+  transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.toast-enter-from {
+  opacity: 0;
+  transform: translateX(-50%) translateY(-12px) scale(0.92);
+}
+.toast-leave-to {
+  opacity: 0;
+  transform: translateX(-50%) translateY(-8px) scale(0.95);
+}
+
+/* ── Page ─────────────────────────────────────────────────── */
 .order-page {
   min-height: 100vh;
   background: #111111;
@@ -925,7 +1049,6 @@ async function placeOrder() {
   }
 }
 
-/* Loading / not found */
 .full-center {
   min-height: 100vh;
   display: flex;
@@ -971,7 +1094,6 @@ async function placeOrder() {
   }
 }
 
-/* Restaurant header */
 .restaurant-header {
   padding: 24px 16px 20px;
   background: #161616;
@@ -985,6 +1107,7 @@ async function placeOrder() {
     padding: 32px 24px 24px;
   }
 }
+
 .restaurant-brand {
   display: flex;
   align-items: center;
@@ -1050,7 +1173,6 @@ async function placeOrder() {
   font-weight: 700;
 }
 
-/* ── Category filter tabs ── */
 .category-tabs-wrap {
   position: sticky;
   top: 104px;
@@ -1103,7 +1225,6 @@ async function placeOrder() {
   box-shadow: 0 4px 12px rgba(200, 115, 58, 0.3);
 }
 
-/* Menu content */
 .menu-content {
   padding: 0 16px 24px;
 }
@@ -1277,7 +1398,6 @@ async function placeOrder() {
   font-weight: 700;
 }
 
-/* Infinite scroll */
 .scroll-sentinel {
   height: 1px;
 }
@@ -1295,7 +1415,6 @@ async function placeOrder() {
   color: rgba(255, 255, 255, 0.2);
 }
 
-/* Cart bar */
 .cart-bar {
   position: fixed;
   bottom: 20px;
@@ -1467,7 +1586,6 @@ async function placeOrder() {
   margin-bottom: 32px;
 }
 
-/* Progress steps */
 .status-steps {
   display: flex;
   align-items: center;
@@ -1531,7 +1649,6 @@ async function placeOrder() {
   background: #4ade80;
 }
 
-/* Order summary */
 .order-summary {
   background: #0e0e0e;
   border: 1px solid rgba(255, 255, 255, 0.07);
@@ -1618,7 +1735,6 @@ async function placeOrder() {
   box-shadow: 0 8px 24px rgba(200, 115, 58, 0.3);
 }
 
-/* Modals */
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -1655,6 +1771,7 @@ async function placeOrder() {
     max-height: 85vh;
   }
 }
+
 @keyframes slide-up {
   from {
     transform: translateY(100%);
@@ -1844,7 +1961,6 @@ async function placeOrder() {
   border: 1px solid rgba(255, 255, 255, 0.07);
 }
 
-/* Promo */
 .auto-promo-banner {
   display: flex;
   align-items: flex-start;
@@ -1904,6 +2020,7 @@ async function placeOrder() {
   color: #dc2626;
   margin-top: 8px;
 }
+
 .applied-promo-tag {
   display: flex;
   align-items: center;
@@ -1955,7 +2072,6 @@ async function placeOrder() {
   color: #dc2626;
 }
 
-/* Cart footer */
 .cart-footer {
   padding: 20px 24px;
   border-top: 1px solid rgba(255, 255, 255, 0.07);
@@ -2059,7 +2175,6 @@ async function placeOrder() {
   margin-top: 12px;
 }
 
-/* Qty controls */
 .qty-control {
   display: flex;
   align-items: center;
@@ -2122,7 +2237,6 @@ async function placeOrder() {
   transform: translateY(-2px);
 }
 
-/* Fields */
 .field-group {
   display: flex;
   flex-direction: column;

@@ -1,5 +1,13 @@
 <template>
   <div class="kitchen-page">
+    <!-- ── Toast ─────────────────────────────── -->
+    <Transition name="toast">
+      <div v-if="toast.show" class="toast" :class="`toast--${toast.type}`">
+        <component :is="toast.icon" :size="16" />
+        <span>{{ toast.message }}</span>
+      </div>
+    </Transition>
+
     <!-- Header -->
     <div class="kitchen-header">
       <div class="header-left">
@@ -173,6 +181,8 @@ import {
   CheckCircle2,
   MessageSquare,
   X,
+  XCircle,
+  BellRing,
 } from 'lucide-vue-next'
 
 const authStore = useAuthStore()
@@ -189,6 +199,59 @@ const tick = ref(0)
 let channel = null
 let tickTimer = null
 
+// ── Toast ──────────────────────────────────────────────────────────────────────
+const toast = ref({ show: false, message: '', type: 'success', icon: CheckCircle })
+let toastTimer = null
+
+function showToast(message, type = 'success') {
+  if (toastTimer) clearTimeout(toastTimer)
+  const iconMap = {
+    success: CheckCircle,
+    error: XCircle,
+    info: BellRing,
+    warning: AlertCircle,
+  }
+  toast.value = { show: true, message, type, icon: iconMap[type] ?? CheckCircle }
+  toastTimer = setTimeout(() => (toast.value.show = false), 3500)
+}
+
+// ── Audio Ding (Web Audio API — no external file needed) ───────────────────────
+let audioCtx = null
+
+function getAudioCtx() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)()
+  return audioCtx
+}
+
+function playDing() {
+  if (!audioEnabled.value) return
+  try {
+    const ctx = getAudioCtx()
+    // Two-tone ding: high note then lower note
+    const tones = [
+      { freq: 1046, start: 0, duration: 0.18 },
+      { freq: 784, start: 0.22, duration: 0.3 },
+    ]
+    tones.forEach(({ freq, start, duration }) => {
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+      osc.connect(gain)
+      gain.connect(ctx.destination)
+      osc.type = 'sine'
+      osc.frequency.value = freq
+      const t = ctx.currentTime + start
+      gain.gain.setValueAtTime(0, t)
+      gain.gain.linearRampToValueAtTime(0.45, t + 0.015)
+      gain.gain.exponentialRampToValueAtTime(0.001, t + duration)
+      osc.start(t)
+      osc.stop(t + duration + 0.05)
+    })
+  } catch (e) {
+    console.warn('Audio ding failed:', e)
+  }
+}
+
+// ── Computed ───────────────────────────────────────────────────────────────────
 const todayLabel = computed(() =>
   new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }),
 )
@@ -216,12 +279,11 @@ const tabs = computed(() => [
 
 const visibleOrders = computed(() => {
   void tick.value
-  let filtered = orders.value.filter((o) => {
+  const filtered = orders.value.filter((o) => {
     if (activeTab.value === 'pending') return o.status === 'pending'
     if (activeTab.value === 'cooking') return o.status === 'cooking'
     return ['ready', 'paid', 'rejected'].includes(o.status)
   })
-
   return activeTab.value === 'done'
     ? filtered.sort(
         (a, b) => new Date(b.updated_at || b.created_at) - new Date(a.updated_at || a.created_at),
@@ -247,12 +309,8 @@ const emptyMessage = computed(() => {
   return 'Finished or rejected orders will show here.'
 })
 
-const rejectModal = ref({
-  open: false,
-  order: null,
-  reason: '',
-  saving: false,
-})
+// ── Reject modal ───────────────────────────────────────────────────────────────
+const rejectModal = ref({ open: false, order: null, reason: '', saving: false })
 
 const rejectReasons = [
   'Item out of stock',
@@ -262,8 +320,7 @@ const rejectReasons = [
   'Customer requested cancel',
 ]
 
-// ── Helpers ────────────────────────────────────────────────
-
+// ── Helpers ────────────────────────────────────────────────────────────────────
 function elapsedMinutes(order) {
   return Math.floor((Date.now() - new Date(order.created_at).getTime()) / 60000)
 }
@@ -275,23 +332,17 @@ function elapsedLabel(order) {
   return `${m} min`
 }
 
-function playNewOrderSound() {
-  if (!audioEnabled.value) return
-  try {
-    const audio = new Audio('/sounds/notification.mp3') // add your own short sound file
-    audio.volume = 0.35
-    audio.play().catch(() => {})
-  } catch {}
-}
-
-// ── Actions ────────────────────────────────────────────────
-
+// ── Actions ────────────────────────────────────────────────────────────────────
 async function acceptOrder(order) {
-  await updateOrderStatus(order.id, 'cooking')
+  const { error } = await updateOrderStatus(order.id, 'cooking')
+  if (!error) showToast(`Order ${order.id.slice(-4).toUpperCase()} accepted — now cooking!`, 'info')
+  else showToast('Failed to accept order.', 'error')
 }
 
 async function markReady(order) {
-  await updateOrderStatus(order.id, 'ready')
+  const { error } = await updateOrderStatus(order.id, 'ready')
+  if (!error) showToast(`Order ${order.id.slice(-4).toUpperCase()} is ready for pickup!`, 'success')
+  else showToast('Failed to mark order as ready.', 'error')
 }
 
 function openRejectModal(order) {
@@ -301,42 +352,39 @@ function openRejectModal(order) {
 async function rejectOrder() {
   const m = rejectModal.value
   m.saving = true
-  await updateOrderStatus(m.order.id, 'rejected', m.reason.trim() || null)
+  const { error } = await updateOrderStatus(m.order.id, 'rejected', m.reason.trim() || null)
+  if (!error) showToast(`Order ${m.order.id.slice(-4).toUpperCase()} rejected.`, 'error')
+  else showToast('Failed to reject order.', 'error')
   m.open = false
   m.saving = false
 }
 
 async function updateOrderStatus(orderId, status, rejectionReason = null) {
-  const payload = {
-    status,
-    updated_at: new Date().toISOString(),
-  }
+  const payload = { status, updated_at: new Date().toISOString() }
   if (rejectionReason) payload.rejection_reason = rejectionReason
 
-  const { error } = await supabase.from('orders').update(payload).eq('id', orderId)
+  const result = await supabase.from('orders').update(payload).eq('id', orderId)
 
-  if (!error) {
+  if (!result.error) {
     const order = orders.value.find((o) => o.id === orderId)
     if (order) {
       order.status = status
       if (rejectionReason) order.rejection_reason = rejectionReason
     }
   }
+  return result
 }
 
-// ── Lifecycle & Realtime ───────────────────────────────────
-
+// ── Lifecycle & Realtime ───────────────────────────────────────────────────────
 onMounted(async () => {
   if (!authStore.profile) await authStore.fetchProfile()
   const restaurantId = authStore.profile?.restaurant_id
   if (!restaurantId) return
 
-  // Load reference data
   const { data: tables } = await supabase
     .from('tables')
     .select('id, name')
     .eq('restaurant_id', restaurantId)
-
   tables?.forEach((t) => {
     tableMap.value[t.id] = t.name
   })
@@ -345,12 +393,10 @@ onMounted(async () => {
     .from('menu_items')
     .select('id, name')
     .eq('restaurant_id', restaurantId)
-
   items?.forEach((i) => {
     menuItemMap.value[i.id] = i.name
   })
 
-  // Load today's orders
   const todayStart = new Date()
   todayStart.setHours(0, 0, 0, 0)
 
@@ -364,7 +410,6 @@ onMounted(async () => {
   orders.value = (raw || []).map(enrichOrder)
   loading.value = false
 
-  // Realtime
   channel = supabase
     .channel(`kitchen-orders-${restaurantId}`)
     .on(
@@ -376,19 +421,22 @@ onMounted(async () => {
         filter: `restaurant_id=eq.${restaurantId}`,
       },
       async (payload) => {
-        const { data: items } = await supabase
+        const { data: orderItems } = await supabase
           .from('order_items')
           .select('*')
           .eq('order_id', payload.new.id)
 
         const enriched = enrichOrder({
           ...payload.new,
-          order_items: items || [],
+          order_items: orderItems || [],
           _isNew: true,
         })
-
         orders.value.unshift(enriched)
-        playNewOrderSound()
+
+        // Ding + toast for new order
+        playDing()
+        activeTab.value = 'pending'
+        showToast('New order received!', 'info')
 
         setTimeout(() => {
           const o = orders.value.find((o) => o.id === enriched.id)
@@ -406,16 +454,13 @@ onMounted(async () => {
       },
       (payload) => {
         const idx = orders.value.findIndex((o) => o.id === payload.new.id)
-        if (idx !== -1) {
-          Object.assign(orders.value[idx], payload.new)
-        }
+        if (idx !== -1) Object.assign(orders.value[idx], payload.new)
       },
     )
     .subscribe((status) => {
       isConnected.value = status === 'SUBSCRIBED'
     })
 
-  // Timer refresh
   tickTimer = setInterval(() => {
     tick.value++
   }, 20000)
@@ -424,22 +469,77 @@ onMounted(async () => {
 onUnmounted(() => {
   if (channel) supabase.removeChannel(channel)
   if (tickTimer) clearInterval(tickTimer)
+  if (audioCtx) audioCtx.close()
+  if (toastTimer) clearTimeout(toastTimer)
 })
 
 function enrichOrder(raw) {
   return {
     ...raw,
-    _tableName: tableMap.value[raw.table_id] || `Table ?`,
+    _tableName: tableMap.value[raw.table_id] || 'Table ?',
     _items: (raw.order_items || []).map((item) => ({
       ...item,
       _name: menuItemMap.value[item.menu_item_id] || 'Unknown item',
     })),
-    _isNew: false,
+    _isNew: raw._isNew ?? false,
   }
 }
 </script>
 
 <style scoped>
+/* ── Toast ───────────────────────────────────────────────── */
+.toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 12px 18px;
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-weight: 600;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(8px);
+  pointer-events: none;
+  font-family: var(--font-body);
+}
+.toast--success {
+  background: rgba(74, 222, 128, 0.15);
+  border: 1px solid rgba(74, 222, 128, 0.35);
+  color: #4ade80;
+}
+.toast--error {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: #f87171;
+}
+.toast--info {
+  background: rgba(200, 115, 58, 0.15);
+  border: 1px solid rgba(200, 115, 58, 0.35);
+  color: #c8733a;
+}
+.toast--warning {
+  background: rgba(250, 204, 21, 0.15);
+  border: 1px solid rgba(250, 204, 21, 0.35);
+  color: #facc15;
+}
+
+.toast-enter-active,
+.toast-leave-active {
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.toast-enter-from {
+  opacity: 0;
+  transform: translateY(-14px) scale(0.94);
+}
+.toast-leave-to {
+  opacity: 0;
+  transform: translateY(-8px) scale(0.94);
+}
+
+/* ── Everything below is unchanged from your original ────── */
 .kitchen-page {
   display: flex;
   flex-direction: column;
@@ -449,7 +549,6 @@ function enrichOrder(raw) {
   font-family: var(--font-body);
 }
 
-/* Header */
 .kitchen-header {
   display: flex;
   align-items: center;
@@ -495,6 +594,16 @@ function enrichOrder(raw) {
   animation: pulse-dot 2s infinite;
 }
 
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
 .header-right {
   display: flex;
   align-items: center;
@@ -526,7 +635,6 @@ function enrichOrder(raw) {
   border-color: var(--color-accent-border);
 }
 
-/* Stat Cards */
 .stat-cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
@@ -580,7 +688,6 @@ function enrichOrder(raw) {
   color: var(--color-text-primary);
 }
 
-/* Orders Area */
 .orders-area {
   flex: 1;
   padding: 24px;
@@ -607,6 +714,12 @@ function enrichOrder(raw) {
   animation: spin 1s linear infinite;
 }
 
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .empty-icon {
   stroke-width: 1.5;
   color: var(--color-text-faint);
@@ -618,7 +731,6 @@ function enrichOrder(raw) {
   max-width: 360px;
 }
 
-/* Orders Grid & Cards */
 .orders-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -654,12 +766,6 @@ function enrichOrder(raw) {
   align-items: center;
   padding: 14px 16px;
   border-bottom: 1px solid var(--color-border-subtle);
-}
-
-.header-left {
-  display: flex;
-  align-items: center;
-  gap: 10px;
 }
 
 .table-badge {
@@ -808,7 +914,7 @@ function enrichOrder(raw) {
   color: #ef4444;
 }
 
-/* Modal styles */
+/* Modal */
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -974,25 +1080,20 @@ function enrichOrder(raw) {
     align-items: flex-start;
     gap: 12px;
   }
-
   .header-right {
     width: 100%;
     justify-content: space-between;
   }
-
   .stat-cards {
     grid-template-columns: 1fr;
   }
-
   .orders-grid {
     grid-template-columns: 1fr;
   }
-
   .card-actions {
     flex-direction: column;
     gap: 10px;
   }
-
   .btn-accept,
   .btn-ready {
     width: 100%;
