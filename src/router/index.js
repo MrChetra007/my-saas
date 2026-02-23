@@ -107,7 +107,6 @@ const routes = [
     children: [
       { path: 'orders', component: () => import('@/views/cashier/CashierOrdersView.vue') },
       { path: 'history', component: () => import('@/views/cashier/CashierHistoryView.vue') },
-      { path: 'payment', component: () => import('@/views/cashier/CashierPaymentView.vue') },
     ],
   },
 
