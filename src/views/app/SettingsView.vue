@@ -165,11 +165,11 @@
         </div>
 
         <div class="section-body">
-          <!-- Plan Status -->
+          <!-- Plan Status Card -->
           <div class="plan-card" :class="`plan-${planStatus}`">
             <div class="plan-left">
               <div class="plan-icon-wrap">
-                <Star v-if="hasActiveSubscription" :size="20" />
+                <Star v-if="isProPlan" :size="20" />
                 <Clock v-else-if="isOnTrial" :size="20" />
                 <LockIcon v-else :size="20" />
               </div>
@@ -181,7 +181,7 @@
             <span class="plan-badge" :class="planStatus">{{ planBadgeLabel }}</span>
           </div>
 
-          <!-- Trial Countdown -->
+          <!-- Trial Countdown (trial plan + not expired) -->
           <div v-if="isOnTrial" class="trial-card">
             <div class="trial-header">
               <span class="trial-title"><Timer :size="14" /> Trial Period</span>
@@ -216,11 +216,9 @@
             </button>
           </div>
 
-          <!-- Expired -->
+          <!-- Expired (trial plan + expired) -->
           <div v-else-if="planStatus === 'expired'" class="expired-card">
-            <div class="expired-icon-wrap">
-              <AlertCircle :size="28" />
-            </div>
+            <div class="expired-icon-wrap"><AlertCircle :size="28" /></div>
             <div>
               <h3 class="expired-title">Trial Expired</h3>
               <p class="expired-text">
@@ -230,6 +228,20 @@
             </div>
             <button class="btn-upgrade" @click="showPlanPicker = true">
               <Zap :size="14" /> Choose a Plan
+            </button>
+          </div>
+
+          <!-- Starter upsell (paid but not Pro yet) -->
+          <div v-else-if="isStarterPlan" class="starter-card">
+            <div class="starter-left">
+              <div class="starter-icon-wrap"><Crown :size="18" /></div>
+              <div>
+                <div class="starter-title">Unlock Pro Features</div>
+                <div class="starter-desc">Get Analytics, Promotions, unlimited tables & more.</div>
+              </div>
+            </div>
+            <button class="btn-upgrade" @click="showPlanPicker = true">
+              <Zap :size="14" /> Upgrade to Pro
             </button>
           </div>
 
@@ -255,15 +267,20 @@
 
           <!-- Actions -->
           <div class="billing-actions">
-            <button
-              v-if="!hasActiveSubscription"
-              class="btn-upgrade"
-              @click="showPlanPicker = true"
-            >
-              <Zap :size="14" /> Upgrade Plan
+            <!--
+              Show upgrade button for everyone EXCEPT Pro users.
+              trial   → "Choose a Plan"
+              expired → "Choose a Plan"
+              starter → "Upgrade to Pro"
+            -->
+            <button v-if="!isProPlan" class="btn-upgrade" @click="showPlanPicker = true">
+              <Zap :size="14" />
+              {{ isStarterPlan ? 'Upgrade to Pro' : 'Choose a Plan' }}
             </button>
+
+            <!-- Pro users get the billing portal link instead -->
             <a
-              v-if="hasActiveSubscription && restaurant.customer_portal_url"
+              v-if="isProPlan && restaurant.customer_portal_url"
               :href="restaurant.customer_portal_url"
               target="_blank"
               class="btn-portal"
@@ -294,12 +311,7 @@
     </template>
 
     <!-- ── Plan Picker Modal ───────────────────── -->
-    <!--
-      Usage anywhere else in the app:
-        import PlanPicker from '@/components/PlanPicker.vue'
-        <PlanPicker v-model="showPlanPicker" @checkout-error="handleError" />
-    -->
-    <PlanPicker v-model="showPlanPicker" @checkout-error="(msg) => (saveError = msg)" />
+    <PlanPickerModal v-model="showPlanPicker" @checkout-error="(msg) => (saveError = msg)" />
   </div>
 </template>
 
@@ -308,7 +320,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
-import PlanPicker from '@/components/PlanPickerModal.vue'
+import PlanPickerModal from '@/components/PlanPickerModal.vue'
 
 import {
   Save,
@@ -324,6 +336,7 @@ import {
   Star,
   Clock,
   Lock,
+  Crown,
   AlertTriangle,
   AlertCircle,
   CheckCircle2,
@@ -333,7 +346,7 @@ import {
   RotateCcw,
 } from 'lucide-vue-next'
 
-const LockIcon = Lock // alias to avoid conflict with HTML attr
+const LockIcon = Lock
 
 const authStore = useAuthStore()
 const route = useRoute()
@@ -348,19 +361,10 @@ const saveSuccess = ref('')
 const showPlanPicker = ref(false)
 const showUpgradedBanner = ref(false)
 
-// ── Data ───────────────────────────────────────────
 const restaurant = ref({})
+const form = ref({ name: '', slug: '', address: '', logoUrl: '', currency: 'USD', timezone: 'UTC' })
 
-const form = ref({
-  name: '',
-  slug: '',
-  address: '',
-  logoUrl: '',
-  currency: 'USD',
-  timezone: 'UTC',
-})
-
-// ── Snapshot / dirty detection ─────────────────────
+// ── Snapshot / dirty ───────────────────────────────
 let snapshot = ''
 function takeSnapshot() {
   snapshot = JSON.stringify(form.value)
@@ -369,7 +373,7 @@ function markDirty() {
   isDirty.value = JSON.stringify(form.value) !== snapshot
 }
 
-// ── Live countdown timer ───────────────────────────
+// ── Timer ──────────────────────────────────────────
 const now = ref(new Date())
 let timerInterval = null
 function startTimer() {
@@ -379,66 +383,60 @@ function startTimer() {
 }
 
 // ── Plan computed ──────────────────────────────────
+// 3 plans: trial, starter, pro
+// isProPlan     = plan === 'pro'                        → full access, Manage Billing shown
+// isStarterPlan = plan === 'starter'                    → limited, Upgrade to Pro shown
+// isOnTrial     = plan === 'trial' AND not yet expired  → countdown + Upgrade shown
+// expired       = plan === 'trial' AND past trial date  → Choose a Plan shown
+
+const isProPlan = computed(() => restaurant.value.plan === 'pro')
+const isStarterPlan = computed(() => restaurant.value.plan === 'starter')
 const isOnTrial = computed(() => {
+  if (restaurant.value.plan !== 'trial') return false
   if (!restaurant.value.trial_ends_at) return false
   return new Date(restaurant.value.trial_ends_at) > now.value
-})
-
-const hasActiveSubscription = computed(() => {
-  const plan = restaurant.value.plan
-  return plan && !['trial', 'expired', 'free', null].includes(plan)
 })
 
 const trialMsLeft = computed(() =>
   Math.max(0, new Date(restaurant.value.trial_ends_at) - now.value),
 )
-
 const trialTimeLeft = computed(() => {
-  const total = trialMsLeft.value
-  const days = Math.floor(total / (1000 * 60 * 60 * 24))
-  const hours = Math.floor((total % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
-  const minutes = Math.floor((total % (1000 * 60 * 60)) / (1000 * 60))
+  const t = trialMsLeft.value
   return {
-    days: String(days).padStart(2, '0'),
-    hours: String(hours).padStart(2, '0'),
-    minutes: String(minutes).padStart(2, '0'),
+    days: String(Math.floor(t / 86400000)).padStart(2, '0'),
+    hours: String(Math.floor((t % 86400000) / 3600000)).padStart(2, '0'),
+    minutes: String(Math.floor((t % 3600000) / 60000)).padStart(2, '0'),
   }
 })
-
 const trialTotalDays = computed(() => {
   if (!restaurant.value.trial_ends_at || !restaurant.value.created_at) return 0
-  const elapsed = now.value - new Date(restaurant.value.created_at)
-  return Math.min(14, Math.floor(elapsed / (1000 * 60 * 60 * 24)))
+  return Math.min(14, Math.floor((now.value - new Date(restaurant.value.created_at)) / 86400000))
 })
-
 const trialPercent = computed(() => Math.min(100, Math.round((trialTotalDays.value / 14) * 100)))
 
 const planStatus = computed(() => {
-  if (hasActiveSubscription.value) return 'active'
+  if (isProPlan.value) return 'active'
+  if (isStarterPlan.value) return 'starter'
   if (isOnTrial.value) return 'trial'
   return 'expired'
 })
 
 const planDisplayName = computed(() => {
-  const map = {
-    trial: 'Trial',
-    starter: 'Starter',
-    pro: 'Pro',
-    enterprise: 'Enterprise',
-    expired: 'Expired',
-  }
+  const map = { trial: 'Trial', starter: 'Starter', pro: 'Pro' }
   return map[restaurant.value.plan] || 'Free'
 })
 
 const planMeta = computed(() => {
-  if (hasActiveSubscription.value) return 'Full access — all features unlocked'
+  if (isProPlan.value) return 'Full access — all features unlocked'
+  if (isStarterPlan.value) return 'Limited access — upgrade to unlock all Pro features'
   if (isOnTrial.value)
     return `${trialTimeLeft.value.days}d ${trialTimeLeft.value.hours}h left in your trial`
-  return 'Your trial has ended — upgrade to continue'
+  return 'Your trial has ended — choose a plan to continue'
 })
 
 const planBadgeLabel = computed(() => {
-  if (hasActiveSubscription.value) return 'Active'
+  if (isProPlan.value) return 'Pro'
+  if (isStarterPlan.value) return 'Starter'
   if (isOnTrial.value) return 'Trial'
   return 'Expired'
 })
@@ -543,13 +541,11 @@ async function handleLogoUpload(event) {
   uploadingLogo.value = true
   saveError.value = ''
   const restaurantId = authStore.profile?.restaurant_id
-  const ext = file.name.split('.').pop()
-  const path = `${restaurantId}/logo.${ext}`
+  const path = `${restaurantId}/logo.${file.name.split('.').pop()}`
 
   const { error: uploadErr } = await supabase.storage
     .from('restaurant-assets')
     .upload(path, file, { upsert: true })
-
   if (uploadErr) {
     saveError.value = 'Upload failed: ' + uploadErr.message
     uploadingLogo.value = false
@@ -615,7 +611,6 @@ onMounted(async () => {
   if (!authStore.profile) await authStore.fetchProfile()
   await fetchSettings()
   startTimer()
-
   if (route.query.upgraded === 'true') {
     showUpgradedBanner.value = true
     await fetchSettings()
@@ -635,7 +630,6 @@ onUnmounted(() => {
   margin: 0 auto;
 }
 
-/* ── Spin ── */
 .spin {
   animation: spin 0.9s linear infinite;
 }
@@ -693,6 +687,7 @@ onUnmounted(() => {
   cursor: not-allowed;
   transform: none;
 }
+
 .btn-discard {
   display: inline-flex;
   align-items: center;
@@ -710,6 +705,7 @@ onUnmounted(() => {
   border-color: var(--color-accent);
   color: var(--color-accent);
 }
+
 .btn-upgrade {
   display: inline-flex;
   align-items: center;
@@ -728,6 +724,7 @@ onUnmounted(() => {
   background: var(--color-accent-hover);
   transform: translateY(-1px);
 }
+
 .btn-portal {
   display: inline-flex;
   align-items: center;
@@ -748,7 +745,7 @@ onUnmounted(() => {
   color: var(--color-accent);
 }
 
-/* ── Upgrade banner ── */
+/* ── Banner ── */
 .upgrade-banner {
   background: rgba(74, 222, 128, 0.1);
   border: 1px solid rgba(74, 222, 128, 0.25);
@@ -987,7 +984,7 @@ onUnmounted(() => {
   color: #facc15;
 }
 
-/* ── Currency preview ── */
+/* ── Preview ── */
 .preview-card {
   background: var(--color-bg-elevated);
   border: 1px solid var(--color-border-subtle);
@@ -1011,7 +1008,7 @@ onUnmounted(() => {
   color: var(--color-text-primary);
 }
 
-/* ── Plan Status Card ── */
+/* ── Plan Card ── */
 .plan-card {
   background: var(--color-bg-elevated);
   border: 1px solid var(--color-border-subtle);
@@ -1030,6 +1027,10 @@ onUnmounted(() => {
 .plan-card.plan-active {
   border-color: rgba(74, 222, 128, 0.35);
   background: rgba(74, 222, 128, 0.07);
+}
+.plan-card.plan-starter {
+  border-color: rgba(200, 115, 58, 0.25);
+  background: rgba(200, 115, 58, 0.05);
 }
 .plan-card.plan-expired {
   border-color: rgba(239, 68, 68, 0.35);
@@ -1083,6 +1084,11 @@ onUnmounted(() => {
 .plan-badge.active {
   background: #4ade80;
   color: #052e16;
+}
+.plan-badge.starter {
+  background: rgba(200, 115, 58, 0.15);
+  color: var(--color-accent);
+  border: 1px solid var(--color-accent-border);
 }
 .plan-badge.expired {
   background: #ef4444;
@@ -1198,7 +1204,48 @@ onUnmounted(() => {
   line-height: 1.5;
 }
 
-/* ── Billing details ── */
+/* ── Starter upsell card ── */
+.starter-card {
+  background: rgba(200, 115, 58, 0.05);
+  border: 1px solid var(--color-accent-border);
+  border-radius: var(--radius-panel);
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.starter-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.starter-icon-wrap {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  background: var(--color-accent-muted);
+  border: 1px solid var(--color-accent-border);
+  color: var(--color-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.starter-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin-bottom: 2px;
+}
+.starter-desc {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+/* ── Billing ── */
 .billing-details {
   margin-bottom: 20px;
 }
@@ -1272,11 +1319,12 @@ onUnmounted(() => {
     flex-direction: column;
     align-items: flex-start;
   }
-  .bottom-bar {
-    padding: 14px 0;
-  }
   .expired-card {
     flex-direction: column;
+  }
+  .starter-card {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }
 </style>
