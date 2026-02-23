@@ -6,8 +6,8 @@
       <div class="sidebar-logo">
         <div class="logo-mark">
           <img
-            v-if="restauranLogoUrl"
-            :src="restauranLogoUrl"
+            v-if="restaurantLogoUrl"
+            :src="restaurantLogoUrl"
             alt="Restaurant Logo"
             style="width: 28px; height: 28px; border-radius: 6px; object-fit: cover"
           />
@@ -78,29 +78,24 @@
           <span class="nav-tooltip" v-show="sidebarCollapsed">Dashboard</span>
         </RouterLink>
 
-        <component
-          :is="canAccessAnalytics ? RouterLink : 'div'"
-          v-bind="canAccessAnalytics ? { to: '/app/analytics' } : {}"
+        <!-- Analytics — always clickable, opens modal if locked -->
+        <div
           class="nav-item"
-          :class="{ 'nav-locked': !canAccessAnalytics }"
-          active-class="nav-active"
-          @click="!canAccessAnalytics && handleLockedClick('Analytics')"
+          :class="canAccessAnalytics ? 'nav-unlocked' : 'nav-pro'"
+          @click="canAccessAnalytics ? $router.push('/app/analytics') : openProPicker('Analytics')"
         >
           <span class="nav-icon"><Activity :size="16" /></span>
           <span class="nav-label" v-show="!sidebarCollapsed">Analytics</span>
-          <Lock
+          <Crown
             v-if="!canAccessAnalytics"
-            :size="11"
-            class="lock-icon"
+            :size="12"
+            class="pro-icon"
             v-show="!sidebarCollapsed"
           />
           <span class="nav-tooltip" v-show="sidebarCollapsed">
-            {{ canAccessAnalytics ? 'Analytics' : 'Upgrade to Pro' }}
+            {{ canAccessAnalytics ? 'Analytics' : 'Pro Feature' }}
           </span>
-          <span class="upgrade-tooltip" v-if="!canAccessAnalytics && !sidebarCollapsed">
-            <Lock :size="10" /> Upgrade to Pro
-          </span>
-        </component>
+        </div>
 
         <div class="nav-section-label" v-show="!sidebarCollapsed">Operations</div>
 
@@ -146,29 +141,26 @@
           <span class="nav-tooltip" v-show="sidebarCollapsed">Staff</span>
         </RouterLink>
 
-        <component
-          :is="canAccessPromotions ? RouterLink : 'div'"
-          v-bind="canAccessPromotions ? { to: '/app/promotions' } : {}"
+        <!-- Promotions — always clickable, opens modal if locked -->
+        <div
           class="nav-item"
-          :class="{ 'nav-locked': !canAccessPromotions }"
-          active-class="nav-active"
-          @click="!canAccessPromotions && handleLockedClick('Promotions')"
+          :class="canAccessPromotions ? 'nav-unlocked' : 'nav-pro'"
+          @click="
+            canAccessPromotions ? $router.push('/app/promotions') : openProPicker('Promotions')
+          "
         >
           <span class="nav-icon"><Tag :size="16" /></span>
           <span class="nav-label" v-show="!sidebarCollapsed">Promotions</span>
-          <Lock
+          <Crown
             v-if="!canAccessPromotions"
-            :size="11"
-            class="lock-icon"
+            :size="12"
+            class="pro-icon"
             v-show="!sidebarCollapsed"
           />
           <span class="nav-tooltip" v-show="sidebarCollapsed">
-            {{ canAccessPromotions ? 'Promotions' : 'Upgrade to Pro' }}
+            {{ canAccessPromotions ? 'Promotions' : 'Pro Feature' }}
           </span>
-          <span class="upgrade-tooltip" v-if="!canAccessPromotions && !sidebarCollapsed">
-            <Lock :size="10" /> Upgrade to Pro
-          </span>
-        </component>
+        </div>
 
         <div class="nav-section-label" v-show="!sidebarCollapsed">Account</div>
 
@@ -199,8 +191,8 @@
     <!-- Mobile overlay -->
     <div class="mobile-overlay" v-if="mobileOpen" @click="mobileOpen = false" />
 
-    <!-- ── Plan Picker Modal ───────────────────── -->
-    <PlanPickerModal v-model="showPlanPicker" :featureName="lockedFeatureName" />
+    <!-- ── Pro Plan Picker Modal ───────────────────── -->
+    <ProPlanPicker v-model="showProPicker" :featureName="lockedFeatureName" />
 
     <!-- ── Main area ───────────────────────────── -->
     <div class="main-area" :class="{ expanded: sidebarCollapsed }">
@@ -234,7 +226,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute, RouterLink } from 'vue-router'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
-import PlanPickerModal from '@/components/PlanPickerModal.vue'
+import ProPlanPicker from '@/components/Proplanpicker.vue'
 
 import {
   LayoutDashboard,
@@ -250,7 +242,7 @@ import {
   ChevronLeft,
   ChevronRight,
   LogOut,
-  Lock,
+  Crown,
   Menu,
 } from 'lucide-vue-next'
 
@@ -263,14 +255,14 @@ const mobileOpen = ref(false)
 const pendingCount = ref(0)
 const restaurantName = ref('')
 const restaurantPlan = ref('trial')
-const restauranLogoUrl = ref('')
+const restaurantLogoUrl = ref('') // fixed typo: restauranLogoUrl → restaurantLogoUrl
 
-const showPlanPicker = ref(false)
+const showProPicker = ref(false)
 const lockedFeatureName = ref('')
 
-function handleLockedClick(featureName) {
+function openProPicker(featureName) {
   lockedFeatureName.value = featureName
-  showPlanPicker.value = true
+  showProPicker.value = true
 }
 
 const canAccessAnalytics = computed(() =>
@@ -297,6 +289,10 @@ const currentPageTitle = computed(() => pageTitles[route.path] || 'Qrder')
 const userName = computed(() => authStore.profile?.full_name || 'User')
 const userInitial = computed(() => userName.value.charAt(0).toUpperCase())
 const restaurantInitial = computed(() => restaurantName.value.charAt(0).toUpperCase() || 'R')
+const planLabel = computed(() => {
+  const map = { trial: '14-day Trial', starter: 'Starter', pro: 'Pro', enterprise: 'Enterprise' }
+  return map[restaurantPlan.value] || 'Trial'
+})
 
 async function loadRestaurant() {
   if (!authStore.profile?.restaurant_id) return
@@ -308,14 +304,9 @@ async function loadRestaurant() {
   if (data) {
     restaurantName.value = data.name
     restaurantPlan.value = data.plan
-    restauranLogoUrl.value = data.logo_url || ''
+    restaurantLogoUrl.value = data.logo_url || ''
   }
 }
-
-const planLabel = computed(() => {
-  const map = { trial: '14-day Trial', starter: 'Starter', pro: 'Pro' }
-  return map[restaurantPlan.value] || 'Trial'
-})
 
 let ordersChannel = null
 async function loadPendingCount() {
@@ -470,15 +461,6 @@ onUnmounted(() => {
   overflow: hidden;
   min-width: 0;
 }
-.badge-name {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--color-text-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  font-family: var(--font-body);
-}
 .badge-plan {
   font-size: 10px;
   color: var(--color-accent);
@@ -531,6 +513,10 @@ onUnmounted(() => {
   position: relative;
   white-space: nowrap;
   cursor: pointer;
+  border: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
 }
 .nav-item:hover {
   background: rgba(255, 255, 255, 0.05);
@@ -544,44 +530,21 @@ onUnmounted(() => {
   color: var(--color-accent);
 }
 
-.nav-item.nav-locked {
-  opacity: 0.4;
-  cursor: not-allowed;
+/* Pro-locked items — fully clickable, accent-tinted on hover */
+.nav-item.nav-pro {
+  cursor: pointer;
 }
-.nav-item.nav-locked:hover {
-  background: transparent;
-  color: var(--color-text-muted);
-}
-.nav-item.nav-locked:hover .upgrade-tooltip {
-  display: flex;
+.nav-item.nav-pro:hover {
+  background: rgba(200, 115, 58, 0.08);
+  color: var(--color-accent);
 }
 
-.lock-icon {
+/* Crown icon */
+.pro-icon {
   margin-left: auto;
-  color: var(--color-text-faint);
+  color: var(--color-accent);
   flex-shrink: 0;
-}
-
-.upgrade-tooltip {
-  display: none;
-  position: absolute;
-  right: -4px;
-  top: 50%;
-  transform: translateY(-50%) translateX(100%);
-  background: var(--color-bg-surface);
-  border: 1px solid var(--color-accent-border);
-  color: var(--color-accent-hover);
-  font-size: 11px;
-  font-weight: 600;
-  font-family: var(--font-body);
-  padding: 5px 10px;
-  border-radius: 6px;
-  white-space: nowrap;
-  box-shadow: var(--shadow-card);
-  z-index: 200;
-  align-items: center;
-  gap: 5px;
-  pointer-events: none;
+  filter: drop-shadow(0 0 4px rgba(200, 115, 58, 0.45));
 }
 
 .nav-icon {

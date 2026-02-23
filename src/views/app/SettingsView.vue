@@ -1,6 +1,6 @@
 <template>
   <div class="settings-page">
-    <!-- Header -->
+    <!-- ── Header ─────────────────────────────────── -->
     <div class="page-header">
       <div>
         <h1 class="page-title">Settings</h1>
@@ -13,7 +13,7 @@
       </button>
     </div>
 
-    <!-- Upgrade success banner -->
+    <!-- ── Upgrade success banner ─────────────────── -->
     <div v-if="showUpgradedBanner" class="upgrade-banner">
       <PartyPopper :size="22" class="banner-icon" />
       <div>
@@ -25,14 +25,14 @@
       </button>
     </div>
 
-    <!-- Loading -->
+    <!-- ── Loading ────────────────────────────────── -->
     <div v-if="loading" class="loading-state">
       <Loader2 :size="32" class="spin" />
       <span>Loading settings…</span>
     </div>
 
     <template v-else>
-      <!-- ── Restaurant Profile ───────────────────── -->
+      <!-- ── Restaurant Profile ─────────────────── -->
       <div class="section-card">
         <div class="section-header">
           <div class="section-header-left">
@@ -73,7 +73,7 @@
             </div>
           </div>
 
-          <!-- Form fields -->
+          <!-- Fields -->
           <div class="form-grid">
             <div class="form-group">
               <label class="form-label">Restaurant Name <span class="required">*</span></label>
@@ -114,7 +114,7 @@
         </div>
       </div>
 
-      <!-- ── Regional Settings ────────────────────── -->
+      <!-- ── Regional Settings ──────────────────── -->
       <div class="section-card">
         <div class="section-header">
           <div class="section-header-left">
@@ -152,7 +152,7 @@
         </div>
       </div>
 
-      <!-- ── Subscription & Billing ──────────────── -->
+      <!-- ── Subscription & Billing ─────────────── -->
       <div class="section-card">
         <div class="section-header">
           <div class="section-header-left">
@@ -165,7 +165,7 @@
         </div>
 
         <div class="section-body">
-          <!-- Plan Status Card -->
+          <!-- Plan Status -->
           <div class="plan-card" :class="`plan-${planStatus}`">
             <div class="plan-left">
               <div class="plan-icon-wrap">
@@ -184,7 +184,7 @@
           <!-- Trial Countdown -->
           <div v-if="isOnTrial" class="trial-card">
             <div class="trial-header">
-              <span class="trial-title"> <Timer :size="14" /> Trial Period </span>
+              <span class="trial-title"><Timer :size="14" /> Trial Period</span>
               <span class="trial-expires">Ends {{ formatDate(restaurant.trial_ends_at) }}</span>
             </div>
             <div class="trial-timer">
@@ -259,11 +259,8 @@
               v-if="!hasActiveSubscription"
               class="btn-upgrade"
               @click="showPlanPicker = true"
-              :disabled="checkoutLoading"
             >
-              <Loader2 v-if="checkoutLoading" :size="14" class="spin" />
-              <Zap v-else :size="14" />
-              Upgrade Plan
+              <Zap :size="14" /> Upgrade Plan
             </button>
             <a
               v-if="hasActiveSubscription && restaurant.customer_portal_url"
@@ -274,20 +271,16 @@
               <ExternalLink :size="14" /> Manage Billing
             </a>
           </div>
-
-          <div v-if="billingError" class="alert error">
-            <AlertCircle :size="14" /> {{ billingError }}
-          </div>
         </div>
       </div>
 
-      <!-- Save Feedback -->
+      <!-- ── Save Feedback ──────────────────────── -->
       <div v-if="saveError" class="alert error"><AlertCircle :size="14" /> {{ saveError }}</div>
       <div v-if="saveSuccess" class="alert success">
         <CheckCircle2 :size="14" /> {{ saveSuccess }}
       </div>
 
-      <!-- Sticky Bottom Bar -->
+      <!-- ── Sticky Bottom Bar ───────────────────── -->
       <div class="bottom-bar" v-if="isDirty">
         <button class="btn-save" @click="saveSettings" :disabled="saving">
           <Loader2 v-if="saving" :size="15" class="spin" />
@@ -300,124 +293,13 @@
       </div>
     </template>
 
-    <!-- ── Plan Picker Modal ───────────────────────── -->
-    <Teleport to="body">
-      <Transition name="modal">
-        <div v-if="showPlanPicker" class="modal-backdrop" @click.self="showPlanPicker = false">
-          <div class="modal-plan-picker">
-            <!-- Modal Header -->
-            <div class="picker-header">
-              <div class="picker-header-left">
-                <div class="picker-logo">
-                  <Zap :size="16" />
-                </div>
-                <div>
-                  <h2 class="picker-title">Choose Your Plan</h2>
-                  <p class="picker-subtitle">Secure checkout via Lemon Squeezy · Cancel anytime</p>
-                </div>
-              </div>
-              <button class="picker-close" @click="showPlanPicker = false">
-                <X :size="16" />
-              </button>
-            </div>
-
-            <!-- Plan Cards -->
-            <div class="picker-body">
-              <div class="plan-options">
-                <!-- Starter -->
-                <div
-                  class="plan-option"
-                  :class="{ selected: selectedPlan === 'starter' }"
-                  @click="selectedPlan = 'starter'"
-                >
-                  <div class="option-top">
-                    <div class="option-name">Starter</div>
-                    <div class="option-price">
-                      <span class="price-dollar">$</span>29<span class="price-mo">/mo</span>
-                    </div>
-                    <p class="option-tagline">Perfect for small restaurants getting started.</p>
-                  </div>
-
-                  <ul class="option-features">
-                    <li><Check :size="13" /> Up to 15 tables</li>
-                    <li><Check :size="13" /> Up to 3 staff accounts</li>
-                    <li><Check :size="13" /> Unlimited orders</li>
-                    <li><Check :size="13" /> QR code ordering</li>
-                    <li><Check :size="13" /> Kitchen & cashier views</li>
-                    <li><Check :size="13" /> Menu management</li>
-                  </ul>
-
-                  <div class="option-select-indicator">
-                    <div class="radio-ring" :class="{ checked: selectedPlan === 'starter' }">
-                      <div v-if="selectedPlan === 'starter'" class="radio-dot" />
-                    </div>
-                    <span>{{ selectedPlan === 'starter' ? 'Selected' : 'Select Starter' }}</span>
-                  </div>
-                </div>
-
-                <!-- Pro -->
-                <div
-                  class="plan-option plan-option-pro"
-                  :class="{ selected: selectedPlan === 'pro' }"
-                  @click="selectedPlan = 'pro'"
-                >
-                  <div class="pro-badge"><Star :size="10" /> Recommended</div>
-
-                  <div class="option-top">
-                    <div class="option-name option-name-pro">Pro</div>
-                    <div class="option-price option-price-pro">
-                      <span class="price-dollar">$</span>69<span class="price-mo">/mo</span>
-                    </div>
-                    <p class="option-tagline">
-                      For restaurants running their full operation digitally.
-                    </p>
-                  </div>
-
-                  <ul class="option-features">
-                    <li><Check :size="13" /> Unlimited tables</li>
-                    <li><Check :size="13" /> Up to 10 staff accounts</li>
-                    <li><Check :size="13" /> Unlimited orders</li>
-                    <li><Check :size="13" /> QR code ordering</li>
-                    <li><Check :size="13" /> All staff role views</li>
-                    <li><Check :size="13" /> Menu management</li>
-                    <li><Check :size="13" /> Analytics & charts</li>
-                    <li><Check :size="13" /> Promotions & discounts</li>
-                  </ul>
-
-                  <div class="option-select-indicator option-select-pro">
-                    <div
-                      class="radio-ring radio-ring-pro"
-                      :class="{ checked: selectedPlan === 'pro' }"
-                    >
-                      <div v-if="selectedPlan === 'pro'" class="radio-dot" />
-                    </div>
-                    <span>{{ selectedPlan === 'pro' ? 'Selected' : 'Select Pro' }}</span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- CTA -->
-              <button
-                class="btn-checkout"
-                @click="goToCheckout"
-                :disabled="!selectedPlan || checkoutLoading"
-              >
-                <Loader2 v-if="checkoutLoading" :size="16" class="spin" />
-                <template v-else>
-                  Continue to Checkout
-                  <ArrowRight :size="16" />
-                </template>
-              </button>
-
-              <p class="secure-note">
-                <Lock :size="12" /> Payments secured by Lemon Squeezy · Cancel anytime · No hidden
-                fees
-              </p>
-            </div>
-          </div>
-        </div>
-      </Transition>
-    </Teleport>
+    <!-- ── Plan Picker Modal ───────────────────── -->
+    <!--
+      Usage anywhere else in the app:
+        import PlanPicker from '@/components/PlanPicker.vue'
+        <PlanPicker v-model="showPlanPicker" @checkout-error="handleError" />
+    -->
+    <PlanPicker v-model="showPlanPicker" @checkout-error="(msg) => (saveError = msg)" />
   </div>
 </template>
 
@@ -426,6 +308,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
+import PlanPicker from '@/components/PlanPickerModal.vue'
 
 import {
   Save,
@@ -448,27 +331,24 @@ import {
   Zap,
   ExternalLink,
   RotateCcw,
-  Check,
-  ArrowRight,
 } from 'lucide-vue-next'
 
-// Alias Lock so it doesn't conflict with html attr
-const LockIcon = Lock
+const LockIcon = Lock // alias to avoid conflict with HTML attr
 
 const authStore = useAuthStore()
 const route = useRoute()
 
+// ── UI state ───────────────────────────────────────
 const loading = ref(true)
 const saving = ref(false)
 const uploadingLogo = ref(false)
 const isDirty = ref(false)
 const saveError = ref('')
 const saveSuccess = ref('')
-const checkoutLoading = ref(false)
-const billingError = ref('')
 const showPlanPicker = ref(false)
-const selectedPlan = ref('pro')
 const showUpgradedBanner = ref(false)
+
+// ── Data ───────────────────────────────────────────
 const restaurant = ref({})
 
 const form = ref({
@@ -669,6 +549,7 @@ async function handleLogoUpload(event) {
   const { error: uploadErr } = await supabase.storage
     .from('restaurant-assets')
     .upload(path, file, { upsert: true })
+
   if (uploadErr) {
     saveError.value = 'Upload failed: ' + uploadErr.message
     uploadingLogo.value = false
@@ -729,33 +610,12 @@ function discardChanges() {
   saveSuccess.value = ''
 }
 
-// ── Checkout ───────────────────────────────────────
-async function goToCheckout() {
-  if (!selectedPlan.value) return
-  billingError.value = ''
-  checkoutLoading.value = true
-  try {
-    const { data, error } = await supabase.functions.invoke('create-checkout-session', {
-      body: { plan: selectedPlan.value },
-    })
-    if (error) throw error
-    if (data?.url) {
-      window.location.href = data.url
-    } else {
-      throw new Error('No checkout URL returned.')
-    }
-  } catch (err) {
-    console.error('Checkout error:', err)
-    billingError.value = 'Could not start checkout. Please try again or contact support.'
-    checkoutLoading.value = false
-  }
-}
-
 // ── Lifecycle ──────────────────────────────────────
 onMounted(async () => {
   if (!authStore.profile) await authStore.fetchProfile()
   await fetchSettings()
   startTimer()
+
   if (route.query.upgraded === 'true') {
     showUpgradedBanner.value = true
     await fetchSettings()
@@ -775,7 +635,7 @@ onUnmounted(() => {
   margin: 0 auto;
 }
 
-/* ── Spin animation ── */
+/* ── Spin ── */
 .spin {
   animation: spin 0.9s linear infinite;
 }
@@ -833,7 +693,6 @@ onUnmounted(() => {
   cursor: not-allowed;
   transform: none;
 }
-
 .btn-discard {
   display: inline-flex;
   align-items: center;
@@ -849,6 +708,43 @@ onUnmounted(() => {
 }
 .btn-discard:hover {
   border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+.btn-upgrade {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: var(--color-accent);
+  color: white;
+  border: none;
+  padding: 11px 22px;
+  border-radius: var(--radius-pill);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.16s;
+}
+.btn-upgrade:hover {
+  background: var(--color-accent-hover);
+  transform: translateY(-1px);
+}
+.btn-portal {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-medium);
+  color: var(--color-text-secondary);
+  padding: 11px 22px;
+  border-radius: var(--radius-pill);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.16s;
+}
+.btn-portal:hover {
+  background: var(--color-accent-muted);
+  border-color: var(--color-accent-border);
   color: var(--color-accent);
 }
 
@@ -1091,7 +987,7 @@ onUnmounted(() => {
   color: #facc15;
 }
 
-/* ── Preview ── */
+/* ── Currency preview ── */
 .preview-card {
   background: var(--color-bg-elevated);
   border: 1px solid var(--color-border-subtle);
@@ -1273,31 +1169,6 @@ onUnmounted(() => {
   margin-bottom: 16px;
 }
 
-/* ── Upgrade / action buttons ── */
-.btn-upgrade {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  background: var(--color-accent);
-  color: white;
-  border: none;
-  padding: 11px 22px;
-  border-radius: var(--radius-pill);
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.16s;
-}
-.btn-upgrade:hover:not(:disabled) {
-  background: var(--color-accent-hover);
-  transform: translateY(-1px);
-}
-.btn-upgrade:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none;
-}
-
 /* ── Expired card ── */
 .expired-card {
   background: rgba(239, 68, 68, 0.07);
@@ -1356,31 +1227,10 @@ onUnmounted(() => {
   font-size: 12px;
   color: var(--color-text-muted);
 }
-
-/* ── Billing actions ── */
 .billing-actions {
   display: flex;
   gap: 12px;
   flex-wrap: wrap;
-}
-.btn-portal {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  background: var(--color-bg-elevated);
-  border: 1px solid var(--color-border-medium);
-  color: var(--color-text-secondary);
-  padding: 11px 22px;
-  border-radius: var(--radius-pill);
-  font-size: 14px;
-  font-weight: 600;
-  text-decoration: none;
-  transition: all 0.16s;
-}
-.btn-portal:hover {
-  background: var(--color-accent-muted);
-  border-color: var(--color-accent-border);
-  color: var(--color-accent);
 }
 
 /* ── Alerts ── */
@@ -1416,340 +1266,8 @@ onUnmounted(() => {
   z-index: 10;
 }
 
-/* ═══════════════════════════════════════════════════
-   PLAN PICKER MODAL
-═══════════════════════════════════════════════════ */
-.modal-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.75);
-  backdrop-filter: blur(5px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 20px;
-}
-
-.modal-plan-picker {
-  background: var(--color-bg-surface);
-  border-radius: 20px;
-  width: 100%;
-  max-width: 640px;
-  border: 1px solid var(--color-border-subtle);
-  box-shadow: 0 32px 80px rgba(0, 0, 0, 0.6);
-  overflow: hidden;
-}
-
-/* Picker Header */
-.picker-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 22px 28px;
-  border-bottom: 1px solid var(--color-border-subtle);
-  background: var(--color-bg-elevated);
-}
-.picker-header-left {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-.picker-logo {
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
-  background: var(--color-accent);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  flex-shrink: 0;
-}
-.picker-title {
-  font-family: var(--font-display);
-  font-size: 20px;
-  font-weight: 700;
-  margin: 0 0 2px;
-  color: var(--color-text-primary);
-}
-.picker-subtitle {
-  font-size: 12px;
-  color: var(--color-text-muted);
-  margin: 0;
-}
-.picker-close {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  background: var(--color-bg-surface);
-  border: 1px solid var(--color-border-subtle);
-  color: var(--color-text-muted);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.14s;
-  flex-shrink: 0;
-}
-.picker-close:hover {
-  background: var(--color-bg-elevated);
-  color: var(--color-text-primary);
-}
-
-/* Picker Body */
-.picker-body {
-  padding: 24px 28px 28px;
-}
-
-/* Plan options grid */
-.plan-options {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
-  margin-bottom: 20px;
-}
-
-.plan-option {
-  background: var(--color-bg-elevated);
-  border: 2px solid var(--color-border-subtle);
-  border-radius: 14px;
-  padding: 20px;
-  cursor: pointer;
-  transition: all 0.18s;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-.plan-option:hover {
-  border-color: var(--color-accent-border);
-  transform: translateY(-2px);
-}
-.plan-option.selected {
-  border-color: var(--color-accent);
-}
-
-/* Pro card styling */
-.plan-option-pro {
-  border-color: rgba(200, 115, 58, 0.3);
-  background: rgba(200, 115, 58, 0.04);
-}
-.plan-option-pro.selected {
-  border-color: var(--color-accent);
-}
-
-/* Pro badge */
-.pro-badge {
-  position: absolute;
-  top: -11px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: var(--color-accent);
-  color: white;
-  font-size: 10px;
-  font-weight: 700;
-  padding: 3px 12px;
-  border-radius: var(--radius-pill);
-  white-space: nowrap;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  letter-spacing: 0.04em;
-}
-
-/* Option top section */
-.option-top {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.option-name {
-  font-family: var(--font-display);
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--color-text-primary);
-}
-.option-name-pro {
-  color: var(--color-accent);
-}
-
-.option-price {
-  font-family: var(--font-display);
-  font-size: 34px;
-  font-weight: 800;
-  color: var(--color-text-primary);
-  letter-spacing: -1.5px;
-  line-height: 1;
-  display: flex;
-  align-items: flex-start;
-  gap: 0;
-}
-.option-price-pro {
-  color: var(--color-accent);
-}
-.price-dollar {
-  font-size: 18px;
-  font-weight: 700;
-  margin-top: 6px;
-}
-.price-mo {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--color-text-secondary);
-  align-self: flex-end;
-  margin-bottom: 4px;
-  margin-left: 2px;
-}
-
-.option-tagline {
-  font-size: 12px;
-  color: var(--color-text-secondary);
-  line-height: 1.4;
-  margin-top: 4px;
-}
-
-/* Features list */
-.option-features {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-  flex: 1;
-}
-.option-features li {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  color: var(--color-text-secondary);
-}
-.option-features li svg {
-  color: var(--color-accent);
-  flex-shrink: 0;
-}
-
-/* Select indicator */
-.option-select-indicator {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--color-text-muted);
-  margin-top: 4px;
-  padding-top: 14px;
-  border-top: 1px solid var(--color-border-subtle);
-}
-.option-select-pro {
-  color: var(--color-accent);
-}
-
-.radio-ring {
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  border: 2px solid var(--color-border-medium);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: border-color 0.14s;
-  flex-shrink: 0;
-}
-.radio-ring.checked {
-  border-color: var(--color-accent);
-}
-.radio-ring-pro.checked {
-  border-color: var(--color-accent);
-}
-.radio-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--color-accent);
-}
-
-/* Checkout button */
-.btn-checkout {
-  width: 100%;
-  padding: 14px;
-  background: var(--color-accent);
-  color: white;
-  border: none;
-  border-radius: var(--radius-pill);
-  font-size: 15px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.16s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  letter-spacing: -0.1px;
-}
-.btn-checkout:hover:not(:disabled) {
-  background: var(--color-accent-hover);
-  transform: translateY(-1px);
-}
-.btn-checkout:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none;
-}
-
-/* Secure note */
-.secure-note {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  text-align: center;
-  color: var(--color-text-muted);
-  font-size: 12px;
-  margin-top: 12px;
-}
-.secure-note svg {
-  color: var(--color-accent);
-  flex-shrink: 0;
-}
-
-/* ── Modal transition ── */
-.modal-enter-active,
-.modal-leave-active {
-  transition: opacity 0.2s;
-}
-.modal-enter-active .modal-plan-picker,
-.modal-leave-active .modal-plan-picker {
-  transition:
-    transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1),
-    opacity 0.2s;
-}
-.modal-enter-from,
-.modal-leave-to {
-  opacity: 0;
-}
-.modal-enter-from .modal-plan-picker {
-  transform: scale(0.94) translateY(10px);
-  opacity: 0;
-}
-.modal-leave-to .modal-plan-picker {
-  transform: scale(0.97);
-  opacity: 0;
-}
-
 /* ── Responsive ── */
 @media (max-width: 640px) {
-  .plan-options {
-    grid-template-columns: 1fr;
-  }
-  .picker-header {
-    padding: 18px 20px;
-  }
-  .picker-body {
-    padding: 20px;
-  }
   .logo-group {
     flex-direction: column;
     align-items: flex-start;
