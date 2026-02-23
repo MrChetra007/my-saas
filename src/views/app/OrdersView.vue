@@ -403,15 +403,30 @@ function orderTotal(order) {
   )
 }
 
-// ─── Fetch Data ───────────────────────────────────────────────────────────────
+// ✅ Correct way
+function getStartOfDayISO(timezone) {
+  const todayStr = new Intl.DateTimeFormat('en-CA', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date()) // gives "YYYY-MM-DD" in their local time
+
+  return new Date(`${todayStr}T00:00:00`).toISOString()
+}
+
+// ─── Fetch Today Data ───────────────────────────────────────────────────────────────
 async function fetchOrders() {
   const restaurantId = authStore.profile?.restaurant_id
+  const timezone = authStore.restaurantTimezone || 'UTC'
+
   const { data, error } = await supabase
     .from('orders')
     .select(
       'id, status, notes, created_at, tables(name), order_items(id, quantity, unit_price, menu_items(name))',
     )
     .eq('restaurant_id', restaurantId)
+    .gte('created_at', getStartOfDayISO(timezone)) // 👈 only today
     .order('created_at', { ascending: false })
 
   if (!error) orders.value = data || []

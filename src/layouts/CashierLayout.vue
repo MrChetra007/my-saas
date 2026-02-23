@@ -4,7 +4,8 @@
     <aside class="sidebar">
       <div class="sidebar-brand">
         <div class="brand-icon-wrap">
-          <Utensils class="brand-icon" />
+          <img v-if="restaurantLogo" :src="restaurantLogo" alt="logo" class="brand-logo-img" />
+          <Utensils v-else class="brand-icon" />
         </div>
         <span class="brand-name">{{ restaurantName }}</span>
       </div>
@@ -26,14 +27,6 @@
         >
           <History class="nav-icon" />
           <span class="nav-label">History</span>
-        </RouterLink>
-        <RouterLink
-          to="/cashier/payment"
-          class="nav-item"
-          :class="{ 'nav-item--active': $route.path === '/cashier/payment' }"
-        >
-          <Banknote class="nav-icon" />
-          <span class="nav-label">Payment</span>
         </RouterLink>
       </nav>
 
@@ -60,7 +53,8 @@
       <header class="mobile-header">
         <div class="mobile-brand">
           <div class="brand-icon-wrap sm">
-            <Utensils class="brand-icon" />
+            <img v-if="restaurantLogo" :src="restaurantLogo" alt="logo" class="brand-logo-img" />
+            <Utensils v-else class="brand-icon" />
           </div>
           <span class="brand-text">{{ restaurantName }}</span>
         </div>
@@ -94,17 +88,6 @@
           <History class="bottom-nav-icon" />
           <span class="bottom-nav-label">History</span>
         </RouterLink>
-        <!-- Add to bottom-nav -->
-        <RouterLink
-          to="/cashier/payment"
-          class="bottom-nav-item"
-          :class="{ 'bottom-nav-item--active': $route.path === '/cashier/payment' }"
-        >
-          <div class="bottom-nav-icon-wrap">
-            <Banknote class="bottom-nav-icon" />
-          </div>
-          <span class="bottom-nav-label">Pay</span>
-        </RouterLink>
       </nav>
     </div>
   </div>
@@ -120,20 +103,28 @@ import { Utensils, ClipboardList, History, User, LogOut } from 'lucide-vue-next'
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
+
 const restaurantName = ref('')
+const restaurantLogo = ref('')
 const pendingOrdersCount = ref(0)
 let ordersChannel = null
 
 onMounted(async () => {
-  // Fetch restaurant name
   const { data } = await supabase
     .from('restaurants')
-    .select('name')
+    .select('name, logo_url, timezone')
     .eq('id', authStore.profile?.restaurant_id)
     .single()
-  if (data) restaurantName.value = data.name
 
-  // Subscribe to pending orders
+  if (data) {
+    restaurantName.value = data.name
+    restaurantLogo.value = data.logo_url || ''
+    // sync to store in case it wasn't set yet
+    if (!authStore.restaurantTimezone && data.timezone) {
+      authStore.restaurantTimezone = data.timezone
+    }
+  }
+
   subscribeToOrders()
 })
 
@@ -145,10 +136,8 @@ function subscribeToOrders() {
   const restaurantId = authStore.profile?.restaurant_id
   if (!restaurantId) return
 
-  // Initial fetch
   fetchPendingOrdersCount()
 
-  // Real-time subscription
   ordersChannel = supabase
     .channel('cashier-orders')
     .on(
@@ -165,10 +154,25 @@ function subscribeToOrders() {
 }
 
 async function fetchPendingOrdersCount() {
+  const restaurantId = authStore.profile?.restaurant_id
+  if (!restaurantId) return
+
+  const timezone = authStore.restaurantTimezone || 'UTC'
+
+  const todayStr = new Intl.DateTimeFormat('en-CA', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date())
+
+  const startOfDay = new Date(`${todayStr}T00:00:00`).toISOString()
+
   const { count } = await supabase
     .from('orders')
     .select('*', { count: 'exact', head: true })
-    .eq('restaurant_id', authStore.profile?.restaurant_id)
+    .eq('restaurant_id', restaurantId)
+    .gte('created_at', startOfDay)
     .in('status', ['pending', 'cooking', 'ready'])
 
   pendingOrdersCount.value = count || 0
@@ -192,7 +196,6 @@ async function signOut() {
   -webkit-font-smoothing: antialiased;
 }
 
-/* ── Sidebar (desktop only) ── */
 .sidebar {
   width: 260px;
   background: #161616;
@@ -220,11 +223,19 @@ async function signOut() {
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
 }
 
 .brand-icon-wrap.sm {
   width: 32px;
   height: 32px;
+}
+
+.brand-logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 8px;
 }
 
 .brand-icon {
@@ -387,7 +398,6 @@ async function signOut() {
   height: 16px;
 }
 
-/* ── Main wrapper ── */
 .main-wrapper {
   flex: 1;
   display: flex;
@@ -396,7 +406,6 @@ async function signOut() {
   background: #111111;
 }
 
-/* ── Mobile top bar ── */
 .mobile-header {
   display: none;
   justify-content: space-between;
@@ -446,7 +455,6 @@ async function signOut() {
   height: 18px;
 }
 
-/* ── Content ── */
 .cashier-main {
   flex: 1;
   overflow-y: auto;
@@ -454,7 +462,6 @@ async function signOut() {
   padding: 24px;
 }
 
-/* ── Bottom tab bar (mobile) ── */
 .bottom-nav {
   display: none;
   justify-content: space-around;
@@ -517,7 +524,6 @@ async function signOut() {
   letter-spacing: 0.05em;
 }
 
-/* ── Responsive ── */
 @media (max-width: 768px) {
   .sidebar {
     display: none;
@@ -537,7 +543,6 @@ async function signOut() {
   }
 }
 
-/* Safe area for iPhone notch */
 @supports (padding-top: env(safe-area-inset-top)) {
   .mobile-header {
     padding-top: calc(12px + env(safe-area-inset-top));

@@ -2,7 +2,10 @@
   <div class="kitchen-layout">
     <header class="kitchen-header">
       <div class="header-left">
-        <span class="logo">🍽️ Kitchen</span>
+        <div class="logo-wrap">
+          <img v-if="restaurantLogo" :src="restaurantLogo" alt="logo" class="logo-img" />
+          <span v-else class="logo">🍽️</span>
+        </div>
         <span class="restaurant-name">{{ restaurantName }}</span>
       </div>
       <div class="header-right">
@@ -25,24 +28,41 @@ import { useAuthStore } from '@/stores/auth'
 const router = useRouter()
 const authStore = useAuthStore()
 const restaurantName = ref('')
+const restaurantLogo = ref('')
 const now = ref(new Date())
 let timer = null
 
-const currentTime = computed(() =>
-  now.value.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
-)
+// Show clock in restaurant's local timezone
+const currentTime = computed(() => {
+  const timezone = authStore.restaurantTimezone || 'UTC'
+  return now.value.toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    timeZone: timezone,
+  })
+})
 
 onMounted(async () => {
   const { data } = await supabase
     .from('restaurants')
-    .select('name')
+    .select('name, logo_url, timezone')
     .eq('id', authStore.profile?.restaurant_id)
     .single()
-  if (data) restaurantName.value = data.name
+
+  if (data) {
+    restaurantName.value = data.name
+    restaurantLogo.value = data.logo_url || ''
+    if (!authStore.restaurantTimezone && data.timezone) {
+      authStore.restaurantTimezone = data.timezone
+    }
+  }
+
   timer = setInterval(() => {
     now.value = new Date()
   }, 1000)
 })
+
 onUnmounted(() => clearInterval(timer))
 
 async function signOut() {
@@ -74,9 +94,26 @@ async function signOut() {
   align-items: center;
   gap: 1rem;
 }
+.logo-wrap {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: rgba(200, 115, 58, 0.15);
+  border: 1px solid rgba(200, 115, 58, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 7px;
+}
 .logo {
   font-size: 1rem;
-  font-weight: 700;
 }
 .restaurant-name {
   font-size: 0.85rem;
@@ -91,6 +128,7 @@ async function signOut() {
   font-size: 1.1rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
+  color: #f9fafb;
 }
 .btn-signout {
   background: #374151;

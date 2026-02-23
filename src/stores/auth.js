@@ -6,6 +6,7 @@ export const useAuthStore = defineStore('auth', {
     user: null,
     profile: null,
     loading: true,
+    restaurantTimezone: 'UTC', // 👈 add this
   }),
 
   getters: {
@@ -75,6 +76,17 @@ export const useAuthStore = defineStore('auth', {
       }
 
       this.profile = data
+
+      // 👇 fetch timezone right after profile is set
+      if (data?.restaurant_id) {
+        const { data: restaurant } = await supabase
+          .from('restaurants')
+          .select('timezone')
+          .eq('id', data.restaurant_id)
+          .single()
+
+        this.restaurantTimezone = restaurant?.timezone || 'UTC'
+      }
       console.log('AuthStore: fetchProfile success', !!data)
     },
 

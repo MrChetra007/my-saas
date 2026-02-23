@@ -1,5 +1,13 @@
 <template>
   <div class="kitchen-page">
+    <!-- ── Toast Container ────────────────── -->
+    <Transition name="toast">
+      <div v-if="toast.show" class="toast" :class="`toast--${toast.type}`">
+        <component :is="toast.icon" :size="16" />
+        <span>{{ toast.message }}</span>
+      </div>
+    </Transition>
+
     <!-- ── Header ─────────────────────────── -->
     <div class="kitchen-header">
       <div class="header-left">
@@ -10,13 +18,17 @@
         </div>
       </div>
       <div class="header-right">
-        <div class="date-label">{{ todayLabel }}</div>
+        <div class="date-label">
+          <Calendar :size="13" />
+          {{ todayLabel }}
+        </div>
         <button
           class="audio-btn"
           @click="muted = !muted"
           :title="muted ? 'Unmute pings' : 'Mute pings'"
         >
-          {{ muted ? '🔕' : '🔔' }}
+          <VolumeX v-if="muted" :size="18" />
+          <Volume2 v-else :size="18" />
         </button>
       </div>
     </div>
@@ -30,6 +42,7 @@
         :class="{ active: activeTab === tab.key }"
         @click="activeTab = tab.key"
       >
+        <component :is="tab.icon" :size="14" />
         {{ tab.label }}
         <span
           v-if="tabCount(tab.key) > 0"
@@ -45,8 +58,8 @@
     <div class="orders-area">
       <!-- Empty per tab -->
       <div v-if="filteredOrders.length === 0" class="state-center">
-        <div class="empty-icon">
-          {{ activeTab === 'pending' ? '⏳' : activeTab === 'cooking' ? '👨‍🍳' : '✅' }}
+        <div class="empty-icon-wrap">
+          <component :is="emptyIcon" :size="36" class="empty-icon" />
         </div>
         <p class="empty-text">{{ emptyText }}</p>
       </div>
@@ -66,6 +79,7 @@
               <span class="order-num">#{{ order.id.slice(-4).toUpperCase() }}</span>
             </div>
             <div class="card-header-right">
+              <Clock :size="11" class="elapsed-icon" />
               <span class="elapsed" :class="{ overdue: elapsedMinutes(order) >= 15 }">
                 {{ elapsed(order.created_at) }}
               </span>
@@ -85,8 +99,14 @@
           <div class="card-actions">
             <!-- Pending: Accept + Reject -->
             <template v-if="order.status === 'pending'">
-              <button class="btn-reject" @click="reject(order.id)">Reject</button>
-              <button class="btn-accept" @click="accept(order.id)">Accept →</button>
+              <button class="btn-reject" @click="reject(order.id)">
+                <X :size="13" />
+                Reject
+              </button>
+              <button class="btn-accept" @click="accept(order.id)">
+                <ChefHat :size="13" />
+                Accept
+              </button>
             </template>
 
             <!-- Cooking: Mark Ready -->
@@ -95,17 +115,26 @@
                 <span class="cooking-dot" />
                 Cooking…
               </div>
-              <button class="btn-ready" @click="markReady(order.id)">Mark Ready ✓</button>
+              <button class="btn-ready" @click="markReady(order.id)">
+                <CheckCheck :size="13" />
+                Mark Ready
+              </button>
             </template>
 
             <!-- Ready -->
             <template v-else-if="order.status === 'ready'">
-              <div class="ready-badge">✅ Ready for pickup</div>
+              <div class="ready-badge">
+                <CheckCircle :size="14" />
+                Ready for pickup
+              </div>
             </template>
 
             <!-- Rejected -->
             <template v-else-if="order.status === 'rejected'">
-              <div class="rejected-badge">❌ Rejected</div>
+              <div class="rejected-badge">
+                <XCircle :size="14" />
+                Rejected
+              </div>
             </template>
           </div>
         </div>
@@ -118,6 +147,20 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
+import {
+  Clock,
+  Calendar,
+  Volume2,
+  VolumeX,
+  ChefHat,
+  CheckCheck,
+  CheckCircle,
+  XCircle,
+  X,
+  ClipboardList,
+  UtensilsCrossed,
+  BadgeCheck,
+} from 'lucide-vue-next'
 
 const authStore = useAuthStore()
 const orders = ref([])
@@ -125,10 +168,31 @@ const activeTab = ref('pending')
 const muted = ref(false)
 let channel = null
 
+// ── Toast ─────────────────────────────────────────────────────────────────────
+const toast = ref({ show: false, message: '', type: 'success', icon: CheckCircle })
+let toastTimer = null
+
+function showToast(message, type = 'success') {
+  if (toastTimer) clearTimeout(toastTimer)
+  toast.value = {
+    show: true,
+    message,
+    type,
+    icon: type === 'success' ? CheckCircle : type === 'error' ? XCircle : ChefHat,
+  }
+  toastTimer = setTimeout(() => (toast.value.show = false), 3000)
+}
+
 // ── Date label ────────────────────────────────────────────────────────────────
-const todayLabel = computed(() =>
-  new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }),
-)
+const todayLabel = computed(() => {
+  const timezone = authStore.restaurantTimezone || 'UTC'
+  return new Date().toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'short',
+    day: 'numeric',
+    timeZone: timezone,
+  })
+})
 
 // ── Audio Ping ────────────────────────────────────────────────────────────────
 let audioCtx = null
@@ -167,9 +231,9 @@ function playPing() {
 
 // ── Tabs ──────────────────────────────────────────────────────────────────────
 const tabs = [
-  { key: 'pending', label: 'Pending' },
-  { key: 'cooking', label: 'Cooking' },
-  { key: 'done', label: 'Done' },
+  { key: 'pending', label: 'Pending', icon: ClipboardList },
+  { key: 'cooking', label: 'Cooking', icon: UtensilsCrossed },
+  { key: 'done', label: 'Done', icon: BadgeCheck },
 ]
 
 function tabCount(key) {
@@ -182,6 +246,12 @@ const filteredOrders = computed(() => {
   if (activeTab.value === 'done')
     return orders.value.filter((o) => ['ready', 'rejected'].includes(o.status))
   return orders.value.filter((o) => o.status === activeTab.value)
+})
+
+const emptyIcon = computed(() => {
+  if (activeTab.value === 'pending') return ClipboardList
+  if (activeTab.value === 'cooking') return UtensilsCrossed
+  return BadgeCheck
 })
 
 const emptyText = computed(() => {
@@ -204,16 +274,26 @@ function elapsed(createdAt) {
 
 // ── Data ──────────────────────────────────────────────────────────────────────
 async function fetchOrders() {
-  const startOfDay = new Date()
-  startOfDay.setHours(0, 0, 0, 0)
+  const restaurantId = authStore.profile?.restaurant_id
+  if (!restaurantId) return
+
+  const timezone = authStore.restaurantTimezone || 'UTC'
+  const todayStr = new Intl.DateTimeFormat('en-CA', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date())
+  const startOfDay = new Date(`${todayStr}T00:00:00`).toISOString()
 
   const { data } = await supabase
     .from('orders')
     .select('*, tables(name), order_items(*, menu_items(name))')
-    .eq('restaurant_id', authStore.profile?.restaurant_id)
+    .eq('restaurant_id', restaurantId)
     .in('status', ['pending', 'cooking', 'ready', 'rejected'])
-    .gte('created_at', startOfDay.toISOString())
+    .gte('created_at', startOfDay)
     .order('created_at', { ascending: true })
+
   if (data) orders.value = data
 }
 
@@ -221,18 +301,27 @@ function handleRealtimeChange(payload) {
   if (payload.eventType === 'INSERT' && payload.new?.status === 'pending') {
     playPing()
     activeTab.value = 'pending'
+    showToast('New order received!', 'info')
   }
   fetchOrders()
 }
 
 async function accept(id) {
-  await supabase.from('orders').update({ status: 'cooking' }).eq('id', id)
+  const { error } = await supabase.from('orders').update({ status: 'cooking' }).eq('id', id)
+  if (!error) showToast('Order accepted — now cooking!', 'info')
+  else showToast('Failed to accept order.', 'error')
 }
+
 async function reject(id) {
-  await supabase.from('orders').update({ status: 'rejected' }).eq('id', id)
+  const { error } = await supabase.from('orders').update({ status: 'rejected' }).eq('id', id)
+  if (!error) showToast('Order rejected.', 'error')
+  else showToast('Failed to reject order.', 'error')
 }
+
 async function markReady(id) {
-  await supabase.from('orders').update({ status: 'ready' }).eq('id', id)
+  const { error } = await supabase.from('orders').update({ status: 'ready' }).eq('id', id)
+  if (!error) showToast('Order marked as ready!', 'success')
+  else showToast('Failed to update order.', 'error')
 }
 
 onMounted(async () => {
@@ -246,6 +335,7 @@ onMounted(async () => {
 onUnmounted(() => {
   channel && supabase.removeChannel(channel)
   audioCtx && audioCtx.close()
+  toastTimer && clearTimeout(toastTimer)
 })
 </script>
 
@@ -267,6 +357,51 @@ onUnmounted(() => {
   color: #f0ece5;
   display: flex;
   flex-direction: column;
+  position: relative;
+}
+
+/* ── Toast ───────────────────────────────────────────────── */
+.toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 18px;
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-weight: 600;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(8px);
+}
+.toast--success {
+  background: rgba(74, 222, 128, 0.15);
+  border: 1px solid rgba(74, 222, 128, 0.3);
+  color: #4ade80;
+}
+.toast--error {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #f87171;
+}
+.toast--info {
+  background: rgba(200, 115, 58, 0.15);
+  border: 1px solid rgba(200, 115, 58, 0.3);
+  color: #c8733a;
+}
+.toast-enter-active,
+.toast-leave-active {
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.toast-enter-from {
+  opacity: 0;
+  transform: translateY(-12px) scale(0.95);
+}
+.toast-leave-to {
+  opacity: 0;
+  transform: translateY(-8px) scale(0.95);
 }
 
 /* ── Header ─────────────────────────────────────────────── */
@@ -300,7 +435,6 @@ onUnmounted(() => {
   height: 8px;
   border-radius: 50%;
   background: #555;
-  transition: background 0.3s;
 }
 .live-dot.connected {
   background: #4ade80;
@@ -327,20 +461,28 @@ onUnmounted(() => {
   gap: 12px;
 }
 .date-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
   font-size: 13px;
   color: #555;
 }
 .audio-btn {
-  background: none;
-  border: none;
-  font-size: 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #666;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-  padding: 4px;
-  border-radius: 6px;
-  transition: background 0.15s;
+  transition: all 0.15s;
 }
 .audio-btn:hover {
-  background: rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.1);
+  color: #aaa;
 }
 
 /* ── Tabs ────────────────────────────────────────────────── */
@@ -355,11 +497,11 @@ onUnmounted(() => {
 .tab-btn {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 7px;
   padding: 8px 20px;
   border-radius: 8px;
   border: none;
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 600;
   color: #555;
   background: transparent;
@@ -414,8 +556,18 @@ onUnmounted(() => {
   padding: 80px 20px;
   color: #444;
 }
+.empty-icon-wrap {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 .empty-icon {
-  font-size: 42px;
+  color: #444;
 }
 .empty-text {
   font-size: 15px;
@@ -476,6 +628,14 @@ onUnmounted(() => {
   padding: 2px 8px;
   border-radius: 6px;
 }
+.card-header-right {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.elapsed-icon {
+  color: #444;
+}
 .elapsed {
   font-size: 12px;
   font-weight: 600;
@@ -527,7 +687,10 @@ onUnmounted(() => {
 }
 
 .btn-reject {
-  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 14px;
   border-radius: 8px;
   border: 1.5px solid #444;
   background: transparent;
@@ -546,6 +709,10 @@ onUnmounted(() => {
 
 .btn-accept {
   flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   padding: 9px;
   background: #c8733a;
   color: white;
@@ -563,6 +730,10 @@ onUnmounted(() => {
 
 .btn-ready {
   flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   padding: 9px;
   background: rgba(74, 222, 128, 0.12);
   color: #4ade80;
@@ -596,7 +767,10 @@ onUnmounted(() => {
 
 .ready-badge {
   flex: 1;
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   font-size: 13.5px;
   font-weight: 700;
   color: #4ade80;
@@ -604,7 +778,10 @@ onUnmounted(() => {
 
 .rejected-badge {
   flex: 1;
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   font-size: 13.5px;
   font-weight: 700;
   color: #ef4444;

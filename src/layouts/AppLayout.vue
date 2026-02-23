@@ -308,13 +308,28 @@ async function loadRestaurant() {
   }
 }
 
+// ✅ Correct way
+function getStartOfDayISO(timezone) {
+  const todayStr = new Intl.DateTimeFormat('en-CA', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date()) // gives "YYYY-MM-DD" in their local time
+
+  return new Date(`${todayStr}T00:00:00`).toISOString()
+}
+
 let ordersChannel = null
 async function loadPendingCount() {
   if (!authStore.profile?.restaurant_id) return
+  const timezone = authStore.restaurantTimezone || 'UTC'
+
   const { count } = await supabase
     .from('orders')
     .select('*', { count: 'exact', head: true })
     .eq('restaurant_id', authStore.profile.restaurant_id)
+    .gte('created_at', getStartOfDayISO(timezone))
     .eq('status', 'pending')
   pendingCount.value = count || 0
 }

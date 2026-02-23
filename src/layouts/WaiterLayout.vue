@@ -4,7 +4,8 @@
     <aside class="sidebar">
       <div class="sidebar-brand">
         <div class="brand-icon-wrap">
-          <Utensils class="brand-icon" />
+          <img v-if="restaurantLogo" :src="restaurantLogo" alt="logo" class="brand-logo-img" />
+          <Utensils v-else class="brand-icon" />
         </div>
         <span class="brand-name">{{ restaurantName }}</span>
       </div>
@@ -60,7 +61,8 @@
       <header class="mobile-header">
         <div class="mobile-brand">
           <div class="brand-icon-wrap sm">
-            <Utensils class="brand-icon" />
+            <img v-if="restaurantLogo" :src="restaurantLogo" alt="logo" class="brand-logo-img" />
+            <Utensils v-else class="brand-icon" />
           </div>
           <span class="brand-text">{{ restaurantName }}</span>
         </div>
@@ -119,15 +121,23 @@ const route = useRoute()
 const authStore = useAuthStore()
 const restaurantName = ref('')
 const activeOrdersCount = ref(0)
+const restaurantLogo = ref('')
 
 onMounted(async () => {
   // Fetch restaurant name
   const { data } = await supabase
     .from('restaurants')
-    .select('name')
+    .select('name,logo_url,timezone')
     .eq('id', authStore.profile?.restaurant_id)
     .single()
-  if (data) restaurantName.value = data.name
+  if (data) {
+    restaurantName.value = data.name
+    restaurantLogo.value = data.logo_url || ''
+    // timezone is already in authStore from fetchProfile, but just in case:
+    if (!authStore.restaurantTimezone && data.timezone) {
+      authStore.restaurantTimezone = data.timezone
+    }
+  }
 
   // Subscribe to active orders count
   subscribeToOrders()
@@ -155,10 +165,27 @@ function subscribeToOrders() {
 }
 
 async function fetchActiveOrdersCount() {
+  const restaurantId = authStore.profile?.restaurant_id // 👈 define locally
+  if (!restaurantId) return
+
+  const timezone = authStore.restaurantTimezone || 'UTC' // 👈 use store, no DB call
+
+  // Get start of today in the restaurant's timezone
+  const now = new Date()
+  const todayStr = new Intl.DateTimeFormat('en-CA', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(now) // gives "YYYY-MM-DD" in their local time
+
+  const startOfDay = new Date(`${todayStr}T00:00:00`)
+
   const { count } = await supabase
     .from('orders')
     .select('*', { count: 'exact', head: true })
     .eq('restaurant_id', authStore.profile?.restaurant_id)
+    .gte('created_at', startOfDay.toISOString()) // 👈 only today
     .in('status', ['pending', 'cooking', 'ready'])
 
   activeOrdersCount.value = count || 0
