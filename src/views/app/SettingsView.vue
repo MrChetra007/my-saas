@@ -6,7 +6,7 @@
         <h1 class="page-title">Settings</h1>
         <p class="page-subtitle">Manage your restaurant profile & preferences</p>
       </div>
-      <button class="btn-save" @click="saveSettings" :disabled="saving || !isDirty">
+      <button class="btn-save" @click="handleSave" :disabled="saving || !isDirty">
         <Loader2 v-if="saving" :size="15" class="spin" />
         <Save v-else :size="15" />
         {{ saving ? 'Saving…' : 'Save Changes' }}
@@ -87,18 +87,37 @@
 
             <div class="form-group">
               <label class="form-label">URL Slug</label>
-              <div class="slug-wrapper">
-                <span class="slug-prefix">qrder.com/order/</span>
-                <input
-                  v-model="form.slug"
-                  class="form-input slug-input"
-                  placeholder="ember-oak"
-                  @input="markDirty"
-                />
+
+              <!-- Read-only base URL row -->
+              <div class="slug-base-url">
+                <span class="slug-row-label">Base URL</span>
+                <span class="slug-base-value">{{ appOrigin }}/order/</span>
               </div>
-              <p class="form-hint warning">
-                <AlertTriangle :size="11" /> Changing this will break existing QR codes.
+
+              <!-- Editable slug name row -->
+              <div class="slug-name-row">
+                <span class="slug-row-label">Slug name</span>
+                <div class="slug-name-input-wrap" :class="{ 'slug-changed': slugChanged }">
+                  <input
+                    v-model="form.slug"
+                    class="form-input slug-name-input"
+                    placeholder="ember-oak"
+                    @input="markDirty"
+                  />
+                  <span v-if="slugChanged" class="slug-changed-badge">changed</span>
+                </div>
+              </div>
+
+              <!-- Full preview -->
+              <div class="slug-full-preview">
+                {{ appOrigin }}/order/<strong>{{ form.slug || '…' }}</strong>
+              </div>
+
+              <p v-if="slugChanged" class="form-hint warning">
+                <AlertTriangle :size="11" />
+                This will break all existing QR codes — you'll need to reprint them.
               </p>
+              <p v-else class="form-hint">Customers reach your menu at this URL.</p>
             </div>
 
             <div class="form-group full-width">
@@ -181,7 +200,7 @@
             <span class="plan-badge" :class="planStatus">{{ planBadgeLabel }}</span>
           </div>
 
-          <!-- Trial Countdown (trial plan + not expired) -->
+          <!-- Trial Countdown -->
           <div v-if="isOnTrial" class="trial-card">
             <div class="trial-header">
               <span class="trial-title"><Timer :size="14" /> Trial Period</span>
@@ -216,7 +235,7 @@
             </button>
           </div>
 
-          <!-- Expired (trial plan + expired) -->
+          <!-- Expired -->
           <div v-else-if="planStatus === 'expired'" class="expired-card">
             <div class="expired-icon-wrap"><AlertCircle :size="28" /></div>
             <div>
@@ -231,7 +250,7 @@
             </button>
           </div>
 
-          <!-- Starter upsell (paid but not Pro yet) -->
+          <!-- Starter upsell -->
           <div v-else-if="isStarterPlan" class="starter-card">
             <div class="starter-left">
               <div class="starter-icon-wrap"><Crown :size="18" /></div>
@@ -267,18 +286,10 @@
 
           <!-- Actions -->
           <div class="billing-actions">
-            <!--
-              Show upgrade button for everyone EXCEPT Pro users.
-              trial   → "Choose a Plan"
-              expired → "Choose a Plan"
-              starter → "Upgrade to Pro"
-            -->
             <button v-if="!isProPlan" class="btn-upgrade" @click="showPlanPicker = true">
               <Zap :size="14" />
               {{ isStarterPlan ? 'Upgrade to Pro' : 'Choose a Plan' }}
             </button>
-
-            <!-- Pro users get the billing portal link instead -->
             <a
               v-if="isProPlan && restaurant.customer_portal_url"
               :href="restaurant.customer_portal_url"
@@ -291,7 +302,7 @@
         </div>
       </div>
 
-      <!-- ── Save Feedback ──────────────────────── -->
+      <!-- ── Alerts ─────────────────────────────── -->
       <div v-if="saveError" class="alert error"><AlertCircle :size="14" /> {{ saveError }}</div>
       <div v-if="saveSuccess" class="alert success">
         <CheckCircle2 :size="14" /> {{ saveSuccess }}
@@ -299,7 +310,7 @@
 
       <!-- ── Sticky Bottom Bar ───────────────────── -->
       <div class="bottom-bar" v-if="isDirty">
-        <button class="btn-save" @click="saveSettings" :disabled="saving">
+        <button class="btn-save" @click="handleSave" :disabled="saving">
           <Loader2 v-if="saving" :size="15" class="spin" />
           <Save v-else :size="15" />
           {{ saving ? 'Saving…' : 'Save Changes' }}
@@ -312,6 +323,50 @@
 
     <!-- ── Plan Picker Modal ───────────────────── -->
     <PlanPickerModal v-model="showPlanPicker" @checkout-error="(msg) => (saveError = msg)" />
+
+    <!-- ── Slug Change Confirmation Modal ─────── -->
+    <Teleport to="body">
+      <div v-if="slugConfirmModal" class="modal-backdrop" @click.self="slugConfirmModal = false">
+        <div class="modal modal-sm">
+          <div class="modal-header">
+            <div class="modal-header-icon">
+              <AlertTriangle :size="20" />
+            </div>
+            <h2 class="modal-title">Change URL Slug?</h2>
+          </div>
+          <div class="modal-body">
+            <p class="modal-text">
+              You're changing the slug from
+              <code class="code-inline">{{ savedSlug }}</code> to
+              <code class="code-inline code-new">{{ form.slug }}</code
+              >.
+            </p>
+            <div class="impact-list">
+              <div class="impact-item">
+                <span class="impact-icon impact-danger">✕</span>
+                All existing QR codes will stop working immediately
+              </div>
+              <div class="impact-item">
+                <span class="impact-icon impact-danger">✕</span>
+                Any printed QR codes will need to be reprinted
+              </div>
+              <div class="impact-item">
+                <span class="impact-icon impact-ok">✓</span>
+                New QR codes will be generated with the new URL
+              </div>
+              <div class="impact-item">
+                <span class="impact-icon impact-ok">✓</span>
+                Order history remains intact
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn-ghost" @click="slugConfirmModal = false">Cancel</button>
+            <button class="btn-danger" @click="confirmAndSave">Yes, change slug & save</button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -360,18 +415,30 @@ const saveError = ref('')
 const saveSuccess = ref('')
 const showPlanPicker = ref(false)
 const showUpgradedBanner = ref(false)
+const slugConfirmModal = ref(false)
 
 const restaurant = ref({})
 const form = ref({ name: '', slug: '', address: '', logoUrl: '', currency: 'USD', timezone: 'UTC' })
+
+// Tracks the slug that is actually saved in the DB
+const savedSlug = ref('')
+
+// Dynamic origin so the slug prefix is always correct regardless of environment
+const appOrigin = window.location.origin
 
 // ── Snapshot / dirty ───────────────────────────────
 let snapshot = ''
 function takeSnapshot() {
   snapshot = JSON.stringify(form.value)
+  // Always sync savedSlug when we take a fresh snapshot
+  savedSlug.value = form.value.slug
 }
 function markDirty() {
   isDirty.value = JSON.stringify(form.value) !== snapshot
 }
+
+// True only when the slug field has been changed from its saved value
+const slugChanged = computed(() => form.value.slug.trim() !== savedSlug.value.trim())
 
 // ── Timer ──────────────────────────────────────────
 const now = ref(new Date())
@@ -383,12 +450,6 @@ function startTimer() {
 }
 
 // ── Plan computed ──────────────────────────────────
-// 3 plans: trial, starter, pro
-// isProPlan     = plan === 'pro'                        → full access, Manage Billing shown
-// isStarterPlan = plan === 'starter'                    → limited, Upgrade to Pro shown
-// isOnTrial     = plan === 'trial' AND not yet expired  → countdown + Upgrade shown
-// expired       = plan === 'trial' AND past trial date  → Choose a Plan shown
-
 const isProPlan = computed(() => restaurant.value.plan === 'pro')
 const isStarterPlan = computed(() => restaurant.value.plan === 'starter')
 const isOnTrial = computed(() => {
@@ -563,12 +624,28 @@ function removeLogo() {
   markDirty()
 }
 
-// ── Save ───────────────────────────────────────────
-async function saveSettings() {
+// ── Save flow ──────────────────────────────────────
+// If the slug changed, show the confirmation modal first.
+// Otherwise save immediately.
+function handleSave() {
   if (!form.value.name.trim()) {
     saveError.value = 'Restaurant name is required.'
     return
   }
+  if (slugChanged.value) {
+    slugConfirmModal.value = true
+    return
+  }
+  saveSettings()
+}
+
+// Called from the confirmation modal "Yes" button
+function confirmAndSave() {
+  slugConfirmModal.value = false
+  saveSettings()
+}
+
+async function saveSettings() {
   saving.value = true
   saveError.value = ''
   saveSuccess.value = ''
@@ -588,13 +665,15 @@ async function saveSettings() {
   if (error) {
     saveError.value = 'Failed to save: ' + error.message
   } else {
-    saveSuccess.value = 'Settings saved successfully.'
+    saveSuccess.value = slugChanged.value
+      ? 'Settings saved. Remember to reprint your QR codes!'
+      : 'Settings saved successfully.'
     takeSnapshot()
     isDirty.value = false
     await authStore.fetchProfile()
     setTimeout(() => {
       saveSuccess.value = ''
-    }, 3000)
+    }, 4000)
   }
   saving.value = false
 }
@@ -743,6 +822,42 @@ onUnmounted(() => {
   background: var(--color-accent-muted);
   border-color: var(--color-accent-border);
   color: var(--color-accent);
+}
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: transparent;
+  border: 1px solid var(--color-border-medium);
+  color: var(--color-text-secondary);
+  padding: 10px 18px;
+  border-radius: var(--radius-pill);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.16s;
+}
+.btn-ghost:hover {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.btn-danger {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: #ef4444;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: var(--radius-pill);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.16s;
+}
+.btn-danger:hover {
+  background: #dc2626;
 }
 
 /* ── Banner ── */
@@ -941,9 +1056,48 @@ onUnmounted(() => {
   border-color: var(--color-accent);
   box-shadow: 0 0 0 3px var(--color-accent-muted);
 }
-.slug-wrapper {
+
+/* Slug field — split into two rows */
+.slug-row-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-muted);
+  min-width: 72px;
+  flex-shrink: 0;
+}
+
+/* Row 1: read-only base URL */
+.slug-base-url {
   display: flex;
   align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+.slug-base-value {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  font-family: monospace;
+  word-break: break-all;
+}
+
+/* Row 2: editable slug name */
+.slug-name-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.slug-name-input-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   border: 1px solid var(--color-border-medium);
   border-radius: 8px;
   overflow: hidden;
@@ -951,28 +1105,54 @@ onUnmounted(() => {
     border-color 0.16s,
     box-shadow 0.16s;
 }
-.slug-wrapper:focus-within {
+.slug-name-input-wrap:focus-within {
   border-color: var(--color-accent);
   box-shadow: 0 0 0 3px var(--color-accent-muted);
 }
-.slug-prefix {
-  background: var(--color-bg-elevated);
-  color: var(--color-text-muted);
-  padding: 11px 12px;
-  font-size: 13px;
-  white-space: nowrap;
-  border-right: 1px solid var(--color-border-medium);
+.slug-name-input-wrap.slug-changed {
+  border-color: #facc15;
+  box-shadow: 0 0 0 3px rgba(250, 204, 21, 0.12);
 }
-.slug-input {
+.slug-name-input {
   flex: 1;
-  border: none;
-  border-radius: 0;
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent;
+}
+.slug-name-input:focus {
+  outline: none;
   box-shadow: none !important;
 }
-.slug-input:focus {
-  outline: none;
-  box-shadow: none;
+.slug-changed-badge {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #facc15;
+  background: rgba(250, 204, 21, 0.12);
+  padding: 3px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+  margin-right: 8px;
+  flex-shrink: 0;
 }
+
+/* Full URL preview */
+.slug-full-preview {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  font-family: monospace;
+  word-break: break-all;
+  padding: 8px 12px;
+  background: var(--color-bg-elevated);
+  border-radius: 6px;
+  margin-bottom: 8px;
+  border: 1px solid var(--color-border-subtle);
+}
+.slug-full-preview strong {
+  color: var(--color-accent);
+}
+
 .form-hint {
   display: flex;
   align-items: center;
@@ -1204,7 +1384,7 @@ onUnmounted(() => {
   line-height: 1.5;
 }
 
-/* ── Starter upsell card ── */
+/* ── Starter upsell ── */
 .starter-card {
   background: rgba(200, 115, 58, 0.05);
   border: 1px solid var(--color-accent-border);
@@ -1313,6 +1493,126 @@ onUnmounted(() => {
   z-index: 10;
 }
 
+/* ── Slug Confirm Modal ── */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+.modal {
+  background: var(--color-bg-surface);
+  border-radius: var(--radius-panel);
+  width: 100%;
+  max-width: 460px;
+  box-shadow: var(--shadow-float);
+  border: 1px solid var(--color-border-subtle);
+  overflow: hidden;
+}
+.modal-sm {
+  max-width: 420px;
+}
+.modal-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--color-border-subtle);
+  background: rgba(250, 204, 21, 0.06);
+  border-bottom-color: rgba(250, 204, 21, 0.18);
+}
+.modal-header-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  background: rgba(250, 204, 21, 0.15);
+  color: #facc15;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.modal-title {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0;
+}
+.modal-body {
+  padding: 24px;
+}
+.modal-text {
+  color: var(--color-text-secondary);
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0 0 20px;
+}
+.code-inline {
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 5px;
+  padding: 2px 7px;
+  font-family: monospace;
+  font-size: 13px;
+  color: var(--color-text-primary);
+}
+.code-new {
+  color: var(--color-accent);
+  border-color: var(--color-accent-border);
+}
+
+/* Impact list */
+.impact-list {
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 10px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.impact-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+.impact-icon {
+  font-size: 13px;
+  font-weight: 700;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-style: normal;
+}
+.impact-danger {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+}
+.impact-ok {
+  background: rgba(74, 222, 128, 0.12);
+  color: #4ade80;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 24px;
+  border-top: 1px solid var(--color-border-subtle);
+  background: var(--color-bg-elevated);
+}
+
 /* ── Responsive ── */
 @media (max-width: 640px) {
   .logo-group {
@@ -1325,6 +1625,9 @@ onUnmounted(() => {
   .starter-card {
     flex-direction: column;
     align-items: flex-start;
+  }
+  .slug-prefix {
+    font-size: 11px;
   }
 }
 </style>
