@@ -78,7 +78,6 @@
           <span class="nav-tooltip" v-show="sidebarCollapsed">Dashboard</span>
         </RouterLink>
 
-        <!-- Analytics — always clickable, opens modal if locked -->
         <div
           class="nav-item"
           :class="canAccessAnalytics ? 'nav-unlocked' : 'nav-pro'"
@@ -119,6 +118,18 @@
           <span class="nav-icon"><ChefHat :size="16" /></span>
           <span class="nav-label" v-show="!sidebarCollapsed">Kitchen</span>
           <span class="nav-tooltip" v-show="sidebarCollapsed">Kitchen</span>
+          <!-- cooking count badge — same pattern as Orders -->
+          <span
+            class="nav-badge nav-badge--cooking"
+            v-if="cookingCount > 0"
+            v-show="!sidebarCollapsed"
+            >{{ cookingCount }}</span
+          >
+          <span
+            class="nav-badge-dot nav-badge-dot--cooking"
+            v-if="cookingCount > 0"
+            v-show="sidebarCollapsed"
+          />
         </RouterLink>
 
         <div class="nav-section-label" v-show="!sidebarCollapsed">Setup</div>
@@ -141,7 +152,6 @@
           <span class="nav-tooltip" v-show="sidebarCollapsed">Staff</span>
         </RouterLink>
 
-        <!-- Promotions — always clickable, opens modal if locked -->
         <div
           class="nav-item"
           :class="canAccessPromotions ? 'nav-unlocked' : 'nav-pro'"
@@ -253,9 +263,10 @@ const authStore = useAuthStore()
 const sidebarCollapsed = ref(false)
 const mobileOpen = ref(false)
 const pendingCount = ref(0)
+const cookingCount = ref(0) // ← NEW
 const restaurantName = ref('')
 const restaurantPlan = ref('trial')
-const restaurantLogoUrl = ref('') // fixed typo: restauranLogoUrl → restaurantLogoUrl
+const restaurantLogoUrl = ref('')
 
 const showProPicker = ref(false)
 const lockedFeatureName = ref('')
@@ -308,30 +319,42 @@ async function loadRestaurant() {
   }
 }
 
-// ✅ Correct way
 function getStartOfDayISO(timezone) {
   const todayStr = new Intl.DateTimeFormat('en-CA', {
     timeZone: timezone,
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
-  }).format(new Date()) // gives "YYYY-MM-DD" in their local time
-
+  }).format(new Date())
   return new Date(`${todayStr}T00:00:00`).toISOString()
 }
 
 let ordersChannel = null
-async function loadPendingCount() {
+
+async function loadCounts() {
   if (!authStore.profile?.restaurant_id) return
   const timezone = authStore.restaurantTimezone || 'UTC'
+  const startOfDay = getStartOfDayISO(timezone)
+  const restaurantId = authStore.profile.restaurant_id
 
-  const { count } = await supabase
-    .from('orders')
-    .select('*', { count: 'exact', head: true })
-    .eq('restaurant_id', authStore.profile.restaurant_id)
-    .gte('created_at', getStartOfDayISO(timezone))
-    .eq('status', 'pending')
-  pendingCount.value = count || 0
+  // Run both queries in parallel
+  const [{ count: pending }, { count: cooking }] = await Promise.all([
+    supabase
+      .from('orders')
+      .select('*', { count: 'exact', head: true })
+      .eq('restaurant_id', restaurantId)
+      .gte('created_at', startOfDay)
+      .eq('status', 'pending'),
+    supabase
+      .from('orders')
+      .select('*', { count: 'exact', head: true })
+      .eq('restaurant_id', restaurantId)
+      .gte('created_at', startOfDay)
+      .eq('status', 'cooking'),
+  ])
+
+  pendingCount.value = pending || 0
+  cookingCount.value = cooking || 0
 }
 
 function subscribeToOrders() {
@@ -346,7 +369,7 @@ function subscribeToOrders() {
         table: 'orders',
         filter: `restaurant_id=eq.${authStore.profile.restaurant_id}`,
       },
-      () => loadPendingCount(),
+      () => loadCounts(), // refresh both counts on any order change
     )
     .subscribe()
 }
@@ -359,7 +382,7 @@ async function signOut() {
 onMounted(async () => {
   if (!authStore.profile) await authStore.fetchProfile()
   await loadRestaurant()
-  await loadPendingCount()
+  await loadCounts()
   subscribeToOrders()
 })
 
@@ -377,7 +400,6 @@ onUnmounted(() => {
   padding: 0;
 }
 
-/* ── Shell ── */
 .app-shell {
   display: flex;
   height: 100vh;
@@ -386,7 +408,6 @@ onUnmounted(() => {
   font-family: var(--font-body);
 }
 
-/* ── Sidebar ── */
 .sidebar {
   width: 228px;
   min-width: 228px;
@@ -406,7 +427,6 @@ onUnmounted(() => {
   min-width: 60px;
 }
 
-/* Logo */
 .sidebar-logo {
   display: flex;
   align-items: center;
@@ -435,7 +455,6 @@ onUnmounted(() => {
   letter-spacing: -0.4px;
 }
 
-/* Restaurant badge */
 .restaurant-badge {
   display: flex;
   align-items: center;
@@ -485,7 +504,6 @@ onUnmounted(() => {
   font-family: var(--font-body);
 }
 
-/* Nav */
 .sidebar-nav {
   flex: 1;
   padding: 4px 8px;
@@ -545,7 +563,6 @@ onUnmounted(() => {
   color: var(--color-accent);
 }
 
-/* Pro-locked items — fully clickable, accent-tinted on hover */
 .nav-item.nav-pro {
   cursor: pointer;
 }
@@ -554,7 +571,6 @@ onUnmounted(() => {
   color: var(--color-accent);
 }
 
-/* Crown icon */
 .pro-icon {
   margin-left: auto;
   color: var(--color-accent);
@@ -575,6 +591,7 @@ onUnmounted(() => {
   flex: 1;
 }
 
+/* Orders badge — orange (pending/urgent) */
 .nav-badge {
   background: var(--color-accent);
   color: #fff;
@@ -587,12 +604,26 @@ onUnmounted(() => {
   font-family: var(--font-body);
   line-height: 1.4;
 }
+
+/* Kitchen badge — yellow (cooking/in-progress) */
+.nav-badge--cooking {
+  background: #ca8a04; /* amber-600 — distinct from pending orange */
+  color: #fff;
+}
+
 .nav-badge-dot {
   width: 6px;
   height: 6px;
   background: var(--color-accent);
   border-radius: 50%;
   position: absolute;
+  top: 7px;
+  right: 7px;
+}
+
+/* Cooking dot — offset slightly so both can show when collapsed */
+.nav-badge-dot--cooking {
+  background: #ca8a04;
   top: 7px;
   right: 7px;
 }
@@ -620,7 +651,6 @@ onUnmounted(() => {
   display: block;
 }
 
-/* Collapse toggle */
 .collapse-btn {
   display: flex;
   align-items: center;
@@ -642,7 +672,6 @@ onUnmounted(() => {
   color: var(--color-text-secondary);
 }
 
-/* Sign out */
 .signout-btn {
   display: flex;
   align-items: center;
@@ -669,7 +698,6 @@ onUnmounted(() => {
   color: #ef4444;
 }
 
-/* ── Main area ── */
 .main-area {
   flex: 1;
   display: flex;
@@ -678,7 +706,6 @@ onUnmounted(() => {
   min-width: 0;
 }
 
-/* ── Topbar ── */
 .topbar {
   height: 56px;
   min-height: 56px;
@@ -731,7 +758,6 @@ onUnmounted(() => {
   gap: 8px;
 }
 
-/* Pending pill */
 .pending-pill {
   display: flex;
   align-items: center;
@@ -771,7 +797,6 @@ onUnmounted(() => {
   }
 }
 
-/* User avatar */
 .user-avatar {
   width: 34px;
   height: 34px;
@@ -793,7 +818,6 @@ onUnmounted(() => {
   border-color: var(--color-accent-border);
 }
 
-/* ── Page content ── */
 .page-content {
   flex: 1;
   overflow-y: auto;
@@ -813,7 +837,6 @@ onUnmounted(() => {
   border-radius: 3px;
 }
 
-/* Mobile overlay */
 .mobile-overlay {
   display: none;
   position: fixed;
