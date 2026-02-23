@@ -60,6 +60,7 @@
             >How it works</a
           >
           <a href="#pricing" class="nav-link" @click.prevent="scrollTo('pricing')">Pricing</a>
+          <a href="#about" class="nav-link" @click.prevent="scrollTo('about')">About</a>
         </div>
         <div class="nav-actions">
           <RouterLink to="/login" class="btn-ghost">Login</RouterLink>
@@ -113,6 +114,9 @@
           class="mobile-link"
           @click="(scrollTo('pricing'), (mobileMenuOpen = false))"
           >Pricing</a
+        >
+        <a href="#about" class="mobile-link" @click="(scrollTo('about'), (mobileMenuOpen = false))"
+          >About</a
         >
         <RouterLink to="/login" class="mobile-link">Login</RouterLink>
         <RouterLink to="/signup" class="btn-pill mobile-cta">Get Started</RouterLink>
@@ -697,6 +701,61 @@
       </div>
     </section>
 
+    <!-- ── About & Contact ────────────────────────────── -->
+    <section class="section about-section" id="about">
+      <div class="section-inner">
+        <span class="section-label">About & Contact</span>
+        <h2 class="section-title">The person behind Qrder</h2>
+
+        <div class="about-card">
+          <!-- Profile -->
+          <div class="about-profile">
+            <div class="about-avatar-wrap">
+              <img class="about-avatar" src="@/assets/images/profile.jpg" alt="Sozin" />
+              <div class="about-avatar-ring" />
+            </div>
+            <div class="about-info">
+              <div class="about-name">Sozin</div>
+              <div class="about-role">Founder &amp; Developer</div>
+              <p class="about-bio">
+                Passionate about building tools that make restaurant operations effortless. Qrder
+                was created to bridge the gap between great food and seamless digital experiences —
+                putting orders, kitchen flow, and menus all in one place.
+              </p>
+            </div>
+          </div>
+
+          <div class="about-divider" />
+
+          <!-- Email -->
+          <div class="about-contact-row">
+            <div class="about-contact-icon">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <rect x="2" y="4" width="20" height="16" rx="3" />
+                <path d="M2 7l10 7 10-7" />
+              </svg>
+            </div>
+            <div class="about-contact-text">
+              <span class="about-contact-label">Email</span>
+              <span class="about-contact-value">
+                <a href="mailto:sozin1234@gmail.com">sozin1234@gmail.com</a>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer note -->
+        <p class="about-footer-note">Made with <span>♥</span> for restaurants everywhere</p>
+      </div>
+    </section>
+
     <!-- ── Footer ─────────────────────────────────────── -->
     <footer class="footer">
       <div class="footer-inner">
@@ -753,6 +812,7 @@
             >How it works</a
           >
           <a href="#pricing" @click.prevent="scrollTo('pricing')" class="footer-link">Pricing</a>
+          <a href="#about" @click.prevent="scrollTo('about')" class="footer-link">About</a>
           <RouterLink to="/login" class="footer-link">Login</RouterLink>
           <RouterLink to="/signup" class="footer-link">Sign up</RouterLink>
         </div>
@@ -1177,7 +1237,6 @@ const faq = [
   color: var(--color-text-faint);
 }
 
-/* Order card */
 .hero-right {
   flex: 1;
   display: flex;
@@ -2094,6 +2153,172 @@ const faq = [
   color: var(--color-text-faint);
 }
 
+/* ── About & Contact ──────────────────────────────────── */
+.about-section {
+  background: var(--color-bg-base);
+}
+
+.about-card {
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 16px;
+  overflow: hidden;
+  width: 100%;
+  max-width: 720px;
+  transition: border-color 0.2s;
+}
+.about-card:hover {
+  border-color: var(--color-border-medium);
+}
+
+.about-profile {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  padding: 32px;
+  position: relative;
+}
+.about-profile::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: linear-gradient(180deg, var(--color-accent), transparent);
+  border-radius: 4px 0 0 4px;
+}
+
+.about-avatar-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+.about-avatar {
+  width: 92px;
+  height: 92px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--color-border-medium);
+  display: block;
+}
+.about-avatar-ring {
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 1.5px solid var(--color-accent-border);
+  background: conic-gradient(
+    from 0deg,
+    var(--color-accent) 0deg,
+    transparent 120deg,
+    transparent 360deg
+  );
+  opacity: 0.3;
+  animation: spin 8s linear infinite;
+  pointer-events: none;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.about-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.about-name {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+  color: var(--color-text-primary);
+}
+.about-role {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+}
+.about-bio {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  line-height: 1.7;
+  margin-top: 4px;
+  max-width: 480px;
+}
+
+.about-divider {
+  height: 1px;
+  background: var(--color-border-subtle);
+  margin: 0 32px;
+}
+
+.about-contact-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 20px 32px;
+  transition: background 0.15s;
+}
+.about-contact-row:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.about-contact-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  background: var(--color-accent-muted);
+  border: 1px solid var(--color-accent-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--color-accent);
+}
+.about-contact-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.about-contact-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.about-contact-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+.about-contact-value {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+.about-contact-value a {
+  color: var(--color-text-primary);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.about-contact-value a:hover {
+  color: var(--color-accent-hover);
+}
+
+.about-footer-note {
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+.about-footer-note span {
+  color: var(--color-accent);
+  font-weight: 600;
+}
+
 /* ── Footer ───────────────────────────────────────────── */
 .footer {
   background: var(--color-bg-base);
@@ -2201,6 +2426,16 @@ const faq = [
   .cta-panel {
     padding: 36px 28px;
   }
+  .about-profile {
+    flex-direction: column;
+    text-align: center;
+  }
+  .about-profile::before {
+    display: none;
+  }
+  .about-info {
+    align-items: center;
+  }
 }
 @media (max-width: 600px) {
   .section {
@@ -2216,6 +2451,15 @@ const faq = [
     flex-direction: column;
     align-items: flex-start;
     gap: 16px;
+  }
+  .about-profile {
+    padding: 24px;
+  }
+  .about-contact-row {
+    padding: 18px 24px;
+  }
+  .about-divider {
+    margin: 0 24px;
   }
 }
 </style>
