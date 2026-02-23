@@ -374,18 +374,22 @@ let clockInterval = null
 // ── Helpers ──────────────────────────────────────────────────────
 
 const todayFormatted = computed(() => {
+  const timezone = authStore.restaurantTimezone || 'UTC'
   return new Date().toLocaleDateString('en-US', {
     weekday: 'long',
     month: 'short',
     day: 'numeric',
+    timeZone: timezone,
   })
 })
 
 function updateClock() {
+  const timezone = authStore.restaurantTimezone || 'UTC'
   currentTime.value = new Date().toLocaleTimeString('en-US', {
     hour: '2-digit',
     minute: '2-digit',
     hour12: true,
+    timeZone: timezone,
   })
 }
 
@@ -402,11 +406,18 @@ function timeElapsed(createdAt) {
 }
 
 function getTodayRange() {
-  const start = new Date()
-  start.setHours(0, 0, 0, 0)
-  const end = new Date()
-  end.setHours(23, 59, 59, 999)
-  return { start: start.toISOString(), end: end.toISOString() }
+  const timezone = authStore.restaurantTimezone || 'UTC'
+
+  const todayStr = new Intl.DateTimeFormat('en-CA', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date())
+
+  const start = new Date(`${todayStr}T00:00:00`).toISOString()
+  const end = new Date(`${todayStr}T23:59:59`).toISOString()
+  return { start, end }
 }
 
 function toggleOrder(id) {
