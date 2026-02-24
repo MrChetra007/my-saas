@@ -43,6 +43,20 @@
 
     <!-- Menu -->
     <template v-if="selectedTableId">
+      <!-- Active promo banner -->
+      <div v-if="autoPromo" class="promo-banner">
+        <Tag class="promo-banner-icon" />
+        <div class="promo-banner-text">
+          <strong>{{ autoPromo.name }}</strong> is active —
+          {{
+            autoPromo.type === 'percentage'
+              ? `${autoPromo.value}% off`
+              : `${formatCurrency(autoPromo.value)} off`
+          }}
+          will be applied automatically
+        </div>
+      </div>
+
       <!-- Category Tabs -->
       <div class="category-section">
         <div class="category-tabs">
@@ -140,7 +154,7 @@
           <ShoppingCart class="fab-icon" />
           <div class="fab-info">
             <span class="fab-label">View Order</span>
-            <span class="fab-meta">{{ totalQty }} items • {{ formatCurrency(cartTotal) }}</span>
+            <span class="fab-meta">{{ totalQty }} items • {{ formatCurrency(orderTotal) }}</span>
           </div>
         </div>
         <div class="fab-badge" v-if="totalQty > 0">{{ totalQty }}</div>
@@ -217,14 +231,88 @@
 
             <!-- Footer -->
             <div class="sheet-footer">
+              <!-- Promo code input (only show if no manual promo applied yet) -->
+              <div v-if="!appliedPromo" class="promo-section">
+                <div class="promo-input-row">
+                  <input
+                    v-model="promoInput"
+                    type="text"
+                    class="promo-input"
+                    placeholder="Customer discount code"
+                    @keyup.enter="applyPromoCode"
+                    @input="promoInput = promoInput.toUpperCase()"
+                    :disabled="promoLoading"
+                    maxlength="20"
+                  />
+                  <button
+                    class="promo-apply-btn"
+                    @click="applyPromoCode"
+                    :disabled="promoLoading || !promoInput.trim()"
+                  >
+                    {{ promoLoading ? '…' : 'Apply' }}
+                  </button>
+                </div>
+                <p v-if="promoError" class="promo-error">{{ promoError }}</p>
+              </div>
+
+              <!-- Applied manual promo tag -->
+              <div v-if="appliedPromo" class="applied-promo-tag">
+                <CheckCircle2 class="applied-check" />
+                <div class="applied-info">
+                  <span class="applied-code">{{ appliedPromoCode }}</span>
+                  <span class="applied-desc">
+                    {{
+                      appliedPromo.type === 'percentage'
+                        ? `${appliedPromo.value}% off`
+                        : `${formatCurrency(appliedPromo.value)} off`
+                    }}
+                    — saving {{ formatCurrency(discountAmount) }}
+                  </span>
+                </div>
+                <button class="remove-promo-btn" @click="removePromoCode">
+                  <X class="remove-icon" />
+                </button>
+              </div>
+
               <div class="total-section">
                 <div class="total-row">
                   <span class="total-label">Subtotal</span>
                   <span class="total-value">{{ formatCurrency(cartTotal) }}</span>
                 </div>
+
+                <!-- Auto promo discount row (only when no manual code applied) -->
+                <div
+                  v-if="autoPromo && !appliedPromo && discountAmount > 0"
+                  class="total-row total-row--discount"
+                >
+                  <span class="total-label-discount">
+                    <Tag class="discount-tag-icon" />
+                    {{ autoPromo.name }}
+                    <span class="discount-badge">
+                      {{ autoPromo.type === 'percentage' ? `${autoPromo.value}%` : 'Fixed' }}
+                    </span>
+                  </span>
+                  <span class="total-value-discount">−{{ formatCurrency(discountAmount) }}</span>
+                </div>
+
+                <!-- Manual promo discount row -->
+                <div
+                  v-if="appliedPromo && discountAmount > 0"
+                  class="total-row total-row--discount"
+                >
+                  <span class="total-label-discount">
+                    <Tag class="discount-tag-icon" />
+                    {{ appliedPromoCode }}
+                    <span class="discount-badge">
+                      {{ appliedPromo.type === 'percentage' ? `${appliedPromo.value}%` : 'Fixed' }}
+                    </span>
+                  </span>
+                  <span class="total-value-discount">−{{ formatCurrency(discountAmount) }}</span>
+                </div>
+
                 <div class="total-row total-row--final">
                   <span class="total-label-final">Total</span>
-                  <span class="total-value-final">{{ formatCurrency(cartTotal) }}</span>
+                  <span class="total-value-final">{{ formatCurrency(orderTotal) }}</span>
                 </div>
               </div>
               <div class="action-buttons">
@@ -248,8 +336,9 @@
 
     <!-- Success Toast -->
     <transition name="toast">
-      <div v-if="successMsg" class="toast">
-        <CheckCircle2 class="toast-icon" />
+      <div v-if="successMsg" class="toast" :class="{ 'toast--error': isError }">
+        <CheckCircle2 v-if="!isError" class="toast-icon" />
+        <XCircle v-else class="toast-icon" />
         <span>{{ successMsg }}</span>
       </div>
     </transition>
@@ -275,7 +364,10 @@ import {
   X,
   Send,
   Trash2,
+  Tag,
+  XCircle,
 } from 'lucide-vue-next'
+import { v4 as uuidv4 } from 'uuid'
 
 const authStore = useAuthStore()
 
@@ -286,8 +378,55 @@ const activeCatId = ref(null)
 const cart = ref({})
 const submitting = ref(false)
 const successMsg = ref('')
+const isError = ref(false)
 const sheetOpen = ref(false)
 
+// ── Auto Promo ────────────────────────────────────────────────
+const autoPromo = ref(null)
+
+async function checkAutoPromotions() {
+  const rid = authStore.profile?.restaurant_id
+  if (!rid) return
+  const { data } = await supabase.rpc('get_active_auto_promotions', {
+    p_restaurant_id: rid,
+  })
+  autoPromo.value = data && data.length > 0 ? data[0] : null
+}
+
+// ── Manual Promo Code ─────────────────────────────────────────
+const promoInput = ref('')
+const appliedPromoCode = ref('')
+const appliedPromo = ref(null)
+const promoLoading = ref(false)
+const promoError = ref('')
+
+async function applyPromoCode() {
+  promoError.value = ''
+  if (!promoInput.value.trim()) return
+  promoLoading.value = true
+  const { data, error } = await supabase.rpc('validate_promotion', {
+    p_restaurant_id: authStore.profile?.restaurant_id,
+    p_code: promoInput.value.trim(),
+    p_order_total: cartTotal.value,
+  })
+  promoLoading.value = false
+  if (error || !data || data.length === 0) {
+    promoError.value = 'Invalid or expired code.'
+    return
+  }
+  appliedPromo.value = data[0]
+  appliedPromoCode.value = promoInput.value.trim().toUpperCase()
+  promoInput.value = ''
+  promoError.value = ''
+}
+
+function removePromoCode() {
+  appliedPromo.value = null
+  appliedPromoCode.value = ''
+  promoError.value = ''
+}
+
+// ── Computed ──────────────────────────────────────────────────
 const activeItems = computed(() => {
   const cat = menu.value.find((c) => c.id === activeCatId.value)
   return cat?.menu_items ?? []
@@ -298,6 +437,16 @@ const totalQty = computed(() => cartItems.value.reduce((s, i) => s + i.qty, 0))
 const cartTotal = computed(() => cartItems.value.reduce((s, i) => s + i.price * i.qty, 0))
 const selectedTable = computed(() => tables.value.find((t) => t.id === selectedTableId.value))
 
+const discountAmount = computed(() => {
+  const promo = appliedPromo.value || autoPromo.value
+  if (!promo || cartTotal.value === 0) return 0
+  if (promo.type === 'percentage') return Math.round(cartTotal.value * promo.value) / 100
+  return Math.min(promo.value, cartTotal.value)
+})
+
+const orderTotal = computed(() => Math.max(0, cartTotal.value - discountAmount.value))
+
+// ── Currency ──────────────────────────────────────────────────
 function formatCurrency(amount) {
   const currency = authStore.restaurantCurrency || 'USD'
   const num = (amount || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')
@@ -315,6 +464,7 @@ function formatCurrency(amount) {
   }
 }
 
+// ── Cart helpers ──────────────────────────────────────────────
 function increment(item) {
   if (!cart.value[item.id]) {
     cart.value[item.id] = {
@@ -354,53 +504,73 @@ function clearCart() {
   sheetOpen.value = false
 }
 
+// ── Toast helper ──────────────────────────────────────────────
+function showToast(msg, error = false) {
+  successMsg.value = msg
+  isError.value = error
+  setTimeout(() => {
+    successMsg.value = ''
+    isError.value = false
+  }, 3000)
+}
+
+// ── Submit Order ──────────────────────────────────────────────
 async function submitOrder() {
   if (!selectedTableId.value || cartItems.value.length === 0) return
   submitting.value = true
 
   try {
-    const { data: order, error } = await supabase
-      .from('orders')
-      .insert({
-        restaurant_id: authStore.profile?.restaurant_id,
-        table_id: selectedTableId.value,
-        status: 'pending',
-      })
-      .select()
-      .single()
+    // Re-check auto promo at submit time to ensure it's still valid
+    await checkAutoPromotions()
 
-    if (error) throw error
+    const usedPromo = autoPromo.value
+    const finalDiscount = discountAmount.value
+    const finalTotal = orderTotal.value
+    const orderId = uuidv4()
 
-    if (order) {
-      const { error: itemsError } = await supabase.from('order_items').insert(
-        cartItems.value.map((i) => ({
-          order_id: order.id,
-          menu_item_id: i.id,
-          quantity: i.qty,
-          unit_price: i.price,
-          notes: i.notes?.trim() || null,
-        })),
-      )
+    const { error: orderErr } = await supabase.from('orders').insert({
+      id: orderId,
+      restaurant_id: authStore.profile?.restaurant_id,
+      table_id: selectedTableId.value,
+      status: 'pending',
+      total_amount: finalTotal,
+      promotion_id: usedPromo?.id || null,
+      discount_amount: finalDiscount > 0 ? finalDiscount : null,
+    })
+    if (orderErr) throw orderErr
 
-      if (itemsError) throw itemsError
+    const { error: itemsError } = await supabase.from('order_items').insert(
+      cartItems.value.map((i) => ({
+        order_id: orderId,
+        menu_item_id: i.id,
+        quantity: i.qty,
+        unit_price: i.price,
+        notes: i.notes?.trim() || null,
+      })),
+    )
+    if (itemsError) throw itemsError
 
-      cart.value = {}
-      selectedTableId.value = null
-      sheetOpen.value = false
-      successMsg.value = 'Order placed successfully!'
-      setTimeout(() => {
-        successMsg.value = ''
-      }, 3000)
+    // Increment usage count on the promo if one was applied
+    if (usedPromo) {
+      await supabase.rpc('apply_promotion_to_order', { p_promotion_id: usedPromo.id })
     }
+
+    cart.value = {}
+    selectedTableId.value = null
+    sheetOpen.value = false
+
+    const discountMsg =
+      usedPromo && finalDiscount > 0 ? ` (${usedPromo.name} −${formatCurrency(finalDiscount)})` : ''
+    showToast(`Order placed successfully!${discountMsg}`)
   } catch (err) {
     console.error('Order error:', err)
-    successMsg.value = 'Failed to place order. Please try again.'
-    setTimeout(() => (successMsg.value = ''), 3000)
+    showToast('Failed to place order. Please try again.', true)
   } finally {
     submitting.value = false
   }
 }
 
+// ── Init ──────────────────────────────────────────────────────
 onMounted(async () => {
   const rid = authStore.profile?.restaurant_id
   const [{ data: t }, { data: m }] = await Promise.all([
@@ -416,6 +586,9 @@ onMounted(async () => {
     menu.value = m
     activeCatId.value = m[0]?.id ?? null
   }
+
+  // Check for active auto promotions on load
+  await checkAutoPromotions()
 })
 </script>
 
@@ -621,6 +794,33 @@ onMounted(async () => {
   color: #c8733a;
 }
 
+/* ── Promo Banner ── */
+.promo-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: rgba(200, 115, 58, 0.12);
+  border: 1px solid rgba(200, 115, 58, 0.25);
+  border-radius: 12px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  color: #d4844e;
+  line-height: 1.5;
+}
+
+.promo-banner-icon {
+  width: 18px;
+  height: 18px;
+  color: #c8733a;
+  flex-shrink: 0;
+}
+
+.promo-banner-text strong {
+  color: #c8733a;
+  font-weight: 700;
+}
+
 /* ── Category Section ── */
 .category-section {
   margin-bottom: 20px;
@@ -768,20 +968,7 @@ onMounted(async () => {
 }
 
 .item-price {
-  display: flex;
-  align-items: baseline;
-  gap: 2px;
-}
-
-.price-currency {
-  font-size: 14px;
-  font-weight: 600;
-  color: #c8733a;
-}
-
-.price-value {
-  font-family: 'Fraunces', serif;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 700;
   color: #c8733a;
 }
@@ -950,7 +1137,7 @@ onMounted(async () => {
   margin: 0;
 }
 
-/* ── Floating Action Button ── */
+/* ── FAB ── */
 .fab {
   position: fixed;
   bottom: 24px;
@@ -1032,7 +1219,6 @@ onMounted(async () => {
   opacity: 0.7;
 }
 
-/* FAB transition */
 .fab-enter-active,
 .fab-leave-active {
   transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -1152,7 +1338,6 @@ onMounted(async () => {
   height: 20px;
 }
 
-/* Sheet Body */
 .sheet-body {
   flex: 1;
   overflow-y: auto;
@@ -1266,7 +1451,7 @@ onMounted(async () => {
   color: rgba(255, 255, 255, 0.35);
 }
 
-/* Sheet Footer */
+/* ── Sheet Footer ── */
 .sheet-footer {
   padding: 20px 24px;
   border-top: 1px solid rgba(255, 255, 255, 0.07);
@@ -1294,6 +1479,42 @@ onMounted(async () => {
   font-size: 14px;
   color: rgba(255, 255, 255, 0.85);
   font-weight: 600;
+}
+
+/* Discount row */
+.total-row--discount {
+  color: #4ade80;
+  margin-bottom: 8px;
+}
+
+.total-label-discount {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: #4ade80;
+}
+
+.discount-tag-icon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.discount-badge {
+  background: rgba(74, 222, 128, 0.15);
+  border: 1px solid rgba(74, 222, 128, 0.25);
+  border-radius: 4px;
+  padding: 1px 7px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #4ade80;
+}
+
+.total-value-discount {
+  font-size: 14px;
+  font-weight: 700;
+  color: #4ade80;
 }
 
 .total-row--final {
@@ -1335,6 +1556,7 @@ onMounted(async () => {
   font-weight: 700;
   cursor: pointer;
   transition: all 0.2s ease;
+  font-family: 'DM Sans', sans-serif;
 }
 
 .btn-place:hover:not(:disabled) {
@@ -1383,6 +1605,7 @@ onMounted(async () => {
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
+  font-family: 'DM Sans', sans-serif;
 }
 
 .btn-clear:hover {
@@ -1430,11 +1653,18 @@ onMounted(async () => {
   font-weight: 600;
   z-index: 300;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  white-space: nowrap;
+}
+
+.toast--error {
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #ef4444;
 }
 
 .toast-icon {
   width: 20px;
   height: 20px;
+  flex-shrink: 0;
 }
 
 .toast-enter-active,
@@ -1448,7 +1678,6 @@ onMounted(async () => {
   transform: translateX(-50%) translateY(20px);
 }
 
-/* Animations */
 @keyframes pulse-dot {
   0%,
   100% {

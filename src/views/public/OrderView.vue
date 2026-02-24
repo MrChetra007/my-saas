@@ -109,6 +109,7 @@
           </div>
           <div class="summary-total">
             <span>Total</span>
+            <!-- FIX #3: Use placedTotal (now guarded with Math.max) -->
             <span>{{ currencySymbol }}{{ placedTotal.toFixed(2) }}</span>
           </div>
         </div>
@@ -535,6 +536,8 @@ const allItemsLoaded = computed(() => visibleCatCount.value >= activeCategories.
 let statusChannel = null
 let menuChannel = null
 let scrollObserver = null
+// FIX #4: interval handle for periodic auto-promo refresh
+let autoPromoInterval = null
 
 // ── Toast ─────────────────────────────────────────────────────────────────────
 const toast = ref({ show: false, message: '', type: 'success', icon: CheckCircle })
@@ -560,27 +563,20 @@ function getAudioCtx() {
   return audioCtx
 }
 
-/**
- * type: 'cooking' — soft two-tone ascending chime
- * type: 'ready'   — brighter three-tone ascending chime (food is ready!)
- * type: 'rejected'— single low note
- */
 function playStatusChime(type = 'cooking') {
   try {
     const ctx = getAudioCtx()
     const tonesMap = {
       cooking: [
-        { freq: 523, start: 0, duration: 0.22 }, // C5
-        { freq: 659, start: 0.25, duration: 0.3 }, // E5
+        { freq: 523, start: 0, duration: 0.22 },
+        { freq: 659, start: 0.25, duration: 0.3 },
       ],
       ready: [
-        { freq: 523, start: 0, duration: 0.18 }, // C5
-        { freq: 659, start: 0.2, duration: 0.18 }, // E5
-        { freq: 784, start: 0.4, duration: 0.35 }, // G5
+        { freq: 523, start: 0, duration: 0.18 },
+        { freq: 659, start: 0.2, duration: 0.18 },
+        { freq: 784, start: 0.4, duration: 0.35 },
       ],
-      rejected: [
-        { freq: 311, start: 0, duration: 0.4 }, // Eb4 — low, subdued
-      ],
+      rejected: [{ freq: 311, start: 0, duration: 0.4 }],
     }
     const tones = tonesMap[type] || tonesMap.cooking
     tones.forEach(({ freq, start, duration }) => {
@@ -624,16 +620,39 @@ const discountAmount = computed(() => {
 
 const orderTotal = computed(() => Math.max(0, cartSubtotal.value - discountAmount.value))
 
-const placedTotal = computed(
-  () =>
+// FIX #3: Guard placedTotal against negative values (same as orderTotal)
+const placedTotal = computed(() =>
+  Math.max(
+    0,
     placedItems.value.reduce((n, i) => n + i.unit_price * i.quantity, 0) -
-    placedDiscountAmount.value,
+      placedDiscountAmount.value,
+  ),
 )
 
 // ── Currency ──────────────────────────────────────────────────────────────────
+// FIX #1: Match Promotions page logic — handle custom currencies like "RM MYR"
 const currencySymbol = computed(() => {
-  const map = { USD: '$', EUR: '€', GBP: '£', KHR: '៛', THB: '฿', SGD: 'S$', AUD: 'A$', JPY: '¥' }
-  return map[restaurant.value.currency] || '$'
+  const currency = restaurant.value.currency || 'USD'
+  const map = {
+    USD: '$',
+    EUR: '€',
+    GBP: '£',
+    KHR: '៛',
+    THB: '฿',
+    SGD: 'S$',
+    AUD: 'A$',
+    JPY: '¥',
+  }
+
+  // Known currency — use the map
+  if (map[currency]) return map[currency]
+
+  // Custom currency: "RM MYR" → extract symbol before the space
+  const spaceIndex = currency.indexOf(' ')
+  if (spaceIndex !== -1) return currency.slice(0, spaceIndex)
+
+  // Fallback
+  return currency || '$'
 })
 
 // ── Categories ────────────────────────────────────────────────────────────────
@@ -680,7 +699,7 @@ const statusDesc = computed(() => {
   return 'Thank you for dining with us!'
 })
 
-// ── Status change handler (plays sound + toast) ───────────────────────────────
+// ── Status change handler ─────────────────────────────────────────────────────
 function handleStatusChange(newStatus) {
   orderStatus.value = newStatus
 
@@ -736,6 +755,8 @@ function decrementCart(idx) {
 }
 
 function openCart() {
+  // FIX #4: Re-check auto promotions each time the cart opens
+  checkAutoPromotions()
   cartOpen.value = true
 }
 
@@ -752,14 +773,38 @@ function resetOrder() {
     supabase.removeChannel(statusChannel)
     statusChannel = null
   }
+  // Restart auto-promo polling after returning to menu
+  checkAutoPromotions()
+  startAutoPromoPolling()
 }
 
 // ── Promotions ────────────────────────────────────────────────────────────────
 async function checkAutoPromotions() {
+  if (!restaurant.value?.id) return
   const { data } = await supabase.rpc('get_active_auto_promotions', {
     p_restaurant_id: restaurant.value.id,
   })
-  if (data && data.length > 0) autoPromo.value = data[0]
+
+  const newPromo = data && data.length > 0 ? data[0] : null
+
+  // FIX #4: Notify the user if a new auto promo just became active mid-session
+  if (newPromo && (!autoPromo.value || autoPromo.value.id !== newPromo.id)) {
+    if (autoPromo.value !== null) {
+      // Only toast if this isn't the first load (autoPromo was previously set/null after init)
+      showToast(`🎉 "${newPromo.name}" discount is now active!`, 'info')
+    }
+    autoPromo.value = newPromo
+  } else if (!newPromo && autoPromo.value) {
+    // Promo expired mid-session
+    showToast('The automatic discount has ended.', 'warning')
+    autoPromo.value = null
+  }
+}
+
+// FIX #4: Poll every 60s so happy hour activates without a page refresh
+function startAutoPromoPolling() {
+  if (autoPromoInterval) clearInterval(autoPromoInterval)
+  autoPromoInterval = setInterval(checkAutoPromotions, 60_000)
 }
 
 async function applyPromoCode() {
@@ -886,7 +931,11 @@ onMounted(async () => {
 
   loading.value = false
   subscribeToMenuAvailability(rest.id)
+
+  // FIX #4: Initial check then start polling every 60s
   await checkAutoPromotions()
+  startAutoPromoPolling()
+
   setTimeout(() => setupInfiniteScroll(), 400)
 })
 
@@ -896,6 +945,8 @@ onUnmounted(() => {
   if (scrollObserver) scrollObserver.disconnect()
   if (audioCtx) audioCtx.close()
   if (toastTimer) clearTimeout(toastTimer)
+  // FIX #4: Clear polling interval on unmount
+  if (autoPromoInterval) clearInterval(autoPromoInterval)
 })
 
 // ── Place order ───────────────────────────────────────────────────────────────
@@ -947,7 +998,13 @@ async function placeOrder() {
     orderPlaced.value = true
     orderStatus.value = 'pending'
 
-    // Subscribe to order status changes — fires toast + chime on each transition
+    // Stop polling while on the status screen — no longer needed
+    if (autoPromoInterval) {
+      clearInterval(autoPromoInterval)
+      autoPromoInterval = null
+    }
+
+    // Subscribe to order status changes
     statusChannel = supabase
       .channel(`order-${orderId}`)
       .on(
