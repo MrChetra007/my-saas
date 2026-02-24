@@ -13,63 +13,13 @@
       <!-- Back button -->
       <button class="auth-back-btn" @click="goBack" aria-label="Go back to home">← Back</button>
 
-      <!-- Logo -->
-      <div class="auth-logo">
-        <div class="auth-logo-icon">
-          <svg width="18" height="18" viewBox="0 0 32 32" fill="none">
-            <rect x="2" y="2" width="10" height="10" rx="2" stroke="white" stroke-width="2" />
-            <rect x="5" y="5" width="4" height="4" rx="0.5" fill="white" />
-            <rect x="20" y="2" width="10" height="10" rx="2" stroke="white" stroke-width="2" />
-            <rect x="23" y="5" width="4" height="4" rx="0.5" fill="white" />
-            <rect x="2" y="20" width="10" height="10" rx="2" stroke="white" stroke-width="2" />
-            <rect x="5" y="23" width="4" height="4" rx="0.5" fill="white" />
-            <line
-              x1="22"
-              y1="21"
-              x2="22"
-              y2="30"
-              stroke="white"
-              stroke-width="2"
-              stroke-linecap="round"
-            />
-            <line
-              x1="26"
-              y1="21"
-              x2="26"
-              y2="30"
-              stroke="white"
-              stroke-width="2"
-              stroke-linecap="round"
-            />
-            <line
-              x1="30"
-              y1="21"
-              x2="30"
-              y2="30"
-              stroke="white"
-              stroke-width="2"
-              stroke-linecap="round"
-            />
-            <path
-              d="M22 21 Q22 25 26 27 Q30 25 30 21"
-              stroke="white"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              fill="none"
-            />
-          </svg>
-        </div>
-        <span class="auth-logo-wordmark">Qrder</span>
-      </div>
-
       <!-- Card -->
       <div class="auth-card">
         <slot />
       </div>
 
       <!-- Footer -->
-      <p class="auth-footer">© {{ new Date().getFullYear() }} Qrder. All rights reserved.</p>
+      <p class="auth-footer">© {{ new Date().getFullYear() }} Qrserve. All rights reserved.</p>
     </div>
   </div>
 </template>
@@ -101,7 +51,7 @@ const goBack = () => {
 /* ── Back button ────────────────────────────────────────── */
 .auth-back-btn {
   position: absolute;
-  top: 24px;
+  top: -10px;
   left: -100px;
   background: rgba(255, 255, 255, 0.04);
   border: none;

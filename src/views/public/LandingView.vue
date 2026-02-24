@@ -8,51 +8,9 @@
       <div class="nav-inner">
         <div class="nav-logo">
           <div class="qrder-icon">
-            <svg width="22" height="22" viewBox="0 0 32 32" fill="none">
-              <rect x="2" y="2" width="10" height="10" rx="2" stroke="white" stroke-width="2" />
-              <rect x="5" y="5" width="4" height="4" rx="0.5" fill="white" />
-              <rect x="20" y="2" width="10" height="10" rx="2" stroke="white" stroke-width="2" />
-              <rect x="23" y="5" width="4" height="4" rx="0.5" fill="white" />
-              <rect x="2" y="20" width="10" height="10" rx="2" stroke="white" stroke-width="2" />
-              <rect x="5" y="23" width="4" height="4" rx="0.5" fill="white" />
-              <line
-                x1="22"
-                y1="21"
-                x2="22"
-                y2="30"
-                stroke="white"
-                stroke-width="2"
-                stroke-linecap="round"
-              />
-              <line
-                x1="26"
-                y1="21"
-                x2="26"
-                y2="30"
-                stroke="white"
-                stroke-width="2"
-                stroke-linecap="round"
-              />
-              <line
-                x1="30"
-                y1="21"
-                x2="30"
-                y2="30"
-                stroke="white"
-                stroke-width="2"
-                stroke-linecap="round"
-              />
-              <path
-                d="M22 21 Q22 25 26 27 Q30 25 30 21"
-                stroke="white"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                fill="none"
-              />
-            </svg>
+            <img src="/favicon.png" alt="" />
           </div>
-          <span class="logo-wordmark">Qrder</span>
+          <span class="logo-wordmark">Qrserve</span>
         </div>
         <div class="nav-links">
           <a href="#features" class="nav-link" @click.prevent="scrollTo('features')">Features</a>
@@ -201,7 +159,7 @@
                 <path d="M16 10a4 4 0 01-8 0" />
               </svg>
             </button>
-            <p class="order-note">Powered by Qrder · SCAN · ORDER · DONE</p>
+            <p class="order-note">Powered by Qrserve · SCAN · ORDER · DONE</p>
           </div>
         </div>
       </div>
@@ -630,50 +588,9 @@
       <div class="cta-panel">
         <div class="cta-logo-wrap">
           <div class="cta-icon">
-            <svg width="30" height="30" viewBox="0 0 32 32" fill="none">
-              <rect x="2" y="2" width="10" height="10" rx="2" stroke="white" stroke-width="2" />
-              <rect x="5" y="5" width="4" height="4" rx="0.5" fill="white" />
-              <rect x="20" y="2" width="10" height="10" rx="2" stroke="white" stroke-width="2" />
-              <rect x="23" y="5" width="4" height="4" rx="0.5" fill="white" />
-              <rect x="2" y="20" width="10" height="10" rx="2" stroke="white" stroke-width="2" />
-              <rect x="5" y="23" width="4" height="4" rx="0.5" fill="white" />
-              <line
-                x1="22"
-                y1="21"
-                x2="22"
-                y2="30"
-                stroke="white"
-                stroke-width="2"
-                stroke-linecap="round"
-              />
-              <line
-                x1="26"
-                y1="21"
-                x2="26"
-                y2="30"
-                stroke="white"
-                stroke-width="2"
-                stroke-linecap="round"
-              />
-              <line
-                x1="30"
-                y1="21"
-                x2="30"
-                y2="30"
-                stroke="white"
-                stroke-width="2"
-                stroke-linecap="round"
-              />
-              <path
-                d="M22 21 Q22 25 26 27 Q30 25 30 21"
-                stroke="white"
-                stroke-width="2"
-                stroke-linecap="round"
-                fill="none"
-              />
-            </svg>
+            <img src="/favicon.png" alt="" />
           </div>
-          <span class="cta-wordmark">Qrder</span>
+          <span class="cta-wordmark">Qrserve</span>
         </div>
         <h2 class="cta-title">Ready to simplify service?</h2>
         <p class="cta-tagline">SCAN · ORDER · DONE</p>
@@ -705,7 +622,7 @@
     <section class="section about-section" id="about">
       <div class="section-inner">
         <span class="section-label">About & Contact</span>
-        <h2 class="section-title">The person behind Qrder</h2>
+        <h2 class="section-title">The person behind Qrserve</h2>
 
         <div class="about-card">
           <!-- Profile -->
@@ -718,7 +635,7 @@
               <div class="about-name">Seth Sochetra</div>
               <div class="about-role">Founder &amp; Developer</div>
               <p class="about-bio">
-                Passionate about building tools that make restaurant operations effortless. Qrder
+                Passionate about building tools that make restaurant operations effortless. Qrserve
                 was created to bridge the gap between great food and seamless digital experiences —
                 putting orders, kitchen flow, and menus all in one place.
               </p>
@@ -761,50 +678,9 @@
       <div class="footer-inner">
         <div class="footer-logo">
           <div class="footer-icon">
-            <svg width="14" height="14" viewBox="0 0 32 32" fill="none">
-              <rect x="2" y="2" width="10" height="10" rx="2" stroke="white" stroke-width="2.5" />
-              <rect x="5" y="5" width="4" height="4" rx="0.5" fill="white" />
-              <rect x="20" y="2" width="10" height="10" rx="2" stroke="white" stroke-width="2.5" />
-              <rect x="23" y="5" width="4" height="4" rx="0.5" fill="white" />
-              <rect x="2" y="20" width="10" height="10" rx="2" stroke="white" stroke-width="2.5" />
-              <rect x="5" y="23" width="4" height="4" rx="0.5" fill="white" />
-              <line
-                x1="22"
-                y1="21"
-                x2="22"
-                y2="30"
-                stroke="white"
-                stroke-width="2"
-                stroke-linecap="round"
-              />
-              <line
-                x1="26"
-                y1="21"
-                x2="26"
-                y2="30"
-                stroke="white"
-                stroke-width="2"
-                stroke-linecap="round"
-              />
-              <line
-                x1="30"
-                y1="21"
-                x2="30"
-                y2="30"
-                stroke="white"
-                stroke-width="2"
-                stroke-linecap="round"
-              />
-              <path
-                d="M22 21 Q22 25 26 27 Q30 25 30 21"
-                stroke="white"
-                stroke-width="2"
-                stroke-linecap="round"
-                fill="none"
-              />
-            </svg>
+            <img src="/favicon.png" alt="" />
           </div>
-          <span class="footer-wordmark">Qrder</span>
+          <span class="footer-wordmark">Qrserve</span>
         </div>
         <div class="footer-links">
           <a href="#features" @click.prevent="scrollTo('features')" class="footer-link">Features</a>
@@ -816,7 +692,9 @@
           <RouterLink to="/login" class="footer-link">Login</RouterLink>
           <RouterLink to="/signup" class="footer-link">Sign up</RouterLink>
         </div>
-        <div class="footer-copy">© {{ new Date().getFullYear() }} Qrder. All rights reserved.</div>
+        <div class="footer-copy">
+          © {{ new Date().getFullYear() }} Qrserve. All rights reserved.
+        </div>
       </div>
     </footer>
   </div>
