@@ -7,15 +7,15 @@
           <div class="picker-header">
             <div class="header-glow" />
             <button class="picker-close" @click="close">
-              <X :size="16" />
+              <X :size="20" />
             </button>
             <div class="header-icon">
-              <Crown :size="22" />
+              <Crown :size="24" />
             </div>
             <h2 class="picker-title">Upgrade to Pro</h2>
             <p class="picker-subtitle">
               <strong>{{ featureName }}</strong> is a Pro feature. Unlock it and everything else
-              below with one upgrade.
+              below.
             </p>
           </div>
 
@@ -24,9 +24,9 @@
             <ul class="feature-list">
               <li v-for="f in proFeatures" :key="f.label" class="feature-item">
                 <div class="feature-icon-wrap">
-                  <component :is="f.icon" :size="15" />
+                  <component :is="f.icon" :size="16" />
                 </div>
-                <div>
+                <div class="feature-text">
                   <div class="feature-label">{{ f.label }}</div>
                   <div class="feature-desc">{{ f.desc }}</div>
                 </div>
@@ -36,9 +36,9 @@
             <!-- Price -->
             <div class="price-row">
               <div class="price-amount">
-                <span class="price-dollar">$</span>69<span class="price-mo">/mo</span>
+                <span class="price-dollar">$</span>59<span class="price-mo">/mo</span>
               </div>
-              <div class="price-note">Cancel anytime · No hidden fees</div>
+              <div class="price-note">Cancel anytime</div>
             </div>
 
             <!-- Error -->
@@ -47,11 +47,11 @@
             <!-- Actions -->
             <button class="btn-upgrade" @click="goToCheckout" :disabled="loading">
               <Loader2 v-if="loading" :size="16" class="spin" />
-              <template v-else> <Zap :size="15" /> Upgrade to Pro </template>
+              <template v-else> <Zap :size="16" /> Upgrade to Pro </template>
             </button>
             <button class="btn-cancel" @click="close">Maybe later</button>
 
-            <p class="secure-note"><Lock :size="11" /> Secured by Lemon Squeezy</p>
+            <p class="secure-note"><Lock :size="12" /> Secured by Lemon Squeezy</p>
           </div>
         </div>
       </div>
@@ -78,10 +78,6 @@ import {
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
-  /**
-   * Name of the feature they tried to access, e.g. "Analytics" or "Promotions".
-   * Shown in the subtitle so the modal feels contextual.
-   */
   featureName: { type: String, default: 'This feature' },
 })
 
@@ -112,13 +108,12 @@ async function goToCheckout() {
     if (err) throw err
     if (data?.url) {
       window.location.href = data.url
-      // loading stays true — page is navigating away
     } else {
       throw new Error('No checkout URL returned.')
     }
   } catch (e) {
     console.error('[ProPlanPicker] Checkout error:', e)
-    error.value = 'Could not start checkout. Please try again or contact support.'
+    error.value = 'Could not start checkout. Please try again.'
     emit('checkout-error', error.value)
     loading.value = false
   }
@@ -145,41 +140,47 @@ async function goToCheckout() {
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  padding: 20px;
+  padding: 12px;
 }
 
 /* ── Modal ── */
 .modal-pro-picker {
   background: var(--color-bg-surface);
-  border-radius: 20px;
+  border-radius: 24px;
   width: 100%;
   max-width: 400px;
+  max-height: calc(100vh - 24px);
   border: 1px solid var(--color-border-subtle);
   box-shadow: 0 32px 80px rgba(0, 0, 0, 0.6);
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 /* ── Header ── */
 .picker-header {
   position: relative;
-  padding: 32px 24px 24px;
+  padding: 28px 20px 20px;
   text-align: center;
   border-bottom: 1px solid var(--color-border-subtle);
   overflow: hidden;
+  flex-shrink: 0;
 }
+
 .header-glow {
   position: absolute;
   inset: 0;
   background: radial-gradient(ellipse at 50% 0%, rgba(200, 115, 58, 0.18) 0%, transparent 70%);
   pointer-events: none;
 }
+
 .picker-close {
   position: absolute;
-  top: 14px;
-  right: 14px;
-  width: 30px;
-  height: 30px;
-  border-radius: 8px;
+  top: 12px;
+  right: 12px;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
   background: var(--color-bg-elevated);
   border: 1px solid var(--color-border-subtle);
   color: var(--color-text-muted);
@@ -190,68 +191,80 @@ async function goToCheckout() {
   transition: all 0.14s;
   z-index: 1;
 }
+
 .picker-close:hover {
   color: var(--color-text-primary);
   background: var(--color-bg-surface);
 }
+
 .header-icon {
-  width: 52px;
-  height: 52px;
-  border-radius: 14px;
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
   background: var(--color-accent);
   color: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 14px;
+  margin: 0 auto 12px;
   box-shadow: 0 8px 24px rgba(200, 115, 58, 0.4);
   position: relative;
   z-index: 1;
 }
+
 .picker-title {
   font-family: var(--font-display);
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 800;
   color: var(--color-text-primary);
-  margin: 0 0 8px;
+  margin: 0 0 6px;
   position: relative;
   z-index: 1;
+  line-height: 1.2;
 }
+
 .picker-subtitle {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--color-text-secondary);
   line-height: 1.5;
   margin: 0;
   position: relative;
   z-index: 1;
 }
+
 .picker-subtitle strong {
   color: var(--color-accent);
 }
 
-/* ── Body ── */
+/* ── Body (scrollable) ── */
 .picker-body {
-  padding: 22px 24px 26px;
+  padding: 20px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* ── Feature list ── */
 .feature-list {
   list-style: none;
   padding: 0;
-  margin: 0 0 20px;
+  margin: 0 0 16px;
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
+
 .feature-item {
   display: flex;
   align-items: flex-start;
   gap: 12px;
 }
+
 .feature-icon-wrap {
-  width: 30px;
-  height: 30px;
-  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
   background: var(--color-accent-muted);
   border: 1px solid var(--color-accent-border);
   color: var(--color-accent);
@@ -259,14 +272,21 @@ async function goToCheckout() {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  margin-top: 1px;
 }
+
+.feature-text {
+  flex: 1;
+  min-width: 0;
+}
+
 .feature-label {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--color-text-primary);
   margin-bottom: 2px;
+  line-height: 1.3;
 }
+
 .feature-desc {
   font-size: 12px;
   color: var(--color-text-secondary);
@@ -277,16 +297,18 @@ async function goToCheckout() {
 .price-row {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 14px 16px;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 16px;
   background: var(--color-bg-elevated);
   border: 1px solid var(--color-border-subtle);
-  border-radius: 10px;
+  border-radius: 12px;
   margin-bottom: 16px;
 }
+
 .price-amount {
   font-family: var(--font-display);
-  font-size: 30px;
+  font-size: 32px;
   font-weight: 800;
   color: var(--color-accent);
   letter-spacing: -1px;
@@ -295,22 +317,26 @@ async function goToCheckout() {
   align-items: flex-start;
   gap: 1px;
 }
+
 .price-dollar {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 700;
-  margin-top: 5px;
+  margin-top: 4px;
 }
+
 .price-mo {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
   color: var(--color-text-secondary);
   align-self: flex-end;
-  margin-bottom: 3px;
+  margin-bottom: 4px;
 }
+
 .price-note {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--color-text-muted);
   line-height: 1.4;
+  text-align: right;
 }
 
 /* ── Error ── */
@@ -319,7 +345,7 @@ async function goToCheckout() {
   align-items: center;
   gap: 8px;
   padding: 10px 14px;
-  border-radius: 8px;
+  border-radius: 10px;
   font-size: 13px;
   margin-bottom: 14px;
   background: rgba(239, 68, 68, 0.1);
@@ -330,12 +356,12 @@ async function goToCheckout() {
 /* ── Buttons ── */
 .btn-upgrade {
   width: 100%;
-  padding: 13px;
+  padding: 14px;
   background: var(--color-accent);
   color: white;
   border: none;
-  border-radius: var(--radius-pill);
-  font-size: 15px;
+  border-radius: 14px;
+  font-size: 16px;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.16s;
@@ -345,28 +371,32 @@ async function goToCheckout() {
   gap: 8px;
   margin-bottom: 10px;
 }
+
 .btn-upgrade:hover:not(:disabled) {
   background: var(--color-accent-hover);
   transform: translateY(-1px);
 }
+
 .btn-upgrade:disabled {
   opacity: 0.5;
   cursor: not-allowed;
   transform: none;
 }
+
 .btn-cancel {
   width: 100%;
-  padding: 11px;
+  padding: 12px;
   background: transparent;
   border: 1px solid var(--color-border-medium);
-  border-radius: var(--radius-pill);
+  border-radius: 14px;
   color: var(--color-text-muted);
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.14s;
   margin-bottom: 14px;
 }
+
 .btn-cancel:hover {
   border-color: var(--color-accent-border);
   color: var(--color-text-secondary);
@@ -377,10 +407,11 @@ async function goToCheckout() {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
-  font-size: 11px;
+  gap: 6px;
+  font-size: 12px;
   color: var(--color-text-muted);
 }
+
 .secure-note svg {
   color: var(--color-accent);
 }
@@ -413,5 +444,88 @@ async function goToCheckout() {
 .modal-leave-to .modal-pro-picker {
   transform: scale(0.97);
   opacity: 0;
+}
+
+/* ── Small screen adjustments ── */
+@media (max-width: 380px) {
+  .modal-backdrop {
+    padding: 8px;
+  }
+
+  .picker-header {
+    padding: 24px 16px 16px;
+  }
+
+  .header-icon {
+    width: 48px;
+    height: 48px;
+  }
+
+  .header-icon :deep(svg) {
+    width: 22px;
+    height: 22px;
+  }
+
+  .picker-title {
+    font-size: 22px;
+  }
+
+  .picker-subtitle {
+    font-size: 13px;
+  }
+
+  .picker-body {
+    padding: 16px;
+  }
+
+  .feature-item {
+    gap: 10px;
+  }
+
+  .feature-icon-wrap {
+    width: 28px;
+    height: 28px;
+  }
+
+  .feature-icon-wrap :deep(svg) {
+    width: 14px;
+    height: 14px;
+  }
+
+  .price-amount {
+    font-size: 28px;
+  }
+
+  .btn-upgrade {
+    padding: 12px;
+    font-size: 15px;
+  }
+
+  .btn-cancel {
+    padding: 10px;
+    font-size: 14px;
+  }
+}
+
+/* ── Height-based adjustments ── */
+@media (max-height: 600px) {
+  .picker-header {
+    padding: 20px 16px 16px;
+  }
+
+  .header-icon {
+    width: 44px;
+    height: 44px;
+    margin-bottom: 8px;
+  }
+
+  .feature-list {
+    gap: 8px;
+  }
+
+  .price-row {
+    padding: 10px 14px;
+    margin-bottom: 12px;
+  }
 }
 </style>

@@ -19,6 +19,15 @@ let authListener = null
 
 // ── On mount: PKCE flow — Supabase auto-exchanges ?code= from the URL ──
 onMounted(async () => {
+  // Check for error in URL first
+  const params = new URLSearchParams(window.location.search)
+  const hashParams = new URLSearchParams(window.location.hash.slice(1))
+
+  if (params.get('error') || hashParams.get('error')) {
+    status.value = 'invalid'
+    return
+  }
+
   try {
     const {
       data: { session },

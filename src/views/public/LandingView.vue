@@ -550,7 +550,7 @@
             <div class="pricing-name">Pro</div>
             <div class="pricing-price">
               <span class="price-dollar">$</span>
-              <span class="price-num">69</span>
+              <span class="price-num">59</span>
               <span class="price-period">/mo</span>
             </div>
             <p class="pricing-desc">For restaurants running their full operation digitally.</p>
