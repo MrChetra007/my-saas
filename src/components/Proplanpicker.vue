@@ -74,6 +74,8 @@ import {
   Users,
   BarChart2,
   Infinity,
+  ShieldCheck,
+  Utensils,
 } from 'lucide-vue-next'
 
 const props = defineProps({
@@ -87,11 +89,31 @@ const loading = ref(false)
 const error = ref('')
 
 const proFeatures = [
-  { icon: Activity, label: 'Analytics & Charts', desc: 'Revenue trends, top items, peak hours.' },
-  { icon: Tag, label: 'Promotions & Discounts', desc: 'Create deals and coupon codes.' },
-  { icon: Infinity, label: 'Unlimited Tables', desc: 'No cap on tables or QR codes.' },
-  { icon: Users, label: 'Up to 10 Staff Accounts', desc: 'Give your whole team access.' },
-  { icon: BarChart2, label: 'All Staff Role Views', desc: 'Kitchen, cashier, and manager views.' },
+  {
+    icon: Infinity,
+    label: 'Unlimited Tables',
+    desc: 'No cap on tables or QR codes.',
+  },
+  {
+    icon: Users,
+    label: 'Up to 10 Staff Accounts',
+    desc: 'Give your whole team access.',
+  },
+  {
+    icon: BarChart2,
+    label: 'All Staff Role Views',
+    desc: 'Kitchen, cashier, and manager views.',
+  },
+  {
+    icon: Activity,
+    label: 'Analytics & Charts',
+    desc: 'Revenue trends, top items, peak hours.',
+  },
+  {
+    icon: Tag,
+    label: 'Promotions & Discounts',
+    desc: 'Create deals and coupon codes.',
+  },
 ]
 
 function close() {
