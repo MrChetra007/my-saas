@@ -43,15 +43,12 @@
             </div>
           </div>
         </div>
-
         <div class="section-body">
           <!-- Logo -->
           <div class="logo-group">
             <div class="logo-preview">
               <img v-if="form.logoUrl" :src="form.logoUrl" alt="Logo" class="logo-img" />
-              <div v-else class="logo-placeholder">
-                <ImageIcon :size="32" />
-              </div>
+              <div v-else class="logo-placeholder"><ImageIcon :size="32" /></div>
             </div>
             <div class="logo-actions">
               <label class="btn-upload">
@@ -87,14 +84,10 @@
 
             <div class="form-group">
               <label class="form-label">URL Slug</label>
-
-              <!-- Read-only base URL row -->
               <div class="slug-base-url">
                 <span class="slug-row-label">Base URL</span>
                 <span class="slug-base-value">{{ appOrigin }}/order/</span>
               </div>
-
-              <!-- Editable slug name row -->
               <div class="slug-name-row">
                 <span class="slug-row-label">Slug name</span>
                 <div class="slug-name-input-wrap" :class="{ 'slug-changed': slugChanged }">
@@ -107,15 +100,12 @@
                   <span v-if="slugChanged" class="slug-changed-badge">changed</span>
                 </div>
               </div>
-
-              <!-- Full preview -->
               <div class="slug-full-preview">
                 {{ appOrigin }}/order/<strong>{{ form.slug || '…' }}</strong>
               </div>
-
               <p v-if="slugChanged" class="form-hint warning">
-                <AlertTriangle :size="11" />
-                This will break all existing QR codes — you'll need to reprint them.
+                <AlertTriangle :size="11" /> This will break all existing QR codes — you'll need to
+                reprint them.
               </p>
               <p v-else class="form-hint">Customers reach your menu at this URL.</p>
             </div>
@@ -144,17 +134,48 @@
             </div>
           </div>
         </div>
-
         <div class="section-body">
           <div class="form-grid">
+            <!-- Currency -->
             <div class="form-group">
               <label class="form-label">Currency</label>
-              <select v-model="form.currency" class="form-select" @change="markDirty">
-                <option v-for="c in currencies" :key="c.code" :value="c.code">
+              <select v-model="form.currency" class="form-select" @change="onCurrencyChange">
+                <option v-for="c in KNOWN_CURRENCIES" :key="c.code" :value="c.code">
                   {{ c.symbol }} {{ c.name }} ({{ c.code }})
                 </option>
+                <option value="OTHER">✏️ Other (custom)</option>
               </select>
+
+              <!-- Custom currency input -->
+              <div v-if="form.currency === 'OTHER'" class="custom-currency-wrap">
+                <div class="custom-currency-field" :class="{ 'has-error': customCurrencyError }">
+                  <input
+                    v-model="customCurrency"
+                    class="form-input custom-input"
+                    placeholder="e.g. RM MYR"
+                    @input="onCustomCurrencyInput"
+                    @focus="tooltipVisible = true"
+                    @blur="tooltipVisible = false"
+                    autocomplete="off"
+                  />
+                  <!-- Floating tooltip -->
+                  <transition name="tooltip-fade">
+                    <div v-if="customCurrencyError && tooltipVisible" class="currency-tooltip">
+                      <AlertCircle :size="12" />
+                      {{ customCurrencyError }}
+                      <div class="tooltip-arrow" />
+                    </div>
+                  </transition>
+                </div>
+                <p class="currency-format-hint">
+                  Format: <strong>symbol · space · code</strong> — e.g.
+                  <span class="hint-example">RM MYR</span>,
+                  <span class="hint-example">R$ BRL</span>,
+                  <span class="hint-example">₱ PHP</span>
+                </p>
+              </div>
             </div>
+
             <div class="form-group">
               <label class="form-label">Timezone</label>
               <select v-model="form.timezone" class="form-select" @change="markDirty">
@@ -164,6 +185,8 @@
               </select>
             </div>
           </div>
+
+          <!-- Price Preview -->
           <div class="preview-card">
             <span class="preview-label">Price Preview</span>
             <span class="preview-value">{{ currencyPreview }}</span>
@@ -182,7 +205,6 @@
             </div>
           </div>
         </div>
-
         <div class="section-body">
           <!-- Plan Status Card -->
           <div class="plan-card" :class="`plan-${planStatus}`">
@@ -208,18 +230,18 @@
             </div>
             <div class="trial-timer">
               <div class="timer-block">
-                <span class="timer-num">{{ trialTimeLeft.days }}</span>
-                <span class="timer-unit">days</span>
+                <span class="timer-num">{{ trialTimeLeft.days }}</span
+                ><span class="timer-unit">days</span>
               </div>
               <span class="timer-colon">:</span>
               <div class="timer-block">
-                <span class="timer-num">{{ trialTimeLeft.hours }}</span>
-                <span class="timer-unit">hrs</span>
+                <span class="timer-num">{{ trialTimeLeft.hours }}</span
+                ><span class="timer-unit">hrs</span>
               </div>
               <span class="timer-colon">:</span>
               <div class="timer-block">
-                <span class="timer-num">{{ trialTimeLeft.minutes }}</span>
-                <span class="timer-unit">min</span>
+                <span class="timer-num">{{ trialTimeLeft.minutes }}</span
+                ><span class="timer-unit">min</span>
               </div>
             </div>
             <div class="trial-progress">
@@ -241,8 +263,8 @@
             <div>
               <h3 class="expired-title">Trial Expired</h3>
               <p class="expired-text">
-                Your trial ended on {{ formatDate(restaurant.trial_ends_at) }}.<br />
-                Choose a plan to continue using Qrder.
+                Your trial ended on {{ formatDate(restaurant.trial_ends_at) }}.<br />Choose a plan
+                to continue using Qrder.
               </p>
             </div>
             <button class="btn-upgrade" @click="showPlanPicker = true">
@@ -267,28 +289,27 @@
           <!-- Billing Details -->
           <div class="billing-details">
             <div class="billing-row">
-              <span class="billing-key">Current Plan</span>
-              <span class="billing-value">{{ planDisplayName }}</span>
+              <span class="billing-key">Current Plan</span
+              ><span class="billing-value">{{ planDisplayName }}</span>
             </div>
             <div class="billing-row" v-if="restaurant.trial_ends_at">
-              <span class="billing-key">Trial Ends</span>
-              <span class="billing-value">{{ formatDate(restaurant.trial_ends_at) }}</span>
+              <span class="billing-key">Trial Ends</span
+              ><span class="billing-value">{{ formatDate(restaurant.trial_ends_at) }}</span>
             </div>
             <div class="billing-row" v-if="restaurant.lemonsqueezy_customer_id">
-              <span class="billing-key">Customer ID</span>
-              <span class="billing-value mono">{{ restaurant.lemonsqueezy_customer_id }}</span>
+              <span class="billing-key">Customer ID</span
+              ><span class="billing-value mono">{{ restaurant.lemonsqueezy_customer_id }}</span>
             </div>
             <div class="billing-row" v-if="restaurant.lemonsqueezy_subscription_id">
-              <span class="billing-key">Subscription ID</span>
-              <span class="billing-value mono">{{ restaurant.lemonsqueezy_subscription_id }}</span>
+              <span class="billing-key">Subscription ID</span
+              ><span class="billing-value mono">{{ restaurant.lemonsqueezy_subscription_id }}</span>
             </div>
           </div>
 
           <!-- Actions -->
           <div class="billing-actions">
             <button v-if="!isProPlan" class="btn-upgrade" @click="showPlanPicker = true">
-              <Zap :size="14" />
-              {{ isStarterPlan ? 'Upgrade to Pro' : 'Choose a Plan' }}
+              <Zap :size="14" />{{ isStarterPlan ? 'Upgrade to Pro' : 'Choose a Plan' }}
             </button>
             <a
               v-if="isProPlan && restaurant.customer_portal_url"
@@ -329,34 +350,30 @@
       <div v-if="slugConfirmModal" class="modal-backdrop" @click.self="slugConfirmModal = false">
         <div class="modal modal-sm">
           <div class="modal-header">
-            <div class="modal-header-icon">
-              <AlertTriangle :size="20" />
-            </div>
+            <div class="modal-header-icon"><AlertTriangle :size="20" /></div>
             <h2 class="modal-title">Change URL Slug?</h2>
           </div>
           <div class="modal-body">
             <p class="modal-text">
-              You're changing the slug from
-              <code class="code-inline">{{ savedSlug }}</code> to
+              You're changing the slug from <code class="code-inline">{{ savedSlug }}</code> to
               <code class="code-inline code-new">{{ form.slug }}</code
               >.
             </p>
             <div class="impact-list">
               <div class="impact-item">
-                <span class="impact-icon impact-danger">✕</span>
-                All existing QR codes will stop working immediately
+                <span class="impact-icon impact-danger">✕</span>All existing QR codes will stop
+                working immediately
               </div>
               <div class="impact-item">
-                <span class="impact-icon impact-danger">✕</span>
-                Any printed QR codes will need to be reprinted
+                <span class="impact-icon impact-danger">✕</span>Any printed QR codes will need to be
+                reprinted
               </div>
               <div class="impact-item">
-                <span class="impact-icon impact-ok">✓</span>
-                New QR codes will be generated with the new URL
+                <span class="impact-icon impact-ok">✓</span>New QR codes will be generated with the
+                new URL
               </div>
               <div class="impact-item">
-                <span class="impact-icon impact-ok">✓</span>
-                Order history remains intact
+                <span class="impact-icon impact-ok">✓</span>Order history remains intact
               </div>
             </div>
           </div>
@@ -402,9 +419,21 @@ import {
 } from 'lucide-vue-next'
 
 const LockIcon = Lock
-
 const authStore = useAuthStore()
 const route = useRoute()
+
+// ── Known currencies (8 fixed) ───────────────────────
+const KNOWN_CURRENCIES = [
+  { code: 'USD', symbol: '$', name: 'US Dollar' },
+  { code: 'EUR', symbol: '€', name: 'Euro' },
+  { code: 'GBP', symbol: '£', name: 'British Pound' },
+  { code: 'JPY', symbol: '¥', name: 'Japanese Yen' },
+  { code: 'AUD', symbol: 'A$', name: 'Australian Dollar' },
+  { code: 'SGD', symbol: 'S$', name: 'Singapore Dollar' },
+  { code: 'KHR', symbol: '៛', name: 'Cambodian Riel' },
+  { code: 'THB', symbol: '฿', name: 'Thai Baht' },
+]
+const KNOWN_CODES = KNOWN_CURRENCIES.map((c) => c.code)
 
 // ── UI state ───────────────────────────────────────
 const loading = ref(true)
@@ -419,25 +448,73 @@ const slugConfirmModal = ref(false)
 
 const restaurant = ref({})
 const form = ref({ name: '', slug: '', address: '', logoUrl: '', currency: 'USD', timezone: 'UTC' })
-
-// Tracks the slug that is actually saved in the DB
 const savedSlug = ref('')
-
-// Dynamic origin so the slug prefix is always correct regardless of environment
 const appOrigin = window.location.origin
+
+// ── Custom currency state ────────────────────────────
+const customCurrency = ref('')
+const customCurrencyError = ref('')
+const tooltipVisible = ref(false)
+
+function onCurrencyChange() {
+  markDirty()
+  if (form.value.currency !== 'OTHER') {
+    customCurrency.value = ''
+    customCurrencyError.value = ''
+  } else {
+    tooltipVisible.value = true
+  }
+}
+
+function validateCustomCurrency(val) {
+  const v = val.trim()
+  if (!v) return 'Please enter your custom currency.'
+
+  const spaceIndex = v.indexOf(' ')
+  if (spaceIndex === -1) return 'Format: symbol · space · code — e.g. RM MYR'
+
+  const symbol = v.slice(0, spaceIndex)
+  const code = v.slice(spaceIndex + 1).trim()
+
+  if (!symbol) return 'Symbol is missing — e.g. RM MYR'
+  if (!code) return 'Currency code is missing — e.g. RM MYR'
+  if (code !== code.toUpperCase())
+    return `Code must be uppercase — use "${code.toUpperCase()}" not "${code}"`
+  if (!/^[A-Z]{2,5}$/.test(code)) return 'Currency code must be 2–5 letters — e.g. MYR, BRL, PHP'
+
+  return ''
+}
+
+function onCustomCurrencyInput() {
+  customCurrencyError.value = validateCustomCurrency(customCurrency.value)
+  tooltipVisible.value = !!customCurrencyError.value
+  markDirty()
+}
+
+// Parse symbol from custom value (e.g. "RM MYR" → "RM")
+function parsedCustomSymbol(val) {
+  const v = (val || customCurrency.value).trim()
+  const spaceIndex = v.indexOf(' ')
+  return spaceIndex !== -1 ? v.slice(0, spaceIndex) : v || '?'
+}
+
+// The value stored in DB
+const resolvedCurrency = computed(() => {
+  if (form.value.currency === 'OTHER') return customCurrency.value.trim()
+  return form.value.currency
+})
 
 // ── Snapshot / dirty ───────────────────────────────
 let snapshot = ''
 function takeSnapshot() {
-  snapshot = JSON.stringify(form.value)
-  // Always sync savedSlug when we take a fresh snapshot
+  snapshot = JSON.stringify({ form: form.value, customCurrency: customCurrency.value })
   savedSlug.value = form.value.slug
 }
 function markDirty() {
-  isDirty.value = JSON.stringify(form.value) !== snapshot
+  isDirty.value =
+    JSON.stringify({ form: form.value, customCurrency: customCurrency.value }) !== snapshot
 }
 
-// True only when the slug field has been changed from its saved value
 const slugChanged = computed(() => form.value.slug.trim() !== savedSlug.value.trim())
 
 // ── Timer ──────────────────────────────────────────
@@ -457,7 +534,6 @@ const isOnTrial = computed(() => {
   if (!restaurant.value.trial_ends_at) return false
   return new Date(restaurant.value.trial_ends_at) > now.value
 })
-
 const trialMsLeft = computed(() =>
   Math.max(0, new Date(restaurant.value.trial_ends_at) - now.value),
 )
@@ -474,19 +550,15 @@ const trialTotalDays = computed(() => {
   return Math.min(14, Math.floor((now.value - new Date(restaurant.value.created_at)) / 86400000))
 })
 const trialPercent = computed(() => Math.min(100, Math.round((trialTotalDays.value / 14) * 100)))
-
 const planStatus = computed(() => {
   if (isProPlan.value) return 'active'
   if (isStarterPlan.value) return 'starter'
   if (isOnTrial.value) return 'trial'
   return 'expired'
 })
-
-const planDisplayName = computed(() => {
-  const map = { trial: 'Trial', starter: 'Starter', pro: 'Pro' }
-  return map[restaurant.value.plan] || 'Free'
-})
-
+const planDisplayName = computed(
+  () => ({ trial: 'Trial', starter: 'Starter', pro: 'Pro' })[restaurant.value.plan] || 'Free',
+)
 const planMeta = computed(() => {
   if (isProPlan.value) return 'Full access — all features unlocked'
   if (isStarterPlan.value) return 'Limited access — upgrade to unlock all Pro features'
@@ -494,7 +566,6 @@ const planMeta = computed(() => {
     return `${trialTimeLeft.value.days}d ${trialTimeLeft.value.hours}h left in your trial`
   return 'Your trial has ended — choose a plan to continue'
 })
-
 const planBadgeLabel = computed(() => {
   if (isProPlan.value) return 'Pro'
   if (isStarterPlan.value) return 'Starter'
@@ -503,26 +574,6 @@ const planBadgeLabel = computed(() => {
 })
 
 // ── Static data ────────────────────────────────────
-const currencies = [
-  { code: 'USD', symbol: '$', name: 'US Dollar' },
-  { code: 'EUR', symbol: '€', name: 'Euro' },
-  { code: 'GBP', symbol: '£', name: 'British Pound' },
-  { code: 'JPY', symbol: '¥', name: 'Japanese Yen' },
-  { code: 'AUD', symbol: 'A$', name: 'Australian Dollar' },
-  { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar' },
-  { code: 'SGD', symbol: 'S$', name: 'Singapore Dollar' },
-  { code: 'KHR', symbol: '៛', name: 'Cambodian Riel' },
-  { code: 'THB', symbol: '฿', name: 'Thai Baht' },
-  { code: 'PHP', symbol: '₱', name: 'Philippine Peso' },
-  { code: 'VND', symbol: '₫', name: 'Vietnamese Dong' },
-  { code: 'IDR', symbol: 'Rp', name: 'Indonesian Rupiah' },
-  { code: 'MYR', symbol: 'RM', name: 'Malaysian Ringgit' },
-  { code: 'CNY', symbol: '¥', name: 'Chinese Yuan' },
-  { code: 'INR', symbol: '₹', name: 'Indian Rupee' },
-  { code: 'BRL', symbol: 'R$', name: 'Brazilian Real' },
-  { code: 'MXN', symbol: '$', name: 'Mexican Peso' },
-]
-
 const timezones = [
   { value: 'UTC', label: 'UTC' },
   { value: 'America/New_York', label: 'Eastern Time (US & Canada)' },
@@ -544,12 +595,21 @@ const timezones = [
   { value: 'Pacific/Auckland', label: 'Auckland (NZST)' },
 ]
 
+// Currency preview — handles both known ISO codes and custom "RM MYR" format
 const currencyPreview = computed(() => {
+  const currency = form.value.currency
+
+  if (currency === 'OTHER') {
+    // Use custom symbol with manually formatted number
+    const err = validateCustomCurrency(customCurrency.value)
+    if (err) return '—'
+    const sym = parsedCustomSymbol()
+    return `${sym} 1,234.50`
+  }
+
+  // Try Intl for known ISO codes
   try {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: form.value.currency,
-    }).format(1234.5)
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(1234.5)
   } catch {
     return '—'
   }
@@ -577,13 +637,20 @@ async function fetchSettings() {
 
   if (!error && data) {
     restaurant.value = data
+    const stored = data.currency || 'USD'
+
     form.value = {
       name: data.name || '',
       slug: data.slug || '',
       address: data.address || '',
       logoUrl: data.logo_url || '',
-      currency: data.currency || 'USD',
       timezone: data.timezone || 'UTC',
+      // If stored value is not one of the 8 known codes, switch to OTHER
+      currency: KNOWN_CODES.includes(stored) ? stored : 'OTHER',
+    }
+
+    if (!KNOWN_CODES.includes(stored)) {
+      customCurrency.value = stored // populate the custom field
     }
   }
   takeSnapshot()
@@ -625,13 +692,23 @@ function removeLogo() {
 }
 
 // ── Save flow ──────────────────────────────────────
-// If the slug changed, show the confirmation modal first.
-// Otherwise save immediately.
 function handleSave() {
   if (!form.value.name.trim()) {
     saveError.value = 'Restaurant name is required.'
     return
   }
+
+  // Validate custom currency before saving
+  if (form.value.currency === 'OTHER') {
+    const err = validateCustomCurrency(customCurrency.value)
+    if (err) {
+      customCurrencyError.value = err
+      tooltipVisible.value = true
+      saveError.value = 'Please fix the currency format before saving.'
+      return
+    }
+  }
+
   if (slugChanged.value) {
     slugConfirmModal.value = true
     return
@@ -639,7 +716,6 @@ function handleSave() {
   saveSettings()
 }
 
-// Called from the confirmation modal "Yes" button
 function confirmAndSave() {
   slugConfirmModal.value = false
   saveSettings()
@@ -657,7 +733,7 @@ async function saveSettings() {
       slug: form.value.slug.trim(),
       address: form.value.address.trim() || null,
       logo_url: form.value.logoUrl || null,
-      currency: form.value.currency,
+      currency: resolvedCurrency.value, // "USD" or "RM MYR"
       timezone: form.value.timezone,
     })
     .eq('id', authStore.profile?.restaurant_id)
@@ -679,7 +755,10 @@ async function saveSettings() {
 }
 
 function discardChanges() {
-  form.value = JSON.parse(snapshot)
+  const snap = JSON.parse(snapshot)
+  form.value = snap.form
+  customCurrency.value = snap.customCurrency
+  customCurrencyError.value = ''
   isDirty.value = false
   saveError.value = ''
   saveSuccess.value = ''
@@ -1057,7 +1136,7 @@ onUnmounted(() => {
   box-shadow: 0 0 0 3px var(--color-accent-muted);
 }
 
-/* Slug field — split into two rows */
+/* Slug */
 .slug-row-label {
   font-size: 11px;
   font-weight: 700;
@@ -1067,8 +1146,6 @@ onUnmounted(() => {
   min-width: 72px;
   flex-shrink: 0;
 }
-
-/* Row 1: read-only base URL */
 .slug-base-url {
   display: flex;
   align-items: center;
@@ -1085,8 +1162,6 @@ onUnmounted(() => {
   font-family: monospace;
   word-break: break-all;
 }
-
-/* Row 2: editable slug name */
 .slug-name-row {
   display: flex;
   align-items: center;
@@ -1136,8 +1211,6 @@ onUnmounted(() => {
   margin-right: 8px;
   flex-shrink: 0;
 }
-
-/* Full URL preview */
 .slug-full-preview {
   font-size: 12px;
   color: var(--color-text-muted);
@@ -1152,7 +1225,6 @@ onUnmounted(() => {
 .slug-full-preview strong {
   color: var(--color-accent);
 }
-
 .form-hint {
   display: flex;
   align-items: center;
@@ -1162,6 +1234,89 @@ onUnmounted(() => {
 }
 .warning {
   color: #facc15;
+}
+
+/* ── Custom currency ── */
+.custom-currency-wrap {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.custom-currency-field {
+  position: relative;
+}
+
+.custom-input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.custom-currency-field.has-error .custom-input {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12) !important;
+}
+
+/* Floating tooltip */
+.currency-tooltip {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--color-bg-surface, #1e1e1e);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #f87171;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 8px 12px;
+  border-radius: 8px;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  z-index: 50;
+  pointer-events: none;
+}
+
+.tooltip-arrow {
+  position: absolute;
+  bottom: -5px;
+  left: 50%;
+  transform: translateX(-50%) rotate(45deg);
+  width: 8px;
+  height: 8px;
+  background: var(--color-bg-surface, #1e1e1e);
+  border-right: 1px solid rgba(239, 68, 68, 0.4);
+  border-bottom: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+.tooltip-fade-enter-active,
+.tooltip-fade-leave-active {
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
+}
+.tooltip-fade-enter-from,
+.tooltip-fade-leave-to {
+  opacity: 0;
+  transform: translateX(-50%) translateY(4px);
+}
+
+.currency-format-hint {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+  margin: 0;
+}
+.hint-example {
+  font-family: monospace;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 11px;
 }
 
 /* ── Preview ── */
@@ -1493,7 +1648,7 @@ onUnmounted(() => {
   z-index: 10;
 }
 
-/* ── Slug Confirm Modal ── */
+/* ── Modal ── */
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -1565,8 +1720,6 @@ onUnmounted(() => {
   color: var(--color-accent);
   border-color: var(--color-accent-border);
 }
-
-/* Impact list */
 .impact-list {
   background: var(--color-bg-elevated);
   border: 1px solid var(--color-border-subtle);
@@ -1603,7 +1756,6 @@ onUnmounted(() => {
   background: rgba(74, 222, 128, 0.12);
   color: #4ade80;
 }
-
 .modal-footer {
   display: flex;
   justify-content: flex-end;
@@ -1626,8 +1778,10 @@ onUnmounted(() => {
     flex-direction: column;
     align-items: flex-start;
   }
-  .slug-prefix {
-    font-size: 11px;
+  .currency-tooltip {
+    white-space: normal;
+    max-width: 240px;
+    text-align: center;
   }
 }
 </style>

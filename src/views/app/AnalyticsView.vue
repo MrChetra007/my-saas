@@ -657,12 +657,26 @@ onBeforeUnmount(destroyCharts)
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 function formatCurrency(amount) {
-  const currency = authStore.profile?.restaurants?.currency || 'USD'
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency,
-    maximumFractionDigits: 0,
-  }).format(amount)
+  const currency = authStore.restaurantCurrency || 'USD'
+  const num = (amount || 0).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+
+  // Custom currency: "RM MYR" → extract symbol before the space
+  const spaceIndex = currency.indexOf(' ')
+  if (spaceIndex !== -1) {
+    const symbol = currency.slice(0, spaceIndex)
+    return `${symbol} ${num}`
+  }
+
+  // Known ISO code — use Intl
+  try {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency,
+      maximumFractionDigits: 0,
+    }).format(amount || 0)
+  } catch {
+    return `${currency} ${num}`
+  }
 }
 </script>
 

@@ -108,12 +108,21 @@ function orderTotal(order) {
 }
 
 function formatCurrency(amount) {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-  }).format(amount)
-}
+  const currency = authStore.restaurantCurrency || 'USD'
+  const num = (amount || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')
 
+  const spaceIndex = currency.indexOf(' ')
+  if (spaceIndex !== -1) {
+    const symbol = currency.slice(0, spaceIndex)
+    return `${symbol} ${num}`
+  }
+
+  try {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount || 0)
+  } catch {
+    return `${currency} ${num}`
+  }
+}
 function formatTime(iso) {
   return new Date(iso).toLocaleTimeString('en-US', {
     hour: '2-digit',

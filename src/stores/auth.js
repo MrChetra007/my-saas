@@ -6,7 +6,8 @@ export const useAuthStore = defineStore('auth', {
     user: null,
     profile: null,
     loading: true,
-    restaurantTimezone: 'UTC', // 👈 add this
+    restaurantTimezone: 'UTC',
+    restaurantCurrency: 'USD', // 👈 added
   }),
 
   getters: {
@@ -47,7 +48,6 @@ export const useAuthStore = defineStore('auth', {
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
           if (session?.user) {
             this.user = session.user
-            // Don't await here to avoid blocking auth flow
             this.fetchProfile().catch((err) => console.error('Background fetchProfile error:', err))
           }
         }
@@ -77,16 +77,18 @@ export const useAuthStore = defineStore('auth', {
 
       this.profile = data
 
-      // 👇 fetch timezone right after profile is set
+      // Fetch timezone + currency in one query
       if (data?.restaurant_id) {
         const { data: restaurant } = await supabase
           .from('restaurants')
-          .select('timezone')
+          .select('timezone, currency') // 👈 added currency
           .eq('id', data.restaurant_id)
           .single()
 
         this.restaurantTimezone = restaurant?.timezone || 'UTC'
+        this.restaurantCurrency = restaurant?.currency || 'USD' // 👈 added
       }
+
       console.log('AuthStore: fetchProfile success', !!data)
     },
 

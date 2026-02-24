@@ -62,7 +62,7 @@
               <span class="item-qty">{{ item.quantity }}×</span>
               <span class="item-name">{{ item.menu_items?.name ?? 'Unknown Item' }}</span>
             </div>
-            <span class="item-price">${{ (item.unit_price * item.quantity).toFixed(2) }}</span>
+            <span class="item-price">{{ formatCurrency(item.unit_price * item.quantity) }}</span>
           </div>
         </div>
 
@@ -80,7 +80,7 @@
           </div>
           <div class="order-total">
             <span class="total-label">Total</span>
-            <span class="total-value">${{ orderTotal(order).toFixed(2) }}</span>
+            <span class="total-value">{{ formatCurrency(orderTotal(order)) }}</span>
           </div>
         </div>
 
@@ -127,6 +127,23 @@ function formatTime(iso) {
     hour: '2-digit',
     minute: '2-digit',
   })
+}
+
+function formatCurrency(amount) {
+  const currency = authStore.restaurantCurrency || 'USD'
+  const num = (amount || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+
+  const spaceIndex = currency.indexOf(' ')
+  if (spaceIndex !== -1) {
+    const symbol = currency.slice(0, spaceIndex)
+    return `${symbol} ${num}`
+  }
+
+  try {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount || 0)
+  } catch {
+    return `${currency} ${num}`
+  }
 }
 
 function formatStatus(status) {

@@ -540,8 +540,18 @@ const currency = ref('USD')
 const imageInput = ref(null)
 
 const currencySymbol = computed(() => {
+  const currency = authStore.restaurantCurrency || 'USD'
   const map = { USD: '$', EUR: '€', GBP: '£', KHR: '៛', THB: '฿', SGD: 'S$', AUD: 'A$', JPY: '¥' }
-  return map[currency.value] || '$'
+
+  // Known currency — use the map
+  if (map[currency]) return map[currency]
+
+  // Custom currency: "RM MYR" → extract symbol before the space
+  const spaceIndex = currency.indexOf(' ')
+  if (spaceIndex !== -1) return currency.slice(0, spaceIndex)
+
+  // Fallback
+  return currency || '$'
 })
 
 const filteredItems = computed(() => {

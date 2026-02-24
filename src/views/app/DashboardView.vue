@@ -394,8 +394,22 @@ function updateClock() {
 }
 
 function formatCurrency(amount) {
-  const currency = authStore.profile?.restaurants?.currency || 'USD'
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount || 0)
+  const currency = authStore.restaurantCurrency || 'USD'
+  const num = (amount || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+
+  // Custom currency stored as "RM MYR" → extract symbol before the space
+  const spaceIndex = currency.indexOf(' ')
+  if (spaceIndex !== -1) {
+    const symbol = currency.slice(0, spaceIndex)
+    return `${symbol} ${num}`
+  }
+
+  // Known ISO code — use Intl
+  try {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount || 0)
+  } catch {
+    return `${currency} ${num}`
+  }
 }
 
 function timeElapsed(createdAt) {

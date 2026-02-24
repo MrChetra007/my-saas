@@ -139,16 +139,53 @@
               <!-- Currency -->
               <div class="field-group">
                 <label class="field-label">Currency</label>
-                <select v-model="step1.currency" class="field-input">
-                  <option value="USD">USD — $</option>
-                  <option value="EUR">EUR — €</option>
-                  <option value="GBP">GBP — £</option>
-                  <option value="KHR">KHR — ៛</option>
-                  <option value="THB">THB — ฿</option>
-                  <option value="SGD">SGD — S$</option>
-                  <option value="AUD">AUD — A$</option>
-                  <option value="JPY">JPY — ¥</option>
+                <select v-model="step1.currency" class="field-input" @change="onCurrencyChange">
+                  <option v-for="c in KNOWN_CURRENCIES" :key="c.code" :value="c.code">
+                    {{ c.symbol }} {{ c.code }}
+                  </option>
+                  <option value="OTHER">✏️ Other (custom)</option>
                 </select>
+
+                <!-- Custom currency input -->
+                <div v-if="step1.currency === 'OTHER'" class="custom-currency-wrap">
+                  <div class="custom-currency-field" :class="{ 'has-error': customCurrencyError }">
+                    <input
+                      v-model="customCurrency"
+                      type="text"
+                      class="field-input custom-input"
+                      placeholder="e.g. RM MYR"
+                      @input="onCustomCurrencyInput"
+                      @focus="tooltipVisible = true"
+                      @blur="tooltipVisible = false"
+                      autocomplete="off"
+                    />
+                    <!-- Floating tooltip -->
+                    <transition name="tooltip-fade">
+                      <div v-if="customCurrencyError && tooltipVisible" class="currency-tooltip">
+                        <svg
+                          width="12"
+                          height="12"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-width="2.5"
+                        >
+                          <circle cx="12" cy="12" r="10" />
+                          <line x1="12" y1="8" x2="12" y2="12" />
+                          <line x1="12" y1="16" x2="12.01" y2="16" />
+                        </svg>
+                        {{ customCurrencyError }}
+                        <div class="tooltip-arrow" />
+                      </div>
+                    </transition>
+                  </div>
+                  <p class="currency-format-hint">
+                    Format: <strong>symbol · space · code</strong> — e.g.
+                    <span class="hint-example">RM MYR</span>,
+                    <span class="hint-example">R$ BRL</span>,
+                    <span class="hint-example">₱ PHP</span>
+                  </p>
+                </div>
               </div>
 
               <!-- Timezone -->
@@ -218,7 +255,6 @@
           </div>
 
           <div class="fields">
-            <!-- Category -->
             <div class="field-group">
               <label class="field-label">Category Name</label>
               <div class="category-suggestions">
@@ -243,7 +279,6 @@
 
             <div class="section-divider"><span>then add a dish</span></div>
 
-            <!-- Item name -->
             <div class="field-group">
               <label class="field-label">Dish Name</label>
               <input
@@ -254,7 +289,6 @@
               />
             </div>
 
-            <!-- Description -->
             <div class="field-group">
               <label class="field-label"
                 >Description <span class="optional">(optional)</span></label
@@ -267,7 +301,6 @@
               />
             </div>
 
-            <!-- Price -->
             <div class="field-group">
               <label class="field-label">Price</label>
               <div class="price-input-wrap">
@@ -356,7 +389,6 @@
             </div>
           </div>
 
-          <!-- QR Preview -->
           <div v-if="qrDataUrl" class="qr-preview-box">
             <div class="qr-badge">Your QR Code</div>
             <div class="qr-frame">
@@ -421,22 +453,89 @@ const totalSteps = 3
 const loading = ref(false)
 const error = ref('')
 
-// ── Step 1 ──────────────────────────────────────────────
+// ── Known currencies (8 fixed) ───────────────────────
+const KNOWN_CURRENCIES = [
+  { code: 'USD', symbol: '$' },
+  { code: 'EUR', symbol: '€' },
+  { code: 'GBP', symbol: '£' },
+  { code: 'JPY', symbol: '¥' },
+  { code: 'AUD', symbol: 'A$' },
+  { code: 'SGD', symbol: 'S$' },
+  { code: 'KHR', symbol: '៛' },
+  { code: 'THB', symbol: '฿' },
+]
+const KNOWN_CODES = KNOWN_CURRENCIES.map((c) => c.code)
+
+// ── Step 1 ───────────────────────────────────────────
 const step1 = ref({ name: '', address: '', currency: 'USD', timezone: 'UTC' })
 const logoInput = ref(null)
 const logoFile = ref(null)
 const logoPreview = ref('')
 
-// ── Step 2 ──────────────────────────────────────────────
+// ── Custom currency state ────────────────────────────
+const customCurrency = ref('') // raw input: e.g. "RM MYR"
+const customCurrencyError = ref('') // validation message
+const tooltipVisible = ref(false) // controls floating tooltip
+
+function onCurrencyChange() {
+  if (step1.value.currency !== 'OTHER') {
+    customCurrency.value = ''
+    customCurrencyError.value = ''
+  } else {
+    tooltipVisible.value = true
+  }
+}
+
+function validateCustomCurrency(val) {
+  const v = val.trim()
+  if (!v) return 'Please enter your custom currency.'
+
+  const spaceIndex = v.indexOf(' ')
+  if (spaceIndex === -1) {
+    return 'Format: symbol · space · code — e.g. RM MYR'
+  }
+
+  const symbol = v.slice(0, spaceIndex)
+  const code = v.slice(spaceIndex + 1).trim()
+
+  if (!symbol) return 'Symbol is missing — e.g. RM MYR'
+  if (!code) return 'Currency code is missing — e.g. RM MYR'
+  if (code !== code.toUpperCase())
+    return `Code must be uppercase — use "${code.toUpperCase()}" not "${code}"`
+  if (!/^[A-Z]{2,5}$/.test(code)) return 'Currency code must be 2–5 letters — e.g. MYR, BRL, PHP'
+
+  return ''
+}
+
+function onCustomCurrencyInput() {
+  customCurrencyError.value = validateCustomCurrency(customCurrency.value)
+  tooltipVisible.value = !!customCurrencyError.value
+}
+
+// Parse symbol from custom input
+function parsedCustomSymbol() {
+  const v = customCurrency.value.trim()
+  const spaceIndex = v.indexOf(' ')
+  return spaceIndex !== -1 ? v.slice(0, spaceIndex) : v || '?'
+}
+
+// The value actually stored in DB (e.g. "USD" or "RM MYR")
+const resolvedCurrency = computed(() => {
+  if (step1.value.currency === 'OTHER') return customCurrency.value.trim()
+  return step1.value.currency
+})
+
+// ── Step 2 ───────────────────────────────────────────
 const step2 = ref({ categoryName: '', itemName: '', itemDescription: '', itemPrice: '' })
 const categorySuggestions = ['Starters', 'Mains', 'Desserts', 'Drinks', 'Specials']
 
 const currencySymbol = computed(() => {
-  const map = { USD: '$', EUR: '€', GBP: '£', KHR: '៛', THB: '฿', SGD: 'S$', AUD: 'A$', JPY: '¥' }
-  return map[step1.value.currency] || '$'
+  if (step1.value.currency === 'OTHER') return parsedCustomSymbol()
+  const found = KNOWN_CURRENCIES.find((c) => c.code === step1.value.currency)
+  return found ? found.symbol : '$'
 })
 
-// ── Step 3 ──────────────────────────────────────────────
+// ── Step 3 ───────────────────────────────────────────
 const step3 = ref({ tableName: 'Table 1' })
 const tableSuggestions = ['Table 1', 'Table 2', 'Bar Seat', 'VIP Room', 'Terrace']
 const qrDataUrl = ref('')
@@ -456,7 +555,7 @@ watch(
   },
 )
 
-// ── Logo ─────────────────────────────────────────────────
+// ── Logo ──────────────────────────────────────────────
 function triggerLogoUpload() {
   logoInput.value?.click()
 }
@@ -471,13 +570,25 @@ function handleLogoChange(e) {
   logoPreview.value = URL.createObjectURL(file)
 }
 
-// ── Step 1 Save ───────────────────────────────────────────
+// ── Step 1 Save ───────────────────────────────────────
 async function saveStep1() {
   error.value = ''
   if (!step1.value.name.trim()) {
     error.value = 'Please enter your restaurant name.'
     return
   }
+
+  // Validate custom currency if selected
+  if (step1.value.currency === 'OTHER') {
+    const err = validateCustomCurrency(customCurrency.value)
+    if (err) {
+      customCurrencyError.value = err
+      tooltipVisible.value = true
+      error.value = 'Please fix the currency format before continuing.'
+      return
+    }
+  }
+
   loading.value = true
   try {
     const {
@@ -489,6 +600,7 @@ async function saveStep1() {
       .eq('id', user.id)
       .single()
     const restaurantId = profile.restaurant_id
+
     let logo_url = null
     if (logoFile.value) {
       const ext = logoFile.value.name.split('.').pop()
@@ -500,17 +612,19 @@ async function saveStep1() {
       const { data: urlData } = supabase.storage.from('restaurant-assets').getPublicUrl(path)
       logo_url = urlData.publicUrl
     }
+
     const { error: updateError } = await supabase
       .from('restaurants')
       .update({
         name: step1.value.name.trim(),
         address: step1.value.address.trim() || null,
-        currency: step1.value.currency,
+        currency: resolvedCurrency.value, // stores "USD" or "RM MYR"
         timezone: step1.value.timezone,
         ...(logo_url && { logo_url }),
         updated_at: new Date().toISOString(),
       })
       .eq('id', restaurantId)
+
     if (updateError) throw updateError
     currentStep.value = 2
   } catch (err) {
@@ -520,7 +634,7 @@ async function saveStep1() {
   }
 }
 
-// ── Step 2 Save ───────────────────────────────────────────
+// ── Step 2 Save ───────────────────────────────────────
 async function saveStep2() {
   error.value = ''
   if (!step2.value.categoryName.trim()) {
@@ -542,12 +656,14 @@ async function saveStep2() {
       .eq('id', user.id)
       .single()
     const restaurantId = profile.restaurant_id
+
     const { data: category, error: catError } = await supabase
       .from('menu_categories')
       .insert({ restaurant_id: restaurantId, name: step2.value.categoryName.trim(), sort_order: 0 })
       .select()
       .single()
     if (catError) throw catError
+
     const { error: itemError } = await supabase.from('menu_items').insert({
       restaurant_id: restaurantId,
       category_id: category.id,
@@ -557,6 +673,7 @@ async function saveStep2() {
       sort_order: 0,
     })
     if (itemError) throw itemError
+
     const { data: restaurant } = await supabase
       .from('restaurants')
       .select('slug')
@@ -585,7 +702,7 @@ async function createTableRow(restaurantId) {
   await generateQr()
 }
 
-// ── Step 3 Save ───────────────────────────────────────────
+// ── Step 3 Save ───────────────────────────────────────
 async function saveStep3() {
   error.value = ''
   if (!step3.value.tableName.trim()) {
@@ -625,7 +742,7 @@ async function saveStep3() {
   }
 }
 
-// ── QR Code ───────────────────────────────────────────────
+// ── QR Code ───────────────────────────────────────────
 async function generateQr() {
   if (!restaurantSlug.value || !newTableId.value) return
   try {
@@ -647,6 +764,7 @@ function downloadQr() {
   link.click()
 }
 
+// ── Load existing restaurant data ─────────────────────
 async function loadRestaurantData() {
   const {
     data: { user },
@@ -663,13 +781,22 @@ async function loadRestaurantData() {
     .select('name, address, currency, timezone, logo_url, slug')
     .eq('id', profile.restaurant_id)
     .single()
+
   if (restaurant) {
     step1.value.name = restaurant.name || ''
     step1.value.address = restaurant.address || ''
-    step1.value.currency = restaurant.currency || 'USD'
     step1.value.timezone = restaurant.timezone || 'UTC'
     if (restaurant.logo_url) logoPreview.value = restaurant.logo_url
     restaurantSlug.value = restaurant.slug || ''
+
+    // Auto-detect custom currency on load
+    const stored = restaurant.currency || 'USD'
+    if (KNOWN_CODES.includes(stored)) {
+      step1.value.currency = stored
+    } else {
+      step1.value.currency = 'OTHER'
+      customCurrency.value = stored
+    }
   }
 }
 
@@ -690,7 +817,6 @@ loadRestaurantData()
   overflow: hidden;
 }
 
-/* Ambient background effects */
 .bg-noise {
   position: fixed;
   inset: 0;
@@ -712,7 +838,6 @@ loadRestaurantData()
   z-index: 0;
 }
 
-/* ── Wrapper ── */
 .onboarding-wrapper {
   width: 100%;
   max-width: 520px;
@@ -727,7 +852,6 @@ loadRestaurantData()
   gap: 10px;
   margin-bottom: 36px;
 }
-
 .logo-icon {
   width: 34px;
   height: 34px;
@@ -739,7 +863,6 @@ loadRestaurantData()
   justify-content: center;
   color: #c8733a;
 }
-
 .logo-text {
   font-family: 'Fraunces', serif;
   font-size: 18px;
@@ -748,7 +871,7 @@ loadRestaurantData()
   letter-spacing: -0.02em;
 }
 
-/* ── Progress bar ── */
+/* ── Progress ── */
 .progress-track {
   height: 2px;
   background: rgba(255, 255, 255, 0.07);
@@ -756,7 +879,6 @@ loadRestaurantData()
   margin-bottom: 20px;
   overflow: hidden;
 }
-
 .progress-fill {
   height: 100%;
   background: linear-gradient(90deg, #c8733a, #d4844e);
@@ -771,7 +893,6 @@ loadRestaurantData()
   gap: 8px;
   margin-bottom: 24px;
 }
-
 .step-dot {
   width: 28px;
   height: 28px;
@@ -786,14 +907,12 @@ loadRestaurantData()
   color: rgba(255, 255, 255, 0.3);
   transition: all 0.3s ease;
 }
-
 .step-dot.step-active {
   background: rgba(200, 115, 58, 0.2);
   border-color: rgba(200, 115, 58, 0.5);
   color: #c8733a;
   box-shadow: 0 0 0 3px rgba(200, 115, 58, 0.1);
 }
-
 .step-dot.step-done {
   background: rgba(200, 115, 58, 0.15);
   border-color: rgba(200, 115, 58, 0.4);
@@ -808,7 +927,6 @@ loadRestaurantData()
   padding: 36px 32px;
   box-shadow: 0 24px 56px rgba(0, 0, 0, 0.4);
 }
-
 .step-label {
   font-size: 11px;
   font-weight: 600;
@@ -817,7 +935,6 @@ loadRestaurantData()
   color: #c8733a;
   margin-bottom: 8px;
 }
-
 .step-title {
   font-family: 'Fraunces', serif;
   font-size: 26px;
@@ -827,7 +944,6 @@ loadRestaurantData()
   line-height: 1.15;
   margin-bottom: 6px;
 }
-
 .step-sub {
   font-size: 14px;
   color: rgba(255, 255, 255, 0.45);
@@ -849,7 +965,6 @@ loadRestaurantData()
   margin-bottom: 20px;
   line-height: 1.4;
 }
-
 .error-box svg {
   flex-shrink: 0;
 }
@@ -861,30 +976,25 @@ loadRestaurantData()
   gap: 18px;
   margin-bottom: 28px;
 }
-
 .field-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 14px;
 }
-
 .field-group {
   display: flex;
   flex-direction: column;
   gap: 7px;
 }
-
 .field-label {
   font-size: 13px;
   font-weight: 500;
   color: rgba(255, 255, 255, 0.55);
 }
-
 .optional {
   font-weight: 400;
   color: rgba(255, 255, 255, 0.25);
 }
-
 .field-input {
   width: 100%;
   padding: 10px 14px;
@@ -902,21 +1012,17 @@ loadRestaurantData()
   -webkit-appearance: none;
   box-sizing: border-box;
 }
-
 .field-input::placeholder {
   color: rgba(255, 255, 255, 0.2);
 }
-
 .field-input:hover {
   border-color: rgba(255, 255, 255, 0.15);
 }
-
 .field-input:focus {
   border-color: rgba(200, 115, 58, 0.4);
   box-shadow: 0 0 0 3px rgba(200, 115, 58, 0.1);
 }
 
-/* Select arrow */
 select.field-input {
   background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L5 5L9 1' stroke='rgba(255,255,255,0.3)' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
@@ -924,7 +1030,6 @@ select.field-input {
   padding-right: 36px;
   cursor: pointer;
 }
-
 select.field-input option {
   background: #1e1e1e;
   color: #ffffff;
@@ -935,9 +1040,90 @@ select.field-input option {
   min-height: 68px;
   line-height: 1.5;
 }
-
 .mt-2 {
   margin-top: 8px;
+}
+
+/* ── Custom currency ── */
+.custom-currency-wrap {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.custom-currency-field {
+  position: relative;
+}
+
+.custom-input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.custom-currency-field.has-error .custom-input {
+  border-color: rgba(239, 68, 68, 0.5) !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
+}
+
+/* Floating tooltip */
+.currency-tooltip {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #2a1a1a;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #f87171;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 8px 12px;
+  border-radius: 8px;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  z-index: 10;
+  pointer-events: none;
+}
+
+.tooltip-arrow {
+  position: absolute;
+  bottom: -5px;
+  left: 50%;
+  transform: translateX(-50%) rotate(45deg);
+  width: 8px;
+  height: 8px;
+  background: #2a1a1a;
+  border-right: 1px solid rgba(239, 68, 68, 0.4);
+  border-bottom: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+.tooltip-fade-enter-active,
+.tooltip-fade-leave-active {
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
+}
+.tooltip-fade-enter-from,
+.tooltip-fade-leave-to {
+  opacity: 0;
+  transform: translateX(-50%) translateY(4px);
+}
+
+.currency-format-hint {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.3);
+  line-height: 1.5;
+  margin: 0;
+}
+.hint-example {
+  font-family: monospace;
+  background: rgba(255, 255, 255, 0.07);
+  border-radius: 4px;
+  padding: 1px 5px;
+  color: rgba(255, 255, 255, 0.5);
 }
 
 /* ── Logo upload ── */
@@ -956,20 +1142,17 @@ select.field-input option {
   overflow: hidden;
   background: rgba(255, 255, 255, 0.02);
 }
-
 .logo-upload:hover,
 .logo-upload.has-logo {
   border-color: rgba(200, 115, 58, 0.5);
   border-style: solid;
   background: rgba(200, 115, 58, 0.04);
 }
-
 .logo-preview {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
-
 .logo-placeholder {
   display: flex;
   flex-direction: column;
@@ -980,18 +1163,15 @@ select.field-input option {
   text-align: center;
   padding: 10px;
 }
-
 .logo-placeholder svg {
   color: #c8733a;
   opacity: 0.7;
   margin-bottom: 2px;
 }
-
 .upload-hint {
   font-size: 10px;
   color: rgba(255, 255, 255, 0.2);
 }
-
 .hidden-input {
   display: none;
 }
@@ -1002,7 +1182,6 @@ select.field-input option {
   flex-wrap: wrap;
   gap: 6px;
 }
-
 .suggestion-chip {
   padding: 5px 13px;
   border-radius: 99px;
@@ -1015,13 +1194,11 @@ select.field-input option {
   transition: all 0.15s;
   font-family: 'DM Sans', sans-serif;
 }
-
 .suggestion-chip:hover {
   border-color: rgba(200, 115, 58, 0.4);
   color: #c8733a;
   background: rgba(200, 115, 58, 0.06);
 }
-
 .suggestion-chip.active {
   border-color: rgba(200, 115, 58, 0.5);
   background: rgba(200, 115, 58, 0.15);
@@ -1039,7 +1216,6 @@ select.field-input option {
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
-
 .section-divider::before,
 .section-divider::after {
   content: '';
@@ -1053,7 +1229,6 @@ select.field-input option {
   display: flex;
   align-items: stretch;
 }
-
 .currency-symbol {
   padding: 10px 13px;
   background: rgba(255, 255, 255, 0.04);
@@ -1067,7 +1242,6 @@ select.field-input option {
   display: flex;
   align-items: center;
 }
-
 .price-input {
   border-radius: 0 8px 8px 0 !important;
 }
@@ -1084,7 +1258,6 @@ select.field-input option {
   gap: 12px;
   margin-bottom: 24px;
 }
-
 .qr-badge {
   font-size: 10px;
   font-weight: 600;
@@ -1096,21 +1269,18 @@ select.field-input option {
   padding: 4px 10px;
   border-radius: 99px;
 }
-
 .qr-frame {
   padding: 10px;
   background: #ffffff;
   border-radius: 10px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
 }
-
 .qr-image {
   width: 150px;
   height: 150px;
   display: block;
   border-radius: 2px;
 }
-
 .qr-url {
   font-size: 11px;
   color: rgba(255, 255, 255, 0.2);
@@ -1119,7 +1289,6 @@ select.field-input option {
   max-width: 280px;
   line-height: 1.5;
 }
-
 .btn-download {
   display: flex;
   align-items: center;
@@ -1135,7 +1304,6 @@ select.field-input option {
   font-family: 'DM Sans', sans-serif;
   transition: all 0.15s;
 }
-
 .btn-download:hover {
   background: rgba(200, 115, 58, 0.14);
   border-color: rgba(200, 115, 58, 0.5);
@@ -1158,31 +1326,25 @@ select.field-input option {
     box-shadow 0.15s,
     transform 0.1s;
 }
-
 .btn-next:hover:not(:disabled) {
   background: #d4844e;
   box-shadow: 0 0 20px rgba(200, 115, 58, 0.35);
 }
-
 .btn-next:active:not(:disabled) {
   background: #b05d2e;
   transform: scale(0.99);
 }
-
 .btn-next:disabled {
   opacity: 0.4;
   cursor: not-allowed;
 }
-
 .btn-row {
   display: flex;
   gap: 10px;
 }
-
 .btn-row .btn-next {
   flex: 1;
 }
-
 .btn-back {
   padding: 12px 18px;
   background: transparent;
@@ -1196,24 +1358,21 @@ select.field-input option {
   transition: all 0.15s;
   white-space: nowrap;
 }
-
 .btn-back:hover {
   border-color: rgba(255, 255, 255, 0.2);
   color: rgba(255, 255, 255, 0.6);
 }
 
-/* Loading state */
+/* Loading */
 .loading-state {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
 }
-
 .spinner {
   animation: spin 0.8s linear infinite;
 }
-
 @keyframes spin {
   from {
     transform: rotate(0deg);
@@ -1228,12 +1387,10 @@ select.field-input option {
 .slide-leave-active {
   transition: all 0.28s cubic-bezier(0.4, 0, 0.2, 1);
 }
-
 .slide-enter-from {
   opacity: 0;
   transform: translateX(20px);
 }
-
 .slide-leave-to {
   opacity: 0;
   transform: translateX(-20px);
@@ -1244,13 +1401,16 @@ select.field-input option {
   .step-card {
     padding: 28px 20px;
   }
-
   .field-row {
     grid-template-columns: 1fr;
   }
-
   .step-title {
     font-size: 22px;
+  }
+  .currency-tooltip {
+    white-space: normal;
+    max-width: 220px;
+    text-align: center;
   }
 }
 </style>

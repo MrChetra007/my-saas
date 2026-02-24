@@ -79,10 +79,7 @@
                 <div class="item-info">
                   <h3 class="item-name">{{ item.name }}</h3>
                   <p class="item-desc" v-if="item.description">{{ item.description }}</p>
-                  <div class="item-price">
-                    <span class="price-currency">$</span>
-                    <span class="price-value">{{ Number(item.price).toFixed(2) }}</span>
-                  </div>
+                  <div class="item-price">{{ formatCurrency(item.price) }}</div>
                 </div>
 
                 <div class="item-actions" v-if="item.is_available !== false">
@@ -143,7 +140,7 @@
           <ShoppingCart class="fab-icon" />
           <div class="fab-info">
             <span class="fab-label">View Order</span>
-            <span class="fab-meta">{{ totalQty }} items • ${{ cartTotal.toFixed(2) }}</span>
+            <span class="fab-meta">{{ totalQty }} items • {{ formatCurrency(cartTotal) }}</span>
           </div>
         </div>
         <div class="fab-badge" v-if="totalQty > 0">{{ totalQty }}</div>
@@ -187,11 +184,11 @@
                     <div class="cart-item-info">
                       <div class="cart-item-header">
                         <span class="cart-item-name">{{ item.name }}</span>
-                        <span class="cart-item-total"
-                          >${{ (item.price * item.qty).toFixed(2) }}</span
-                        >
+                        <span class="cart-item-total">{{
+                          formatCurrency(item.price * item.qty)
+                        }}</span>
                       </div>
-                      <div class="cart-item-unit">${{ item.price.toFixed(2) }} each</div>
+                      <div class="cart-item-unit">{{ formatCurrency(item.price) }} each</div>
                     </div>
                     <div class="qty-control qty-control--compact">
                       <button
@@ -223,11 +220,11 @@
               <div class="total-section">
                 <div class="total-row">
                   <span class="total-label">Subtotal</span>
-                  <span class="total-value">${{ cartTotal.toFixed(2) }}</span>
+                  <span class="total-value">{{ formatCurrency(cartTotal) }}</span>
                 </div>
                 <div class="total-row total-row--final">
                   <span class="total-label-final">Total</span>
-                  <span class="total-value-final">${{ cartTotal.toFixed(2) }}</span>
+                  <span class="total-value-final">{{ formatCurrency(cartTotal) }}</span>
                 </div>
               </div>
               <div class="action-buttons">
@@ -300,6 +297,23 @@ const cartItems = computed(() => Object.values(cart.value).filter((i) => i.qty >
 const totalQty = computed(() => cartItems.value.reduce((s, i) => s + i.qty, 0))
 const cartTotal = computed(() => cartItems.value.reduce((s, i) => s + i.price * i.qty, 0))
 const selectedTable = computed(() => tables.value.find((t) => t.id === selectedTableId.value))
+
+function formatCurrency(amount) {
+  const currency = authStore.restaurantCurrency || 'USD'
+  const num = (amount || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+
+  const spaceIndex = currency.indexOf(' ')
+  if (spaceIndex !== -1) {
+    const symbol = currency.slice(0, spaceIndex)
+    return `${symbol} ${num}`
+  }
+
+  try {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount || 0)
+  } catch {
+    return `${currency} ${num}`
+  }
+}
 
 function increment(item) {
   if (!cart.value[item.id]) {
