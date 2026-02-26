@@ -296,7 +296,7 @@ const pageTitles = {
   '/app/promotions': 'Promotions',
 }
 
-const currentPageTitle = computed(() => pageTitles[route.path] || 'Qrder')
+const currentPageTitle = computed(() => pageTitles[route.path] || 'Qrserve')
 const userName = computed(() => authStore.profile?.full_name || 'User')
 const userInitial = computed(() => userName.value.charAt(0).toUpperCase())
 const restaurantInitial = computed(() => restaurantName.value.charAt(0).toUpperCase() || 'R')
