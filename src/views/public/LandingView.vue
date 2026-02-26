@@ -632,7 +632,7 @@
               <div class="about-avatar-ring" />
             </div>
             <div class="about-info">
-              <div class="about-name">Seth Sochetra</div>
+              <div class="about-name">Sozin</div>
               <div class="about-role">Founder &amp; Developer</div>
               <p class="about-bio">
                 Passionate about building tools that make restaurant operations effortless. Qrserve
@@ -644,28 +644,85 @@
 
           <div class="about-divider" />
 
-          <!-- Email -->
-          <div class="about-contact-row">
-            <div class="about-contact-icon">
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
+          <!-- Contact Form -->
+          <form class="about-contact-form" @submit.prevent="sendEmail">
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Your Name</label>
+                <input
+                  v-model="contactForm.name"
+                  type="text"
+                  class="form-input"
+                  placeholder="e.g. Amirah"
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label class="form-label">Your Email</label>
+                <input
+                  v-model="contactForm.email"
+                  type="email"
+                  class="form-input"
+                  placeholder="you@example.com"
+                  required
+                />
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Message</label>
+              <textarea
+                v-model="contactForm.message"
+                class="form-input form-textarea"
+                placeholder="Tell us about your restaurant or ask anything..."
+                rows="4"
+                required
+              />
+            </div>
+            <div class="form-footer">
+              <button
+                type="submit"
+                class="btn-pill form-submit-btn"
+                :disabled="emailStatus === 'sending'"
               >
-                <rect x="2" y="4" width="20" height="16" rx="3" />
-                <path d="M2 7l10 7 10-7" />
-              </svg>
+                <svg
+                  v-if="emailStatus === 'sending'"
+                  class="spin-icon"
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                  stroke-linecap="round"
+                >
+                  <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                </svg>
+                <svg
+                  v-else
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
+                  <line x1="22" y1="2" x2="11" y2="13" />
+                  <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                </svg>
+                {{ emailStatus === 'sending' ? 'Sending…' : 'Send Message' }}
+              </button>
+              <transition name="fade-msg">
+                <span v-if="emailStatus === 'success'" class="form-status success">
+                  ✓ Message sent! We'll get back to you soon.
+                </span>
+                <span v-else-if="emailStatus === 'error'" class="form-status error">
+                  ✗ Something went wrong. Please try again.
+                </span>
+              </transition>
             </div>
-            <div class="about-contact-text">
-              <span class="about-contact-label">Email</span>
-              <span class="about-contact-value">
-                <a href="mailto:sozin1234@gmail.com">sochetra411@gmail.com</a>
-              </span>
-            </div>
-          </div>
+          </form>
         </div>
 
         <!-- Footer note -->
@@ -701,11 +758,40 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, reactive } from 'vue'
 
 const scrolled = ref(false)
 const mobileMenuOpen = ref(false)
 const openFaq = ref(null)
+
+// Contact form
+const contactForm = reactive({ name: '', email: '', message: '' })
+const emailStatus = ref('') // '' | 'sending' | 'success' | 'error'
+
+async function sendEmail() {
+  emailStatus.value = 'sending'
+  try {
+    await window.emailjs.send(
+      'service_cgdixfi', // e.g. 'service_abc123'
+      'template_vjd8hsd', // e.g. 'template_xyz456'
+      {
+        from_name: contactForm.name,
+        from_email: contactForm.email,
+        message: contactForm.message,
+        to_name: 'Sozin',
+      },
+    )
+    emailStatus.value = 'success'
+    contactForm.name = ''
+    contactForm.email = ''
+    contactForm.message = ''
+    setTimeout(() => (emailStatus.value = ''), 5000)
+  } catch (err) {
+    console.error('EmailJS error:', err)
+    emailStatus.value = 'error'
+    setTimeout(() => (emailStatus.value = ''), 5000)
+  }
+}
 
 function handleScroll() {
   scrolled.value = window.scrollY > 20
@@ -848,6 +934,111 @@ const faq = [
 </script>
 
 <style scoped>
+/* ── Contact Form ─────────────────────────────────────── */
+.about-contact-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px 32px 28px;
+}
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.form-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+.form-input {
+  background: var(--color-bg-elevated);
+  border: 1.5px solid var(--color-border-subtle);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--color-text-primary);
+  outline: none;
+  transition:
+    border-color 0.18s,
+    box-shadow 0.18s;
+  width: 100%;
+  box-sizing: border-box;
+}
+.form-input::placeholder {
+  color: var(--color-text-faint);
+}
+.form-input:focus {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px var(--color-accent-muted);
+}
+.form-textarea {
+  resize: vertical;
+  min-height: 100px;
+  line-height: 1.6;
+}
+.form-footer {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.form-submit-btn {
+  flex-shrink: 0;
+}
+.form-submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+}
+.form-status {
+  font-size: 13px;
+  font-weight: 600;
+}
+.form-status.success {
+  color: var(--color-status-success);
+}
+.form-status.error {
+  color: var(--color-status-error, #f87171);
+}
+
+/* Spinner animation */
+.spin-icon {
+  animation: spin-anim 0.8s linear infinite;
+}
+@keyframes spin-anim {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Status fade transition */
+.fade-msg-enter-active,
+.fade-msg-leave-active {
+  transition: opacity 0.3s ease;
+}
+.fade-msg-enter-from,
+.fade-msg-leave-to {
+  opacity: 0;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+  .about-contact-form {
+    padding: 20px 24px 24px;
+  }
+}
 /* ── Brand icon ─────────────────────────────────────────── */
 .qrder-icon {
   width: 36px;
