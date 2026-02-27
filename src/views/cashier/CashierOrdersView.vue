@@ -432,14 +432,16 @@ function openReceiptModal(order) {
 }
 
 async function confirmPaid() {
-  // Auto-download PNG if cashier didn't download anything
   if (!receiptModal.value.downloaded) {
     await downloadPng()
-    addToast('Receipt auto-saved as PNG', 3000)
   }
+
   receiptModal.value.saving = true
-  await supabase.from('orders').update({ status: 'paid' }).eq('id', receiptModal.value.order.id)
-  await fetchTodayRevenue()
+  const order = receiptModal.value.order
+  const { error } = await supabase.from('orders').update({ status: 'paid' }).eq('id', order.id)
+  if (!error) {
+    orders.value = orders.value.filter((o) => o.id !== order.id)
+  }
   receiptModal.value.open = false
   receiptModal.value.saving = false
 }
