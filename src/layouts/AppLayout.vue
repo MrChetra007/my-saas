@@ -4,12 +4,12 @@
     <aside class="sidebar" :class="{ collapsed: sidebarCollapsed, 'mobile-open': mobileOpen }">
       <!-- Logo -->
       <div class="sidebar-logo">
-        <div class="logo-mark">
+        <div class="logo-mark" :class="{ 'logo-mark--plain': restaurantLogoUrl }">
           <img
             v-if="restaurantLogoUrl"
             :src="restaurantLogoUrl"
             alt="Restaurant Logo"
-            style="width: 28px; height: 28px; border-radius: 6px; object-fit: cover"
+            style="width: 32px; height: 32px; border-radius: 8px; object-fit: cover; display: block"
           />
           <svg v-else width="16" height="16" viewBox="0 0 32 32" fill="none">
             <rect x="2" y="2" width="10" height="10" rx="2" stroke="white" stroke-width="2" />
@@ -118,7 +118,6 @@
           <span class="nav-icon"><ChefHat :size="16" /></span>
           <span class="nav-label" v-show="!sidebarCollapsed">Kitchen</span>
           <span class="nav-tooltip" v-show="sidebarCollapsed">Kitchen</span>
-          <!-- cooking count badge — same pattern as Orders -->
           <span
             class="nav-badge nav-badge--cooking"
             v-if="cookingCount > 0"
@@ -263,7 +262,7 @@ const authStore = useAuthStore()
 const sidebarCollapsed = ref(false)
 const mobileOpen = ref(false)
 const pendingCount = ref(0)
-const cookingCount = ref(0) // ← NEW
+const cookingCount = ref(0)
 const restaurantName = ref('')
 const restaurantPlan = ref('trial')
 const restaurantLogoUrl = ref('')
@@ -337,7 +336,6 @@ async function loadCounts() {
   const startOfDay = getStartOfDayISO(timezone)
   const restaurantId = authStore.profile.restaurant_id
 
-  // Run both queries in parallel
   const [{ count: pending }, { count: cooking }] = await Promise.all([
     supabase
       .from('orders')
@@ -369,7 +367,7 @@ function subscribeToOrders() {
         table: 'orders',
         filter: `restaurant_id=eq.${authStore.profile.restaurant_id}`,
       },
-      () => loadCounts(), // refresh both counts on any order change
+      () => loadCounts(),
     )
     .subscribe()
 }
@@ -435,6 +433,8 @@ onUnmounted(() => {
   border-bottom: 1px solid var(--color-border-subtle);
   flex-shrink: 0;
 }
+
+/* Default logo-mark: orange bg for the fallback SVG icon */
 .logo-mark {
   width: 32px;
   height: 32px;
@@ -445,7 +445,15 @@ onUnmounted(() => {
   justify-content: center;
   flex-shrink: 0;
   box-shadow: var(--shadow-glow);
+  overflow: hidden;
 }
+
+/* When a real logo image is present: remove the orange bg entirely */
+.logo-mark--plain {
+  background: transparent;
+  box-shadow: none;
+}
+
 .logo-text {
   font-family: var(--font-display);
   font-size: 16px;
@@ -562,7 +570,6 @@ onUnmounted(() => {
 .nav-item.nav-active .nav-icon {
   color: var(--color-accent);
 }
-
 .nav-item.nav-pro {
   cursor: pointer;
 }
@@ -591,7 +598,6 @@ onUnmounted(() => {
   flex: 1;
 }
 
-/* Orders badge — orange (pending/urgent) */
 .nav-badge {
   background: var(--color-accent);
   color: #fff;
@@ -604,10 +610,8 @@ onUnmounted(() => {
   font-family: var(--font-body);
   line-height: 1.4;
 }
-
-/* Kitchen badge — yellow (cooking/in-progress) */
 .nav-badge--cooking {
-  background: #ca8a04; /* amber-600 — distinct from pending orange */
+  background: #ca8a04;
   color: #fff;
 }
 
@@ -620,8 +624,6 @@ onUnmounted(() => {
   top: 7px;
   right: 7px;
 }
-
-/* Cooking dot — offset slightly so both can show when collapsed */
 .nav-badge-dot--cooking {
   background: #ca8a04;
   top: 7px;
