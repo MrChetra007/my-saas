@@ -6,20 +6,56 @@
         <p class="header-sub">Live order management</p>
         <h1 class="header-title">Orders</h1>
       </div>
-      <button v-if="isWaiter || isAdmin" class="btn-new-order" @click="openNewOrder">
-        <svg
-          width="14"
-          height="14"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2.5"
+      <div class="header-actions">
+        <button
+          class="btn-sound-toggle"
+          :class="{ 'sound-off': !soundEnabled }"
+          @click="soundEnabled = !soundEnabled"
+          :title="soundEnabled ? 'Mute order alerts' : 'Unmute order alerts'"
         >
-          <line x1="12" y1="5" x2="12" y2="19" />
-          <line x1="5" y1="12" x2="19" y2="12" />
-        </svg>
-        New Order
-      </button>
+          <svg
+            v-if="soundEnabled"
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+            <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+          </svg>
+          <svg
+            v-else
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+            <line x1="23" y1="9" x2="17" y2="15" />
+            <line x1="17" y1="9" x2="23" y2="15" />
+          </svg>
+          {{ soundEnabled ? 'Sound On' : 'Sound Off' }}
+        </button>
+        <button v-if="isWaiter || isAdmin" class="btn-new-order" @click="openNewOrder">
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+          >
+            <line x1="12" y1="5" x2="12" y2="19" />
+            <line x1="5" y1="12" x2="19" y2="12" />
+          </svg>
+          New Order
+        </button>
+      </div>
     </div>
 
     <!-- ── Filter Tabs ─────────────────────────────────── -->
@@ -443,6 +479,36 @@
         </div>
       </div>
     </Teleport>
+
+    <!-- ── Toast Notifications ── -->
+    <Teleport to="body">
+      <div class="toast-container">
+        <TransitionGroup name="toast">
+          <div v-for="toast in toasts" :key="toast.id" class="toast" @click="removeToast(toast.id)">
+            <div class="toast-icon-wrap">
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+                <line x1="3" y1="6" x2="21" y2="6" />
+                <path d="M16 10a4 4 0 0 1-8 0" />
+              </svg>
+            </div>
+            <div class="toast-content">
+              <span class="toast-title">New Order Ready!</span>
+              <span class="toast-body">{{ toast.message }}</span>
+            </div>
+            <button class="toast-close" @click.stop="removeToast(toast.id)">×</button>
+            <div class="toast-progress" :style="{ animationDuration: toast.duration + 'ms' }" />
+          </div>
+        </TransitionGroup>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -486,6 +552,74 @@ const filteredOrders = computed(() => {
   if (activeTab.value === 'all') return orders.value
   return orders.value.filter((o) => o.status === activeTab.value)
 })
+
+// ─── Sound & Toast State ──────────────────────────────────────────────────────
+const soundEnabled = ref(true)
+const toasts = ref([])
+let toastIdCounter = 0
+let knownOrderIds = new Set()
+
+function addToast(message, duration = 4000) {
+  const id = ++toastIdCounter
+  toasts.value.push({ id, message, duration })
+  setTimeout(() => removeToast(id), duration)
+}
+
+function removeToast(id) {
+  toasts.value = toasts.value.filter((t) => t.id !== id)
+}
+
+function playCashRegisterSound() {
+  if (!soundEnabled.value) return
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)()
+    const playTone = (frequency, startTime, duration, gainPeak = 0.4) => {
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+      osc.connect(gain)
+      gain.connect(ctx.destination)
+      osc.type = 'square'
+      osc.frequency.setValueAtTime(frequency, startTime)
+      gain.gain.setValueAtTime(0, startTime)
+      gain.gain.linearRampToValueAtTime(gainPeak, startTime + 0.01)
+      gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration)
+      osc.start(startTime)
+      osc.stop(startTime + duration + 0.05)
+    }
+    const playNoise = (startTime, duration, gainPeak = 0.25) => {
+      const bufferSize = ctx.sampleRate * duration
+      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate)
+      const data = buffer.getChannelData(0)
+      for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1
+      const source = ctx.createBufferSource()
+      source.buffer = buffer
+      const gain = ctx.createGain()
+      const filter = ctx.createBiquadFilter()
+      filter.type = 'bandpass'
+      filter.frequency.value = 800
+      filter.Q.value = 0.8
+      source.connect(filter)
+      filter.connect(gain)
+      gain.connect(ctx.destination)
+      gain.gain.setValueAtTime(gainPeak, startTime)
+      gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration)
+      source.start(startTime)
+      source.stop(startTime + duration + 0.05)
+    }
+    const t = ctx.currentTime
+    playNoise(t, 0.06, 0.3)
+    playTone(180, t, 0.07, 0.15)
+    playTone(2200, t + 0.05, 0.35, 0.35)
+    playTone(2800, t + 0.07, 0.25, 0.2)
+    playTone(1800, t + 0.09, 0.3, 0.15)
+    playNoise(t + 0.12, 0.18, 0.15)
+    playNoise(t + 0.28, 0.1, 0.35)
+    playTone(120, t + 0.28, 0.12, 0.2)
+    setTimeout(() => ctx.close(), 800)
+  } catch (e) {
+    console.warn('Audio playback failed:', e)
+  }
+}
 
 // ─── Receipt Modal ─────────────────────────────────────────────────────────────
 // `downloaded` tracks whether PNG or PDF was downloaded before confirming paid.
@@ -794,7 +928,21 @@ async function fetchOrders() {
     .eq('restaurant_id', restaurantId)
     .gte('created_at', getStartOfDayISO(timezone))
     .order('created_at', { ascending: false })
-  if (!error) orders.value = data || []
+  if (!error) {
+    const incoming = data || []
+    // Detect new ready orders after initial load
+    if (knownOrderIds.size > 0) {
+      const newReady = incoming.filter((o) => o.status === 'ready' && !knownOrderIds.has(o.id))
+      newReady.forEach((o) => {
+        const tableName = o.tables?.name ?? 'Unknown Table'
+        const itemCount = o.order_items?.length ?? 0
+        addToast(`${tableName} · ${itemCount} item${itemCount !== 1 ? 's' : ''}`)
+        playCashRegisterSound()
+      })
+    }
+    knownOrderIds = new Set(incoming.map((o) => o.id))
+    orders.value = incoming
+  }
   loading.value = false
 }
 
@@ -889,6 +1037,8 @@ function subscribeRealtime() {
 onMounted(async () => {
   await Promise.all([fetchOrders(), fetchTables(), fetchRestaurantName()])
   if (isWaiter.value || isAdmin.value) await fetchMenu()
+  // Seed known IDs so first load doesn't trigger alerts
+  knownOrderIds = new Set(orders.value.map((o) => o.id))
   subscribeRealtime()
 })
 
@@ -1827,6 +1977,162 @@ onUnmounted(() => {
   opacity: 0;
 }
 
+/* ── Header Actions ──────────────────────────────────────── */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* ── Sound Toggle ────────────────────────────────────────── */
+.btn-sound-toggle {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px;
+  border-radius: var(--radius-pill, 999px);
+  border: 1px solid rgba(74, 222, 128, 0.3);
+  background: rgba(74, 222, 128, 0.08);
+  color: #4ade80;
+  font-size: 12.5px;
+  font-weight: 600;
+  font-family: var(--font-body, 'DM Sans', sans-serif);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.btn-sound-toggle:hover {
+  background: rgba(74, 222, 128, 0.15);
+  border-color: rgba(74, 222, 128, 0.5);
+}
+.btn-sound-toggle.sound-off {
+  border-color: var(--color-border-subtle, rgba(255, 255, 255, 0.07));
+  background: transparent;
+  color: var(--color-text-muted, rgba(255, 255, 255, 0.35));
+}
+.btn-sound-toggle.sound-off:hover {
+  border-color: var(--color-border-medium, rgba(255, 255, 255, 0.15));
+  color: var(--color-text-secondary, rgba(255, 255, 255, 0.55));
+}
+
+/* ── Toast Container ─────────────────────────────────────── */
+.toast-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;
+}
+
+/* ── Toast Card ──────────────────────────────────────────── */
+.toast {
+  pointer-events: all;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--color-bg-surface, #161616);
+  border: 1px solid rgba(74, 222, 128, 0.3);
+  border-radius: 14px;
+  padding: 14px 16px;
+  width: 300px;
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(74, 222, 128, 0.1);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(12px);
+}
+.toast:hover {
+  border-color: rgba(74, 222, 128, 0.5);
+}
+.toast-icon-wrap {
+  width: 36px;
+  height: 36px;
+  background: rgba(74, 222, 128, 0.12);
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #4ade80;
+}
+.toast-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.toast-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #4ade80;
+  letter-spacing: 0.01em;
+}
+.toast-body {
+  font-size: 13px;
+  color: var(--color-text-primary, #fff);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.toast-close {
+  background: none;
+  border: none;
+  color: var(--color-text-muted, rgba(255, 255, 255, 0.35));
+  font-size: 18px;
+  cursor: pointer;
+  line-height: 1;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: color 0.15s;
+  flex-shrink: 0;
+}
+.toast-close:hover {
+  color: var(--color-text-primary, #fff);
+}
+.toast-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  width: 100%;
+  background: linear-gradient(90deg, #4ade80, #22c55e);
+  border-radius: 0 0 14px 14px;
+  transform-origin: left;
+  animation: toast-shrink linear forwards;
+}
+@keyframes toast-shrink {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+
+/* ── Toast Transitions ───────────────────────────────────── */
+.toast-enter-active {
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.toast-leave-active {
+  transition: all 0.2s ease-in;
+}
+.toast-enter-from {
+  opacity: 0;
+  transform: translateX(110%);
+}
+.toast-leave-to {
+  opacity: 0;
+  transform: translateX(110%) scale(0.95);
+}
+.toast-move {
+  transition: transform 0.25s ease;
+}
+
 /* ── Responsive ──────────────────────────────────────────── */
 @media (max-width: 768px) {
   .orders-grid {
@@ -1834,6 +2140,12 @@ onUnmounted(() => {
   }
   .header-title {
     font-size: 1.5rem;
+  }
+  .header-actions {
+    gap: 8px;
+  }
+  .btn-sound-toggle span {
+    display: none;
   }
   .receipt-modal-footer {
     flex-direction: column;
@@ -1850,6 +2162,14 @@ onUnmounted(() => {
   .btn-ghost {
     width: 100%;
     justify-content: center;
+  }
+  .toast-container {
+    top: 12px;
+    right: 12px;
+    left: 12px;
+  }
+  .toast {
+    width: 100%;
   }
 }
 </style>
