@@ -126,27 +126,9 @@
         <!-- Actions -->
         <div class="card-actions">
           <button
-            v-if="isCashier && order.status === 'ready'"
+            v-if="(isCashier || isAdmin) && order.status === 'ready'"
             class="btn-action btn-paid"
-            @click="markAsPaid(order)"
-          >
-            <svg
-              width="13"
-              height="13"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2.5"
-            >
-              <polyline points="20 6 9 17 4 12" />
-            </svg>
-            Mark as Paid
-          </button>
-
-          <button
-            v-if="isAdmin && order.status === 'ready'"
-            class="btn-action btn-paid"
-            @click="markAsPaid(order)"
+            @click="openReceiptModal(order)"
           >
             <svg
               width="13"
@@ -297,6 +279,170 @@
         </div>
       </div>
     </Transition>
+
+    <!-- ══ RECEIPT PREVIEW MODAL ══════════════════════════ -->
+    <Teleport to="body">
+      <div v-if="receiptModal.open" class="modal-overlay" @click.self="receiptModal.open = false">
+        <div class="modal modal--receipt">
+          <!-- Modal Header -->
+          <div class="modal-header">
+            <div class="receipt-modal-header-left">
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                style="color: var(--color-accent, #c8733a)"
+              >
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+                <line x1="16" y1="13" x2="8" y2="13" />
+                <line x1="16" y1="17" x2="8" y2="17" />
+                <polyline points="10 9 9 9 8 9" />
+              </svg>
+              <div>
+                <h2 class="modal-title">Order Receipt</h2>
+                <p class="receipt-modal-subtitle">Preview before downloading</p>
+              </div>
+            </div>
+            <button class="modal-close" @click="receiptModal.open = false">
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+              >
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          </div>
+
+          <!-- Receipt Preview -->
+          <div class="modal-body receipt-modal-body">
+            <div class="receipt-preview">
+              <div class="receipt-header">
+                <div class="receipt-restaurant">{{ restaurantName }}</div>
+                <div class="receipt-tagline">Thank you for dining with us!</div>
+                <div class="receipt-divider">· · · · · · · · · · · · · · ·</div>
+              </div>
+
+              <div class="receipt-meta">
+                <div class="receipt-meta-row">
+                  <span class="receipt-meta-label">Table</span>
+                  <span class="receipt-meta-value">{{
+                    receiptModal.order?.tables?.name ?? '—'
+                  }}</span>
+                </div>
+                <div class="receipt-meta-row">
+                  <span class="receipt-meta-label">Order ID</span>
+                  <span class="receipt-meta-value receipt-mono"
+                    >#{{ receiptModal.order?.id.slice(-6).toUpperCase() }}</span
+                  >
+                </div>
+                <div class="receipt-meta-row">
+                  <span class="receipt-meta-label">Date</span>
+                  <span class="receipt-meta-value">{{
+                    formatDate(receiptModal.order?.created_at)
+                  }}</span>
+                </div>
+                <div class="receipt-meta-row">
+                  <span class="receipt-meta-label">Time</span>
+                  <span class="receipt-meta-value">{{
+                    formatTimeHuman(receiptModal.order?.created_at)
+                  }}</span>
+                </div>
+              </div>
+
+              <div class="receipt-divider">· · · · · · · · · · · · · · ·</div>
+
+              <div class="receipt-items">
+                <div
+                  v-for="item in receiptModal.order?.order_items"
+                  :key="item.id"
+                  class="receipt-item"
+                >
+                  <div class="receipt-item-left">
+                    <span class="receipt-item-qty">{{ item.quantity }}×</span>
+                    <span class="receipt-item-name">{{ item.menu_items?.name ?? 'Item' }}</span>
+                  </div>
+                  <span class="receipt-item-price">{{
+                    formatCurrency(item.unit_price * item.quantity)
+                  }}</span>
+                </div>
+              </div>
+
+              <div class="receipt-divider">· · · · · · · · · · · · · · ·</div>
+
+              <div class="receipt-total-row">
+                <span class="receipt-total-label">TOTAL</span>
+                <span class="receipt-total-value">{{
+                  formatCurrency(orderTotal(receiptModal.order))
+                }}</span>
+              </div>
+
+              <div class="receipt-footer">
+                <div class="receipt-divider">· · · · · · · · · · · · · · ·</div>
+                <div class="receipt-thanks">✦ Have a great day! ✦</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Modal Footer -->
+          <div class="modal-footer receipt-modal-footer">
+            <button class="btn-ghost" @click="receiptModal.open = false">Cancel</button>
+            <div class="download-group">
+              <button class="btn-download-png" @click="downloadPng" :disabled="receiptModal.saving">
+                <svg
+                  width="13"
+                  height="13"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <rect x="3" y="3" width="18" height="18" rx="2" />
+                  <circle cx="8.5" cy="8.5" r="1.5" />
+                  <polyline points="21 15 16 10 5 21" />
+                </svg>
+                PNG
+              </button>
+              <button class="btn-download-pdf" @click="downloadPdf" :disabled="receiptModal.saving">
+                <svg
+                  width="13"
+                  height="13"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                </svg>
+                PDF
+              </button>
+            </div>
+            <button class="btn-confirm-paid" @click="confirmPaid" :disabled="receiptModal.saving">
+              <svg
+                width="13"
+                height="13"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2.5"
+              >
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+              {{ receiptModal.saving ? 'Processing…' : 'Confirm Paid' }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -319,6 +465,7 @@ const orders = ref([])
 const tables = ref([])
 const menuCategories = ref([])
 const activeTab = ref('all')
+const restaurantName = ref('Restaurant')
 
 const allTabs = [
   { label: 'All', value: 'all' },
@@ -340,7 +487,211 @@ const filteredOrders = computed(() => {
   return orders.value.filter((o) => o.status === activeTab.value)
 })
 
-// ─── New Order (Waiter) ───────────────────────────────────────────────────────
+// ─── Receipt Modal ─────────────────────────────────────────────────────────────
+// `downloaded` tracks whether PNG or PDF was downloaded before confirming paid.
+// If neither was downloaded, confirmPaid auto-downloads a PNG first.
+const receiptModal = ref({ open: false, order: null, saving: false, downloaded: false })
+
+function openReceiptModal(order) {
+  receiptModal.value = { open: true, order, saving: false, downloaded: false }
+}
+
+async function confirmPaid() {
+  // Auto-download PNG if cashier skipped both download buttons
+  if (!receiptModal.value.downloaded) {
+    await downloadPng()
+  }
+
+  receiptModal.value.saving = true
+  const order = receiptModal.value.order
+  const { error } = await supabase.from('orders').update({ status: 'paid' }).eq('id', order.id)
+  if (!error) {
+    const found = orders.value.find((o) => o.id === order.id)
+    if (found) found.status = 'paid'
+  }
+  receiptModal.value.open = false
+  receiptModal.value.saving = false
+}
+
+// ─── PNG Download ──────────────────────────────────────────────────────────────
+async function downloadPng() {
+  const order = receiptModal.value.order
+  const canvas = drawReceiptToCanvas(order)
+  const a = document.createElement('a')
+  a.download = `receipt-${order.id.slice(-6).toUpperCase()}.png`
+  a.href = canvas.toDataURL('image/png')
+  a.click()
+  receiptModal.value.downloaded = true
+}
+
+function drawReceiptToCanvas(order) {
+  const W = 480
+  const padding = 40
+  const lineH = 28
+  const items = order.order_items || []
+
+  const totalH = 80 + 24 + 20 + 24 * 4 + 20 + items.length * lineH + 20 + 44 + 60
+
+  const canvas = document.createElement('canvas')
+  canvas.width = W
+  canvas.height = totalH
+  const ctx = canvas.getContext('2d')
+
+  ctx.fillStyle = '#ffffff'
+  ctx.fillRect(0, 0, W, totalH)
+
+  let y = 40
+
+  ctx.fillStyle = '#111827'
+  ctx.font = 'bold 22px sans-serif'
+  ctx.textAlign = 'center'
+  ctx.fillText(restaurantName.value, W / 2, y)
+  y += 28
+
+  ctx.fillStyle = '#6b7280'
+  ctx.font = '13px sans-serif'
+  ctx.fillText('Thank you for dining with us!', W / 2, y)
+  y += 24
+
+  ctx.fillStyle = '#d1d5db'
+  ctx.fillText('· · · · · · · · · · · · · · · · · ·', W / 2, y)
+  y += 24
+
+  const meta = [
+    ['Table', order.tables?.name ?? '—'],
+    ['Order ID', `#${order.id.slice(-6).toUpperCase()}`],
+    ['Date', formatDate(order.created_at)],
+    ['Time', formatTimeHuman(order.created_at)],
+  ]
+  ctx.textAlign = 'left'
+  for (const [label, value] of meta) {
+    ctx.fillStyle = '#6b7280'
+    ctx.font = '13px sans-serif'
+    ctx.fillText(label, padding, y)
+    ctx.fillStyle = '#111827'
+    ctx.textAlign = 'right'
+    ctx.fillText(value, W - padding, y)
+    ctx.textAlign = 'left'
+    y += 24
+  }
+
+  ctx.fillStyle = '#d1d5db'
+  ctx.textAlign = 'center'
+  ctx.fillText('· · · · · · · · · · · · · · · · · ·', W / 2, y)
+  y += 24
+
+  for (const item of items) {
+    ctx.textAlign = 'left'
+    ctx.fillStyle = '#374151'
+    ctx.font = '14px sans-serif'
+    ctx.fillText(`${item.quantity}× ${item.menu_items?.name ?? 'Item'}`, padding, y)
+    ctx.textAlign = 'right'
+    ctx.fillStyle = '#111827'
+    ctx.fillText(formatCurrency(item.unit_price * item.quantity), W - padding, y)
+    y += lineH
+  }
+
+  ctx.fillStyle = '#d1d5db'
+  ctx.textAlign = 'center'
+  ctx.fillText('· · · · · · · · · · · · · · · · · ·', W / 2, y)
+  y += 28
+
+  ctx.textAlign = 'left'
+  ctx.fillStyle = '#111827'
+  ctx.font = 'bold 16px sans-serif'
+  ctx.fillText('TOTAL', padding, y)
+  ctx.textAlign = 'right'
+  ctx.font = 'bold 18px sans-serif'
+  ctx.fillText(formatCurrency(orderTotal(order)), W - padding, y)
+  y += 36
+
+  ctx.fillStyle = '#d1d5db'
+  ctx.textAlign = 'center'
+  ctx.font = '13px sans-serif'
+  ctx.fillText('· · · · · · · · · · · · · · · · · ·', W / 2, y)
+  y += 20
+  ctx.fillStyle = '#9ca3af'
+  ctx.fillText('✦ Have a great day! ✦', W / 2, y)
+
+  return canvas
+}
+
+// ─── PDF Download ──────────────────────────────────────────────────────────────
+function downloadPdf() {
+  const order = receiptModal.value.order
+  receiptModal.value.downloaded = true
+
+  const items = order.order_items || []
+
+  const itemRows = items
+    .map(
+      (item) => `
+      <tr>
+        <td class="item-qty">${item.quantity}×</td>
+        <td class="item-name">${item.menu_items?.name ?? 'Item'}</td>
+        <td class="item-price">${formatCurrency(item.unit_price * item.quantity)}</td>
+      </tr>`,
+    )
+    .join('')
+
+  const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Receipt - #${order.id.slice(-6).toUpperCase()}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'DM Sans', sans-serif; background: #fff; display: flex; justify-content: center; padding: 40px 20px; color: #111827; }
+    .receipt { width: 320px; padding: 32px 28px; border: 1px dashed #d1d5db; border-radius: 8px; }
+    .restaurant { font-size: 20px; font-weight: 700; text-align: center; margin-bottom: 6px; }
+    .tagline { font-size: 12px; color: #6b7280; text-align: center; margin-bottom: 16px; }
+    .divider { text-align: center; color: #d1d5db; font-size: 12px; letter-spacing: 2px; margin: 12px 0; }
+    .meta-table { width: 100%; font-size: 13px; border-collapse: collapse; }
+    .meta-table td { padding: 3px 0; }
+    .meta-table .label { color: #6b7280; }
+    .meta-table .value { text-align: right; font-weight: 500; }
+    .items-table { width: 100%; font-size: 13px; border-collapse: collapse; }
+    .items-table td { padding: 5px 0; vertical-align: top; }
+    .item-qty { width: 28px; color: #6b7280; }
+    .item-price { text-align: right; font-weight: 500; white-space: nowrap; }
+    .total-row { display: flex; justify-content: space-between; align-items: center; margin-top: 4px; }
+    .total-label { font-size: 13px; font-weight: 700; letter-spacing: 0.08em; }
+    .total-value { font-size: 20px; font-weight: 700; }
+    .footer-thanks { text-align: center; font-size: 12px; color: #9ca3af; margin-top: 4px; }
+    @media print { body { padding: 0; } .receipt { border: none; } }
+  </style>
+</head>
+<body>
+  <div class="receipt">
+    <div class="restaurant">${restaurantName.value}</div>
+    <div class="tagline">Thank you for dining with us!</div>
+    <div class="divider">· · · · · · · · · · · · ·</div>
+    <table class="meta-table">
+      <tr><td class="label">Table</td><td class="value">${order.tables?.name ?? '—'}</td></tr>
+      <tr><td class="label">Order ID</td><td class="value">#${order.id.slice(-6).toUpperCase()}</td></tr>
+      <tr><td class="label">Date</td><td class="value">${formatDate(order.created_at)}</td></tr>
+      <tr><td class="label">Time</td><td class="value">${formatTimeHuman(order.created_at)}</td></tr>
+    </table>
+    <div class="divider">· · · · · · · · · · · · ·</div>
+    <table class="items-table">${itemRows}</table>
+    <div class="divider">· · · · · · · · · · · · ·</div>
+    <div class="total-row">
+      <span class="total-label">TOTAL</span>
+      <span class="total-value">${formatCurrency(orderTotal(order))}</span>
+    </div>
+    <div class="divider">· · · · · · · · · · · · ·</div>
+    <div class="footer-thanks">✦ Have a great day! ✦</div>
+  </div>
+  <script>window.onload = () => { window.print(); window.onafterprint = () => window.close(); }<\/script>
+</body>
+</html>`
+
+  const win = window.open('', '_blank', 'width=480,height=700')
+  win.document.write(html)
+  win.document.close()
+}
+
+// ─── New Order ────────────────────────────────────────────────────────────────
 const showNewOrder = ref(false)
 const submitting = ref(false)
 const newOrderError = ref('')
@@ -353,26 +704,22 @@ const cartTotal = computed(() => cartItems.value.reduce((sum, i) => sum + i.pric
 function cartQty(itemId) {
   return cart.value[itemId]?.quantity || 0
 }
-
 function addToCart(item) {
   if (!cart.value[item.id])
     cart.value[item.id] = { id: item.id, name: item.name, price: item.price, quantity: 0 }
   cart.value[item.id].quantity++
 }
-
 function removeFromCart(itemId) {
   if (!cart.value[itemId]) return
   cart.value[itemId].quantity--
   if (cart.value[itemId].quantity <= 0) delete cart.value[itemId]
 }
-
 function openNewOrder() {
   newOrder.value = { tableId: '', note: '' }
   cart.value = {}
   newOrderError.value = ''
   showNewOrder.value = true
 }
-
 function closeNewOrder() {
   if (submitting.value) return
   showNewOrder.value = false
@@ -382,13 +729,8 @@ function closeNewOrder() {
 function formatCurrency(amount) {
   const currency = authStore.restaurantCurrency || 'USD'
   const num = (amount || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',')
-
   const spaceIndex = currency.indexOf(' ')
-  if (spaceIndex !== -1) {
-    const symbol = currency.slice(0, spaceIndex)
-    return `${symbol} ${num}`
-  }
-
+  if (spaceIndex !== -1) return `${currency.slice(0, spaceIndex)} ${num}`
   try {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount || 0)
   } catch {
@@ -407,71 +749,85 @@ function statusLabel(status) {
   return { pending: 'Pending', cooking: 'Cooking', ready: 'Ready', paid: 'Paid' }[status] || status
 }
 
-// ✅ Calculate total from order_items — no total_price column needed
 function orderTotal(order) {
-  return (order.order_items || []).reduce(
+  return (order?.order_items || []).reduce(
     (sum, item) => sum + (item.unit_price || 0) * (item.quantity || 1),
     0,
   )
 }
 
-// ✅ Correct way
+function formatDate(iso) {
+  return new Date(iso).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  })
+}
+
+function formatTimeHuman(iso) {
+  return new Date(iso).toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+  })
+}
+
 function getStartOfDayISO(timezone) {
   const todayStr = new Intl.DateTimeFormat('en-CA', {
     timeZone: timezone,
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
-  }).format(new Date()) // gives "YYYY-MM-DD" in their local time
-
+  }).format(new Date())
   return new Date(`${todayStr}T00:00:00`).toISOString()
 }
 
-// ─── Fetch Today Data ───────────────────────────────────────────────────────────────
+// ─── Fetch ────────────────────────────────────────────────────────────────────
 async function fetchOrders() {
   const restaurantId = authStore.profile?.restaurant_id
   const timezone = authStore.restaurantTimezone || 'UTC'
-
   const { data, error } = await supabase
     .from('orders')
     .select(
       'id, status, notes, created_at, tables(name), order_items(id, quantity, unit_price, menu_items(name))',
     )
     .eq('restaurant_id', restaurantId)
-    .gte('created_at', getStartOfDayISO(timezone)) // 👈 only today
+    .gte('created_at', getStartOfDayISO(timezone))
     .order('created_at', { ascending: false })
-
   if (!error) orders.value = data || []
   loading.value = false
 }
 
 async function fetchTables() {
-  const restaurantId = authStore.profile?.restaurant_id
   const { data } = await supabase
     .from('tables')
     .select('id, name')
-    .eq('restaurant_id', restaurantId)
+    .eq('restaurant_id', authStore.profile?.restaurant_id)
     .order('name')
   tables.value = data || []
 }
 
 async function fetchMenu() {
-  const restaurantId = authStore.profile?.restaurant_id
   const { data } = await supabase
     .from('menu_categories')
     .select('id, name, menu_items(id, name, price, is_available)')
-    .eq('restaurant_id', restaurantId)
+    .eq('restaurant_id', authStore.profile?.restaurant_id)
     .eq('menu_items.is_available', true)
     .order('name')
   menuCategories.value = (data || []).filter((c) => c.menu_items?.length > 0)
 }
 
-// ─── Actions ──────────────────────────────────────────────────────────────────
-async function markAsPaid(order) {
-  const { error } = await supabase.from('orders').update({ status: 'paid' }).eq('id', order.id)
-  if (!error) order.status = 'paid'
+async function fetchRestaurantName() {
+  if (!authStore.profile?.restaurant_id) return
+  const { data } = await supabase
+    .from('restaurants')
+    .select('name')
+    .eq('id', authStore.profile.restaurant_id)
+    .single()
+  if (data?.name) restaurantName.value = data.name
 }
 
+// ─── Actions ──────────────────────────────────────────────────────────────────
 async function cancelOrder(order) {
   const { error } = await supabase.from('orders').update({ status: 'cancelled' }).eq('id', order.id)
   if (!error) orders.value = orders.value.filter((o) => o.id !== order.id)
@@ -482,9 +838,7 @@ async function submitOrder() {
   if (!newOrder.value.tableId || cartItems.value.length === 0) return
   submitting.value = true
   const restaurantId = authStore.profile?.restaurant_id
-
   try {
-    // 1. Create the order (no total_price column)
     const { data: orderData, error: orderErr } = await supabase
       .from('orders')
       .insert({
@@ -495,18 +849,16 @@ async function submitOrder() {
       })
       .select()
       .single()
-
     if (orderErr) throw new Error(orderErr.message)
 
-    // 2. Insert order items
-    const items = cartItems.value.map((i) => ({
-      order_id: orderData.id,
-      menu_item_id: i.id,
-      quantity: i.quantity,
-      unit_price: i.price,
-    }))
-
-    const { error: itemsErr } = await supabase.from('order_items').insert(items)
+    const { error: itemsErr } = await supabase.from('order_items').insert(
+      cartItems.value.map((i) => ({
+        order_id: orderData.id,
+        menu_item_id: i.id,
+        quantity: i.quantity,
+        unit_price: i.price,
+      })),
+    )
     if (itemsErr) throw new Error(itemsErr.message)
 
     showNewOrder.value = false
@@ -527,12 +879,7 @@ function subscribeRealtime() {
     .channel('orders-view')
     .on(
       'postgres_changes',
-      {
-        event: '*',
-        schema: 'public',
-        table: 'orders',
-        filter: `restaurant_id=eq.${restaurantId}`,
-      },
+      { event: '*', schema: 'public', table: 'orders', filter: `restaurant_id=eq.${restaurantId}` },
       () => fetchOrders(),
     )
     .subscribe()
@@ -540,8 +887,7 @@ function subscribeRealtime() {
 
 // ─── Lifecycle ────────────────────────────────────────────────────────────────
 onMounted(async () => {
-  await fetchOrders()
-  await fetchTables()
+  await Promise.all([fetchOrders(), fetchTables(), fetchRestaurantName()])
   if (isWaiter.value || isAdmin.value) await fetchMenu()
   subscribeRealtime()
 })
@@ -720,8 +1066,6 @@ onUnmounted(() => {
   border-color: var(--color-border-medium, rgba(255, 255, 255, 0.12));
   transform: translateY(-1px);
 }
-
-/* Left color stripe */
 .card-stripe {
   position: absolute;
   left: 0;
@@ -741,8 +1085,6 @@ onUnmounted(() => {
 .stripe--paid {
   background: rgba(255, 255, 255, 0.12);
 }
-
-/* Offset content so stripe doesn't overlap */
 .card-header,
 .card-items,
 .card-note,
@@ -751,7 +1093,6 @@ onUnmounted(() => {
   padding-left: 18px;
   padding-right: 16px;
 }
-
 .card-header {
   display: flex;
   justify-content: space-between;
@@ -787,8 +1128,6 @@ onUnmounted(() => {
   color: var(--color-text-muted, rgba(255, 255, 255, 0.35));
   margin: 0;
 }
-
-/* Status badge */
 .status-badge {
   display: flex;
   align-items: center;
@@ -826,8 +1165,6 @@ onUnmounted(() => {
   color: rgba(255, 255, 255, 0.4);
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
-
-/* Items */
 .card-items {
   display: flex;
   flex-direction: column;
@@ -853,8 +1190,6 @@ onUnmounted(() => {
   font-size: 12px;
   color: var(--color-text-muted, rgba(255, 255, 255, 0.35));
 }
-
-/* Note */
 .card-note {
   display: flex;
   align-items: flex-start;
@@ -873,8 +1208,6 @@ onUnmounted(() => {
   margin-top: 1px;
   opacity: 0.5;
 }
-
-/* Total */
 .card-total {
   display: flex;
   justify-content: space-between;
@@ -893,12 +1226,9 @@ onUnmounted(() => {
   color: var(--color-text-primary, #fff);
   letter-spacing: -0.3px;
 }
-
-/* Actions */
 .card-actions {
   padding-bottom: 14px;
 }
-
 .btn-action {
   width: 100%;
   padding: 9px;
@@ -930,7 +1260,6 @@ onUnmounted(() => {
 .btn-cancel-order:hover {
   background: rgba(239, 68, 68, 0.15);
 }
-
 .card-waiting {
   display: flex;
   align-items: center;
@@ -971,7 +1300,7 @@ onUnmounted(() => {
   margin: 0;
 }
 
-/* ── Modal ───────────────────────────────────────────────── */
+/* ── Modal (shared) ──────────────────────────────────────── */
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -998,7 +1327,9 @@ onUnmounted(() => {
 .modal--lg {
   max-width: 600px;
 }
-
+.modal--receipt {
+  max-width: 460px;
+}
 @keyframes modal-in {
   from {
     opacity: 0;
@@ -1009,7 +1340,6 @@ onUnmounted(() => {
     transform: scale(1) translateY(0);
   }
 }
-
 .modal-header {
   display: flex;
   justify-content: space-between;
@@ -1017,6 +1347,7 @@ onUnmounted(() => {
   padding: 20px 24px 16px;
   border-bottom: 1px solid var(--color-border-subtle, rgba(255, 255, 255, 0.07));
   flex-shrink: 0;
+  background: var(--color-bg-elevated, #0e0e0e);
 }
 .modal-title {
   font-family: var(--font-display, 'Fraunces', serif);
@@ -1044,7 +1375,6 @@ onUnmounted(() => {
   background: rgba(255, 255, 255, 0.06);
   color: var(--color-text-primary, #fff);
 }
-
 .modal-body {
   padding: 20px 24px;
   overflow-y: auto;
@@ -1063,6 +1393,196 @@ onUnmounted(() => {
   border-top: 1px solid var(--color-border-subtle, rgba(255, 255, 255, 0.07));
   background: var(--color-bg-elevated, #0e0e0e);
   flex-shrink: 0;
+}
+
+/* ── Receipt Modal specifics ─────────────────────────────── */
+.receipt-modal-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.receipt-modal-subtitle {
+  font-size: 11px;
+  color: var(--color-text-muted, rgba(255, 255, 255, 0.35));
+  margin-top: 2px;
+}
+.receipt-modal-body {
+  display: flex;
+  justify-content: center;
+}
+.receipt-modal-footer {
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+/* ── Receipt Preview ─────────────────────────────────────── */
+.receipt-preview {
+  background: #ffffff;
+  color: #111827;
+  width: 280px;
+  padding: 28px 24px;
+  border-radius: 10px;
+  border: 1px dashed #d1d5db;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.35);
+  font-family: 'DM Sans', sans-serif;
+}
+.receipt-header {
+  text-align: center;
+  margin-bottom: 4px;
+}
+.receipt-restaurant {
+  font-size: 20px;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 4px;
+}
+.receipt-tagline {
+  font-size: 12px;
+  color: #6b7280;
+}
+.receipt-divider {
+  text-align: center;
+  color: #d1d5db;
+  font-size: 11px;
+  letter-spacing: 3px;
+  margin: 12px 0;
+}
+.receipt-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.receipt-meta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+}
+.receipt-meta-label {
+  color: #6b7280;
+}
+.receipt-meta-value {
+  color: #111827;
+  font-weight: 500;
+}
+.receipt-mono {
+  font-family: monospace;
+  font-size: 12px;
+}
+.receipt-items {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.receipt-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  font-size: 13px;
+}
+.receipt-item-left {
+  display: flex;
+  gap: 8px;
+  flex: 1;
+}
+.receipt-item-qty {
+  color: #6b7280;
+  min-width: 24px;
+}
+.receipt-item-name {
+  color: #374151;
+  flex: 1;
+}
+.receipt-item-price {
+  color: #111827;
+  font-weight: 500;
+  min-width: 70px;
+  text-align: right;
+}
+.receipt-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.receipt-total-label {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #111827;
+}
+.receipt-total-value {
+  font-size: 22px;
+  font-weight: 700;
+  color: #111827;
+}
+.receipt-footer {
+  text-align: center;
+}
+.receipt-thanks {
+  font-size: 12px;
+  color: #9ca3af;
+  margin-top: 4px;
+}
+
+/* ── Download & Confirm Buttons ──────────────────────────── */
+.download-group {
+  display: flex;
+  gap: 8px;
+}
+.btn-download-png,
+.btn-download-pdf {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+  border: 1px solid var(--color-border-medium, rgba(255, 255, 255, 0.12));
+  background: var(--color-bg-surface, #161616);
+  color: var(--color-text-secondary, rgba(255, 255, 255, 0.55));
+}
+.btn-download-png:hover {
+  background: rgba(99, 102, 241, 0.1);
+  border-color: rgba(99, 102, 241, 0.4);
+  color: #818cf8;
+}
+.btn-download-pdf:hover {
+  background: rgba(200, 115, 58, 0.1);
+  border-color: var(--color-accent-border, rgba(200, 115, 58, 0.25));
+  color: var(--color-accent, #c8733a);
+}
+.btn-download-png:disabled,
+.btn-download-pdf:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.btn-confirm-paid {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: rgba(74, 222, 128, 0.12);
+  color: #4ade80;
+  border: 1px solid rgba(74, 222, 128, 0.25);
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+.btn-confirm-paid:hover:not(:disabled) {
+  background: rgba(74, 222, 128, 0.2);
+  border-color: rgba(74, 222, 128, 0.4);
+}
+.btn-confirm-paid:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* ── Form fields ─────────────────────────────────────────── */
@@ -1118,7 +1638,6 @@ onUnmounted(() => {
   flex-direction: column;
   gap: 4px;
 }
-
 .menu-item {
   display: flex;
   align-items: center;
@@ -1144,7 +1663,6 @@ onUnmounted(() => {
   opacity: 0.4;
   cursor: not-allowed;
 }
-
 .menu-item-info {
   flex: 1;
 }
@@ -1168,7 +1686,6 @@ onUnmounted(() => {
   font-weight: 700;
   color: #f87171;
 }
-
 .menu-item-qty {
   display: flex;
   align-items: center;
@@ -1234,8 +1751,6 @@ onUnmounted(() => {
 .cart-total-val {
   color: var(--color-accent, #c8733a);
 }
-
-/* Error */
 .error-alert {
   padding: 10px 14px;
   background: rgba(239, 68, 68, 0.08);
@@ -1266,7 +1781,6 @@ onUnmounted(() => {
   opacity: 0.4;
   cursor: not-allowed;
 }
-
 .btn-submit {
   display: flex;
   align-items: center;
@@ -1289,7 +1803,6 @@ onUnmounted(() => {
   opacity: 0.4;
   cursor: not-allowed;
 }
-
 .spinner {
   width: 13px;
   height: 13px;
@@ -1321,6 +1834,22 @@ onUnmounted(() => {
   }
   .header-title {
     font-size: 1.5rem;
+  }
+  .receipt-modal-footer {
+    flex-direction: column;
+  }
+  .download-group {
+    width: 100%;
+  }
+  .btn-download-png,
+  .btn-download-pdf {
+    flex: 1;
+    justify-content: center;
+  }
+  .btn-confirm-paid,
+  .btn-ghost {
+    width: 100%;
+    justify-content: center;
   }
 }
 </style>
