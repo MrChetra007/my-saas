@@ -24,6 +24,11 @@ const routes = [
     component: () => import('@/views/public/Terms.vue'),
     meta: { public: true },
   },
+  {
+    path: '/privacy',
+    component: () => import('@/views/public/Privacy.vue'),
+    meta: { public: true },
+  },
   //for customers to place orders without logging in
   {
     path: '/order/:slug/:tableId',
