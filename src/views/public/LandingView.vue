@@ -10,7 +10,7 @@
           <div class="qrder-icon">
             <img src="/favicon.png" alt="" />
           </div>
-          <span class="logo-wordmark">Qrserve</span>
+          <span class="logo-wordmark">QRserve</span>
         </div>
         <div class="nav-links">
           <a href="#features" class="nav-link" @click.prevent="scrollTo('features')">Features</a>
@@ -159,7 +159,7 @@
                 <path d="M16 10a4 4 0 01-8 0" />
               </svg>
             </button>
-            <p class="order-note">Powered by Qrserve · SCAN · ORDER · DONE</p>
+            <p class="order-note">Powered by QRserve · SCAN · ORDER · DONE</p>
           </div>
         </div>
       </div>
@@ -622,7 +622,7 @@
     <section class="section about-section" id="about">
       <div class="section-inner">
         <span class="section-label">About & Contact</span>
-        <h2 class="section-title">The person behind Qrserve</h2>
+        <h2 class="section-title">The person behind QRserve</h2>
 
         <div class="about-card">
           <!-- Profile -->
@@ -737,7 +737,7 @@
           <div class="footer-icon">
             <img src="/favicon.png" alt="" />
           </div>
-          <span class="footer-wordmark">Qrserve</span>
+          <span class="footer-wordmark">QRserve</span>
         </div>
         <div class="footer-links">
           <a href="#features" @click.prevent="scrollTo('features')" class="footer-link">Features</a>
@@ -752,7 +752,7 @@
           <RouterLink to="/signup" class="footer-link">Sign up</RouterLink>
         </div>
         <div class="footer-copy">
-          © {{ new Date().getFullYear() }} Qrserve. All rights reserved.
+          © {{ new Date().getFullYear() }} QRserve. All rights reserved.
         </div>
       </div>
     </footer>

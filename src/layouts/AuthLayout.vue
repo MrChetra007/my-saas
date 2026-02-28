@@ -19,7 +19,7 @@
       </div>
 
       <!-- Footer -->
-      <p class="auth-footer">© {{ new Date().getFullYear() }} Qrserve. All rights reserved.</p>
+      <p class="auth-footer">© {{ new Date().getFullYear() }} QRserve. All rights reserved.</p>
     </div>
   </div>
 </template>

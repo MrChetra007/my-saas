@@ -7,7 +7,7 @@
       <div class="nav-inner">
         <RouterLink to="/" class="nav-logo">
           <div class="logo-icon"><img src="/favicon.png" alt="" /></div>
-          <span class="logo-wordmark">Qrserve</span>
+          <span class="logo-wordmark">QRserve</span>
         </RouterLink>
         <RouterLink to="/" class="btn-ghost">← Back to Home</RouterLink>
       </div>
@@ -18,9 +18,9 @@
       <div class="legal-header-inner">
         <span class="section-label">Legal</span>
         <h1 class="legal-title">Terms of Service</h1>
-        <p class="legal-meta">Last updated: February 28, 2026</p>
+        <p class="legal-meta">Last updated: March 01, 2026</p>
         <p class="legal-intro">
-          These Terms of Service govern your access to and use of Qrserve. By creating an account or
+          These Terms of Service govern your access to and use of QRserve. By creating an account or
           using the service, you agree to be bound by these terms.
         </p>
       </div>
@@ -44,12 +44,12 @@
           <section id="acceptance" class="legal-section">
             <h2>Acceptance of Terms</h2>
             <p>
-              By accessing or using Qrserve ("the Service"), you confirm that you are at least 18
+              By accessing or using QRserve ("the Service"), you confirm that you are at least 18
               years old, have the legal authority to enter into this agreement, and agree to these
               Terms of Service in full.
             </p>
             <p>
-              If you are using Qrserve on behalf of a business or organization, you represent that
+              If you are using QRserve on behalf of a business or organization, you represent that
               you have authority to bind that entity to these terms.
             </p>
           </section>
@@ -57,7 +57,7 @@
           <section id="description" class="legal-section">
             <h2>Service Description</h2>
             <p>
-              Qrserve is a Software-as-a-Service (SaaS) platform that provides restaurant management
+              QRserve is a Software-as-a-Service (SaaS) platform that provides restaurant management
               tools including QR code-based ordering, kitchen display systems, staff dashboards,
               menu management, and analytics.
             </p>
@@ -69,7 +69,7 @@
 
           <section id="accounts" class="legal-section">
             <h2>Accounts</h2>
-            <p>To use Qrserve, you must create an account. You are responsible for:</p>
+            <p>To use QRserve, you must create an account. You are responsible for:</p>
             <ul class="legal-list">
               <li>Providing accurate, complete, and up-to-date information during registration</li>
               <li>Maintaining the security and confidentiality of your login credentials</li>
@@ -85,7 +85,7 @@
           <section id="subscriptions" class="legal-section">
             <h2>Subscriptions & Payments</h2>
             <p>
-              Qrserve is offered on a subscription basis. The following terms apply to all paid
+              QRserve is offered on a subscription basis. The following terms apply to all paid
               plans:
             </p>
 
@@ -131,7 +131,7 @@
               </li>
               <li>
                 <strong>Payment processing:</strong> Payments are securely processed by our
-                third-party provider. We do not store your full card details on our servers
+                third-party provider (Paddle). We do not store your full card details on our servers
               </li>
             </ul>
           </section>
@@ -181,7 +181,7 @@
 
           <section id="acceptable-use" class="legal-section">
             <h2>Acceptable Use</h2>
-            <p>You agree not to use Qrserve to:</p>
+            <p>You agree not to use QRserve to:</p>
             <ul class="legal-list">
               <li>Violate any applicable laws or regulations</li>
               <li>Transmit harmful, fraudulent, or misleading content</li>
@@ -202,7 +202,7 @@
           <section id="your-data" class="legal-section">
             <h2>Your Data</h2>
             <p>
-              You retain full ownership of all content and data you input into Qrserve — including
+              You retain full ownership of all content and data you input into QRserve — including
               menu items, order data, and customer information. By using the Service, you grant us a
               limited license to store, process, and display your data solely to provide the Service
               to you.
@@ -232,8 +232,8 @@
           <section id="intellectual-property" class="legal-section">
             <h2>Intellectual Property</h2>
             <p>
-              All aspects of Qrserve — including the interface, design, code, branding, and features
-              — are the intellectual property of Qrserve and its creator. You may not copy,
+              All aspects of QRserve — including the interface, design, code, branding, and features
+              — are the intellectual property of QRserve and its creator. You may not copy,
               reproduce, or distribute any part of the Service without written permission.
             </p>
             <p>
@@ -245,7 +245,7 @@
           <section id="limitation" class="legal-section">
             <h2>Limitation of Liability</h2>
             <p>
-              To the maximum extent permitted by applicable law, Qrserve and its creator shall not
+              To the maximum extent permitted by applicable law, QRserve and its creator shall not
               be liable for any indirect, incidental, special, or consequential damages — including
               loss of profits, data, or business — arising from your use of or inability to use the
               Service.
@@ -261,7 +261,7 @@
             <p>
               We may update these Terms from time to time. When we make material changes, we will
               notify you via email or a prominent notice in the Service at least 14 days before the
-              changes take effect. Continued use of Qrserve after that date constitutes acceptance
+              changes take effect. Continued use of QRserve after that date constitutes acceptance
               of the updated Terms.
             </p>
           </section>
@@ -335,14 +335,14 @@
       <div class="legal-footer-inner">
         <RouterLink to="/" class="footer-logo">
           <div class="footer-icon"><img src="/favicon.png" alt="" /></div>
-          <span class="footer-wordmark">Qrserve</span>
+          <span class="footer-wordmark">QRserve</span>
         </RouterLink>
         <div class="footer-links">
           <RouterLink to="/privacy" class="footer-link">Privacy Policy</RouterLink>
           <RouterLink to="/terms" class="footer-link active">Terms of Service</RouterLink>
           <RouterLink to="/" class="footer-link">Home</RouterLink>
         </div>
-        <p class="footer-copy">© {{ new Date().getFullYear() }} Qrserve. All rights reserved.</p>
+        <p class="footer-copy">© {{ new Date().getFullYear() }} QRserve. All rights reserved.</p>
       </div>
     </footer>
   </div>

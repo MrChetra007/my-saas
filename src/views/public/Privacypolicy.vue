@@ -7,7 +7,7 @@
       <div class="nav-inner">
         <RouterLink to="/" class="nav-logo">
           <div class="logo-icon"><img src="/favicon.png" alt="" /></div>
-          <span class="logo-wordmark">Qrserve</span>
+          <span class="logo-wordmark">QRserve</span>
         </RouterLink>
         <RouterLink to="/" class="btn-ghost">← Back to Home</RouterLink>
       </div>
@@ -18,10 +18,10 @@
       <div class="legal-header-inner">
         <span class="section-label">Legal</span>
         <h1 class="legal-title">Privacy Policy</h1>
-        <p class="legal-meta">Last updated: February 28, 2026</p>
+        <p class="legal-meta">Last updated: March 01, 2026</p>
         <p class="legal-intro">
-          This Privacy Policy describes how Qrserve collects, uses, and protects your information
-          when you use our service. By using Qrserve, you agree to the practices described here.
+          This Privacy Policy describes how QRserve collects, uses, and protects your information
+          when you use our service. By using QRserve, you agree to the practices described here.
         </p>
       </div>
     </header>
@@ -43,7 +43,7 @@
         <div class="legal-body">
           <section id="information-we-collect" class="legal-section">
             <h2>Information We Collect</h2>
-            <p>When you use Qrserve, we collect the following types of information:</p>
+            <p>When you use QRserve, we collect the following types of information:</p>
             <div class="info-card">
               <div class="info-row">
                 <div class="info-icon">
@@ -141,7 +141,7 @@
 
           <section id="how-we-use" class="legal-section">
             <h2>How We Use Your Information</h2>
-            <p>We use your information to operate, improve, and support the Qrserve service:</p>
+            <p>We use your information to operate, improve, and support the QRserve service:</p>
             <ul class="legal-list">
               <li>To create and manage your account and restaurant profile</li>
               <li>To process your subscription payments and manage billing cycles</li>
@@ -174,7 +174,7 @@
           <section id="subscriptions-billing" class="legal-section">
             <h2>Subscriptions & Billing</h2>
             <p>
-              Qrserve offers paid subscription plans. By subscribing, you authorize us to charge
+              QRserve offers paid subscription plans. By subscribing, you authorize us to charge
               your payment method on a recurring basis according to your selected plan.
             </p>
             <ul class="legal-list">
@@ -188,8 +188,8 @@
               </li>
               <li>We do not offer refunds for partial billing periods unless required by law</li>
               <li>
-                Payment is processed securely by our third-party payment provider (Lemon Squeezy).
-                We do not store your full card details
+                Payment is processed securely by our third-party payment provider (Paddle). We do
+                not store your full card details
               </li>
               <li>
                 Billing information including plan type, payment status, and invoices is retained
@@ -204,7 +204,7 @@
             <ul class="legal-list">
               <li>
                 <strong>Payment Processors:</strong> Your billing data is shared with our payment
-                provider to process subscription charges
+                provider (Paddle) to process subscription charges
               </li>
               <li>
                 <strong>Infrastructure Providers:</strong> We use Supabase for our database and
@@ -229,7 +229,7 @@
           <section id="cookies" class="legal-section">
             <h2>Cookies</h2>
             <p>
-              Qrserve uses cookies to keep you logged in, remember your preferences, and understand
+              QRserve uses cookies to keep you logged in, remember your preferences, and understand
               how the service is used. We use two types:
             </p>
             <div class="cookie-table">
@@ -308,7 +308,7 @@
           <section id="children" class="legal-section">
             <h2>Children's Privacy</h2>
             <p>
-              Qrserve is not directed to anyone under the age of 16. We do not knowingly collect
+              QRserve is not directed to anyone under the age of 16. We do not knowingly collect
               personal data from children. If you believe a child has provided us with personal
               data, please contact us and we will delete it promptly.
             </p>
@@ -386,14 +386,14 @@
       <div class="legal-footer-inner">
         <RouterLink to="/" class="footer-logo">
           <div class="footer-icon"><img src="/favicon.png" alt="" /></div>
-          <span class="footer-wordmark">Qrserve</span>
+          <span class="footer-wordmark">QRserve</span>
         </RouterLink>
         <div class="footer-links">
           <RouterLink to="/privacy" class="footer-link active">Privacy Policy</RouterLink>
           <RouterLink to="/terms" class="footer-link">Terms of Service</RouterLink>
           <RouterLink to="/" class="footer-link">Home</RouterLink>
         </div>
-        <p class="footer-copy">© {{ new Date().getFullYear() }} Qrserve. All rights reserved.</p>
+        <p class="footer-copy">© {{ new Date().getFullYear() }} QRserve. All rights reserved.</p>
       </div>
     </footer>
   </div>
