@@ -131,7 +131,7 @@
               </li>
               <li>
                 <strong>Payment processing:</strong> Payments are securely processed by our
-                third-party provider (Paddle). We do not store your full card details on our servers
+                third-party provider. We do not store your full card details on our servers
               </li>
             </ul>
           </section>

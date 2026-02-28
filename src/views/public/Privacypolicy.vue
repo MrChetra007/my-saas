@@ -188,8 +188,8 @@
               </li>
               <li>We do not offer refunds for partial billing periods unless required by law</li>
               <li>
-                Payment is processed securely by our third-party payment provider (Paddle). We do
-                not store your full card details
+                Payment is processed securely by our third-party payment provider. We do not store
+                your full card details
               </li>
               <li>
                 Billing information including plan type, payment status, and invoices is retained
