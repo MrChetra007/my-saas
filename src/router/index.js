@@ -19,6 +19,11 @@ export function roleHome(role) {
 const routes = [
   // ── Public ──────────────────────────────────────
   { path: '/', component: () => import('@/views/public/LandingView.vue'), meta: { public: true } },
+  {
+    opath: '/terms',
+    component: () => import('@/views/public/Terms.vue'),
+    meta: { public: true },
+  },
   //for customers to place orders without logging in
   {
     path: '/order/:slug/:tableId',
