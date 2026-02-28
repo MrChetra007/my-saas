@@ -92,13 +92,13 @@
             <div class="plan-cards">
               <div class="plan-card">
                 <div class="plan-name">Starter</div>
-                <div class="plan-price">$29<span>/mo</span></div>
+                <div class="plan-price">$49<span>/mo</span></div>
                 <p>Up to 15 tables, 3 staff accounts, QR ordering, kitchen & cashier views.</p>
               </div>
               <div class="plan-card featured">
                 <div class="plan-badge">Recommended</div>
                 <div class="plan-name">Pro</div>
-                <div class="plan-price">$59<span>/mo</span></div>
+                <div class="plan-price">$99<span>/mo</span></div>
                 <p>Unlimited tables, 10 staff accounts, all features, analytics, and promotions.</p>
               </div>
             </div>

@@ -31,7 +31,7 @@
                 <div class="option-top">
                   <div class="option-name">Starter</div>
                   <div class="option-price">
-                    <span class="price-dollar">$</span>29<span class="price-mo">/mo</span>
+                    <span class="price-dollar">$</span>49<span class="price-mo">/mo</span>
                   </div>
                 </div>
 
@@ -65,7 +65,7 @@
                 <div class="option-top">
                   <div class="option-name option-name-pro">Pro</div>
                   <div class="option-price option-price-pro">
-                    <span class="price-dollar">$</span>59<span class="price-mo">/mo</span>
+                    <span class="price-dollar">$</span>99<span class="price-mo">/mo</span>
                   </div>
                 </div>
 

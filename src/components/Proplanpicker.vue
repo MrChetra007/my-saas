@@ -36,7 +36,7 @@
             <!-- Price -->
             <div class="price-row">
               <div class="price-amount">
-                <span class="price-dollar">$</span>59<span class="price-mo">/mo</span>
+                <span class="price-dollar">$</span>99<span class="price-mo">/mo</span>
               </div>
               <div class="price-note">Cancel anytime</div>
             </div>

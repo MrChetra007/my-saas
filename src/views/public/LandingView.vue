@@ -480,7 +480,7 @@
             <div class="pricing-name">Starter</div>
             <div class="pricing-price">
               <span class="price-dollar">$</span>
-              <span class="price-num">29</span>
+              <span class="price-num">49</span>
               <span class="price-period">/mo</span>
             </div>
             <p class="pricing-desc">Perfect for small restaurants getting started.</p>
@@ -508,7 +508,7 @@
             <div class="pricing-name">Pro</div>
             <div class="pricing-price">
               <span class="price-dollar">$</span>
-              <span class="price-num">59</span>
+              <span class="price-num">99</span>
               <span class="price-period">/mo</span>
             </div>
             <p class="pricing-desc">For restaurants running their full operation digitally.</p>
