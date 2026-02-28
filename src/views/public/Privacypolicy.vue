@@ -348,7 +348,9 @@
               </div>
               <div>
                 <p class="contact-label">Email</p>
-                <a href="mailto:hello@qrserve.app" class="contact-value">hello@qrserve.app</a>
+                <a href="mailto:sochetra411@gmail.com" class="contact-value"
+                  >sochetra411@gmail.com</a
+                >
               </div>
             </div>
             <div class="contact-card">

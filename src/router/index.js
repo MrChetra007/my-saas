@@ -20,13 +20,13 @@ const routes = [
   // ── Public ──────────────────────────────────────
   { path: '/', component: () => import('@/views/public/LandingView.vue'), meta: { public: true } },
   {
-    opath: '/terms',
+    path: '/terms',
     component: () => import('@/views/public/Terms.vue'),
     meta: { public: true },
   },
   {
     path: '/privacy',
-    component: () => import('@/views/public/Privacy.vue'),
+    component: () => import('@/views/public/Privacypolicy.vue'),
     meta: { public: true },
   },
   //for customers to place orders without logging in
