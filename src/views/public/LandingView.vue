@@ -801,7 +801,17 @@ function handleScroll() {
 function scrollTo(id) {
   document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
-onMounted(() => window.addEventListener('scroll', handleScroll))
+onMounted(() => {
+  window.addEventListener('scroll', handleScroll)
+
+  // Scroll to hash on direct URL load (e.g. /#pricing)
+  const hash = window.location.hash?.slice(1)
+  if (hash) {
+    setTimeout(() => {
+      document.getElementById(hash)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 300)
+  }
+})
 onUnmounted(() => window.removeEventListener('scroll', handleScroll))
 
 const orderItems = [
