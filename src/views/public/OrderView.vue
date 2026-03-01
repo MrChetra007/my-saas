@@ -805,7 +805,12 @@ async function applyPromoCode() {
   if (!promoInput.value.trim()) return
 
   const rid = resolvedRestaurantId.value
+  console.log('[PromoCode] resolvedRestaurantId:', rid)
+  console.log('[PromoCode] code entered:', promoInput.value.trim())
+  console.log('[PromoCode] cartSubtotal:', cartSubtotal.value)
+
   if (!rid) {
+    console.warn('[PromoCode] No restaurant ID available — aborting')
     promoError.value = 'Unable to validate code. Please try again.'
     return
   }
@@ -818,11 +823,25 @@ async function applyPromoCode() {
   })
   promoLoading.value = false
 
-  if (error || !data || data.length === 0) {
+  console.log('[PromoCode] RPC response data:', data)
+  console.log('[PromoCode] RPC response error:', error)
+
+  if (error) {
+    console.error('[PromoCode] Supabase RPC error:', error.message, error.details, error.hint)
     promoError.value = 'Invalid or expired code.'
     return
   }
 
+  if (!data || data.length === 0) {
+    console.warn('[PromoCode] No matching promo found for:', {
+      restaurant_id: rid,
+      code: promoInput.value.trim(),
+    })
+    promoError.value = 'Invalid or expired code.'
+    return
+  }
+
+  console.log('[PromoCode] ✅ Promo applied:', data[0])
   appliedPromo.value = data[0]
   appliedPromoCode.value = promoInput.value.trim().toUpperCase()
   promoInput.value = ''
