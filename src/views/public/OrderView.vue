@@ -109,7 +109,6 @@
           </div>
           <div class="summary-total">
             <span>Total</span>
-            <!-- FIX #3: Use placedTotal (now guarded with Math.max) -->
             <span>{{ currencySymbol }}{{ placedTotal.toFixed(2) }}</span>
           </div>
         </div>
@@ -512,6 +511,11 @@ import {
 
 const route = useRoute()
 
+// ── Restaurant ID from URL query param (?rid=...) ─────────────────────────────
+// This is embedded in the QR code by Tables.vue so we always know which
+// restaurant to scope promotions to — even before the DB fetch completes.
+const restaurantIdFromUrl = route.query.rid || null
+
 const loading = ref(true)
 const notFound = ref(false)
 const restaurant = ref({})
@@ -536,8 +540,10 @@ const allItemsLoaded = computed(() => visibleCatCount.value >= activeCategories.
 let statusChannel = null
 let menuChannel = null
 let scrollObserver = null
-// FIX #4: interval handle for periodic auto-promo refresh
 let autoPromoInterval = null
+
+// ── Resolved restaurant ID (URL param takes priority, falls back to fetched) ──
+const resolvedRestaurantId = computed(() => restaurantIdFromUrl || restaurant.value?.id || null)
 
 // ── Toast ─────────────────────────────────────────────────────────────────────
 const toast = ref({ show: false, message: '', type: 'success', icon: CheckCircle })
@@ -555,7 +561,7 @@ function showToast(message, type = 'success') {
   toastTimer = setTimeout(() => (toast.value.show = false), 4000)
 }
 
-// ── Audio (Web Audio API — gentle chime, no file needed) ──────────────────────
+// ── Audio ─────────────────────────────────────────────────────────────────────
 let audioCtx = null
 
 function getAudioCtx() {
@@ -620,7 +626,6 @@ const discountAmount = computed(() => {
 
 const orderTotal = computed(() => Math.max(0, cartSubtotal.value - discountAmount.value))
 
-// FIX #3: Guard placedTotal against negative values (same as orderTotal)
 const placedTotal = computed(() =>
   Math.max(
     0,
@@ -630,7 +635,6 @@ const placedTotal = computed(() =>
 )
 
 // ── Currency ──────────────────────────────────────────────────────────────────
-// FIX #1: Match Promotions page logic — handle custom currencies like "RM MYR"
 const currencySymbol = computed(() => {
   const currency = restaurant.value.currency || 'USD'
   const map = {
@@ -643,15 +647,9 @@ const currencySymbol = computed(() => {
     AUD: 'A$',
     JPY: '¥',
   }
-
-  // Known currency — use the map
   if (map[currency]) return map[currency]
-
-  // Custom currency: "RM MYR" → extract symbol before the space
   const spaceIndex = currency.indexOf(' ')
   if (spaceIndex !== -1) return currency.slice(0, spaceIndex)
-
-  // Fallback
   return currency || '$'
 })
 
@@ -702,7 +700,6 @@ const statusDesc = computed(() => {
 // ── Status change handler ─────────────────────────────────────────────────────
 function handleStatusChange(newStatus) {
   orderStatus.value = newStatus
-
   if (newStatus === 'cooking') {
     playStatusChime('cooking')
     showToast('Kitchen accepted your order — now cooking! 🍳', 'info')
@@ -755,7 +752,6 @@ function decrementCart(idx) {
 }
 
 function openCart() {
-  // FIX #4: Re-check auto promotions each time the cart opens
   checkAutoPromotions()
   cartOpen.value = true
 }
@@ -773,35 +769,32 @@ function resetOrder() {
     supabase.removeChannel(statusChannel)
     statusChannel = null
   }
-  // Restart auto-promo polling after returning to menu
   checkAutoPromotions()
   startAutoPromoPolling()
 }
 
 // ── Promotions ────────────────────────────────────────────────────────────────
 async function checkAutoPromotions() {
-  if (!restaurant.value?.id) return
+  const rid = resolvedRestaurantId.value
+  if (!rid) return
+
   const { data } = await supabase.rpc('get_active_auto_promotions', {
-    p_restaurant_id: restaurant.value.id,
+    p_restaurant_id: rid,
   })
 
   const newPromo = data && data.length > 0 ? data[0] : null
 
-  // FIX #4: Notify the user if a new auto promo just became active mid-session
   if (newPromo && (!autoPromo.value || autoPromo.value.id !== newPromo.id)) {
     if (autoPromo.value !== null) {
-      // Only toast if this isn't the first load (autoPromo was previously set/null after init)
       showToast(`🎉 "${newPromo.name}" discount is now active!`, 'info')
     }
     autoPromo.value = newPromo
   } else if (!newPromo && autoPromo.value) {
-    // Promo expired mid-session
     showToast('The automatic discount has ended.', 'warning')
     autoPromo.value = null
   }
 }
 
-// FIX #4: Poll every 60s so happy hour activates without a page refresh
 function startAutoPromoPolling() {
   if (autoPromoInterval) clearInterval(autoPromoInterval)
   autoPromoInterval = setInterval(checkAutoPromotions, 60_000)
@@ -810,17 +803,26 @@ function startAutoPromoPolling() {
 async function applyPromoCode() {
   promoError.value = ''
   if (!promoInput.value.trim()) return
+
+  const rid = resolvedRestaurantId.value
+  if (!rid) {
+    promoError.value = 'Unable to validate code. Please try again.'
+    return
+  }
+
   promoLoading.value = true
   const { data, error } = await supabase.rpc('validate_promotion', {
-    p_restaurant_id: restaurant.value.id,
+    p_restaurant_id: rid,
     p_code: promoInput.value.trim(),
     p_order_total: cartSubtotal.value,
   })
   promoLoading.value = false
+
   if (error || !data || data.length === 0) {
     promoError.value = 'Invalid or expired code.'
     return
   }
+
   appliedPromo.value = data[0]
   appliedPromoCode.value = promoInput.value.trim().toUpperCase()
   promoInput.value = ''
@@ -895,6 +897,8 @@ onMounted(async () => {
     loading.value = false
     return
   }
+
+  // Merge fetched data — if rid was in URL, it should match; trust the DB id
   restaurant.value = rest
 
   const { data: table } = await supabase
@@ -932,7 +936,6 @@ onMounted(async () => {
   loading.value = false
   subscribeToMenuAvailability(rest.id)
 
-  // FIX #4: Initial check then start polling every 60s
   await checkAutoPromotions()
   startAutoPromoPolling()
 
@@ -945,7 +948,6 @@ onUnmounted(() => {
   if (scrollObserver) scrollObserver.disconnect()
   if (audioCtx) audioCtx.close()
   if (toastTimer) clearTimeout(toastTimer)
-  // FIX #4: Clear polling interval on unmount
   if (autoPromoInterval) clearInterval(autoPromoInterval)
 })
 
@@ -998,13 +1000,11 @@ async function placeOrder() {
     orderPlaced.value = true
     orderStatus.value = 'pending'
 
-    // Stop polling while on the status screen — no longer needed
     if (autoPromoInterval) {
       clearInterval(autoPromoInterval)
       autoPromoInterval = null
     }
 
-    // Subscribe to order status changes
     statusChannel = supabase
       .channel(`order-${orderId}`)
       .on(
@@ -1034,7 +1034,6 @@ async function placeOrder() {
   padding: 0;
 }
 
-/* ── Toast ───────────────────────────────────────────────── */
 .toast {
   position: fixed;
   top: 16px;
@@ -1087,7 +1086,6 @@ async function placeOrder() {
   transform: translateX(-50%) translateY(-8px) scale(0.95);
 }
 
-/* ── Page ─────────────────────────────────────────────────── */
 .order-page {
   min-height: 100vh;
   background: #111111;
@@ -1098,7 +1096,6 @@ async function placeOrder() {
   color: #ffffff;
   -webkit-font-smoothing: antialiased;
 }
-
 @media (min-width: 640px) {
   .order-page {
     max-width: 640px;
@@ -1144,7 +1141,6 @@ async function placeOrder() {
   max-width: 280px;
   line-height: 1.6;
 }
-
 @keyframes spin {
   to {
     transform: rotate(360deg);
@@ -1533,7 +1529,6 @@ async function placeOrder() {
   transform: translateX(-50%) translateY(20px);
 }
 
-/* Status screen */
 .status-screen {
   min-height: 100vh;
   background: #111111;
@@ -1828,7 +1823,6 @@ async function placeOrder() {
     max-height: 85vh;
   }
 }
-
 @keyframes slide-up {
   from {
     transform: translateY(100%);

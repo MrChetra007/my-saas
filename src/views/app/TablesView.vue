@@ -351,7 +351,7 @@ watch(
 )
 
 function fullOrderUrl(id) {
-  return `${window.location.origin}/order/${restaurantSlug.value}/${id}`
+  return `${window.location.origin}/order/${restaurantSlug.value}/${id}?rid=${restaurantId.value}`
 }
 
 function shortUrl(id) {
