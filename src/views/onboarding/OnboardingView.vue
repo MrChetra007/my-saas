@@ -20,7 +20,7 @@
             <path d="M8 12c0-2.21 1.79-4 4-4s4 1.79 4 4-1.79 4-4 4-4-1.79-4-4z" />
           </svg>
         </div>
-        <span class="logo-text">RestoOS</span>
+        <span class="logo-text">QRserve</span>
       </div>
 
       <!-- Progress bar -->
@@ -279,6 +279,58 @@
 
             <div class="section-divider"><span>then add a dish</span></div>
 
+            <!-- ── Dish photo upload ── -->
+            <div class="field-group">
+              <label class="field-label">Photo <span class="optional">(optional)</span></label>
+              <div
+                class="image-upload-area"
+                @click="triggerItemImageUpload"
+                :class="{ 'has-image': step2.imagePreview }"
+              >
+                <img v-if="step2.imagePreview" :src="step2.imagePreview" class="upload-preview" />
+                <div v-else class="upload-placeholder">
+                  <svg
+                    width="22"
+                    height="22"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                  >
+                    <rect x="3" y="3" width="18" height="18" rx="2" />
+                    <circle cx="8.5" cy="8.5" r="1.5" />
+                    <polyline points="21 15 16 10 5 21" />
+                  </svg>
+                  <span>Click to upload</span>
+                  <span class="upload-hint">PNG or JPG · max 2MB</span>
+                </div>
+                <button
+                  v-if="step2.imagePreview"
+                  class="remove-image"
+                  @click.stop="removeItemImage"
+                >
+                  <svg
+                    width="10"
+                    height="10"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="3"
+                  >
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                </button>
+              </div>
+              <input
+                ref="itemImageInput"
+                type="file"
+                accept="image/*"
+                class="hidden-input"
+                @change="handleItemImageChange"
+              />
+            </div>
+
             <div class="field-group">
               <label class="field-label">Dish Name</label>
               <input
@@ -473,9 +525,9 @@ const logoFile = ref(null)
 const logoPreview = ref('')
 
 // ── Custom currency state ────────────────────────────
-const customCurrency = ref('') // raw input: e.g. "RM MYR"
-const customCurrencyError = ref('') // validation message
-const tooltipVisible = ref(false) // controls floating tooltip
+const customCurrency = ref('')
+const customCurrencyError = ref('')
+const tooltipVisible = ref(false)
 
 function onCurrencyChange() {
   if (step1.value.currency !== 'OTHER') {
@@ -512,28 +564,56 @@ function onCustomCurrencyInput() {
   tooltipVisible.value = !!customCurrencyError.value
 }
 
-// Parse symbol from custom input
 function parsedCustomSymbol() {
   const v = customCurrency.value.trim()
   const spaceIndex = v.indexOf(' ')
   return spaceIndex !== -1 ? v.slice(0, spaceIndex) : v || '?'
 }
 
-// The value actually stored in DB (e.g. "USD" or "RM MYR")
 const resolvedCurrency = computed(() => {
   if (step1.value.currency === 'OTHER') return customCurrency.value.trim()
   return step1.value.currency
 })
 
 // ── Step 2 ───────────────────────────────────────────
-const step2 = ref({ categoryName: '', itemName: '', itemDescription: '', itemPrice: '' })
+const step2 = ref({
+  categoryName: '',
+  itemName: '',
+  itemDescription: '',
+  itemPrice: '',
+  imagePreview: '',
+  imageFile: null,
+})
 const categorySuggestions = ['Starters', 'Mains', 'Desserts', 'Drinks', 'Specials']
+const itemImageInput = ref(null)
 
 const currencySymbol = computed(() => {
   if (step1.value.currency === 'OTHER') return parsedCustomSymbol()
   const found = KNOWN_CURRENCIES.find((c) => c.code === step1.value.currency)
   return found ? found.symbol : '$'
 })
+
+// ── Item image handlers ──────────────────────────────
+function triggerItemImageUpload() {
+  itemImageInput.value?.click()
+}
+
+function handleItemImageChange(e) {
+  const file = e.target.files[0]
+  if (!file) return
+  if (file.size > 2 * 1024 * 1024) {
+    error.value = 'Image must be under 2MB.'
+    return
+  }
+  step2.value.imageFile = file
+  step2.value.imagePreview = URL.createObjectURL(file)
+  e.target.value = ''
+}
+
+function removeItemImage() {
+  step2.value.imageFile = null
+  step2.value.imagePreview = ''
+}
 
 // ── Step 3 ───────────────────────────────────────────
 const step3 = ref({ tableName: 'Table 1' })
@@ -578,7 +658,6 @@ async function saveStep1() {
     return
   }
 
-  // Validate custom currency if selected
   if (step1.value.currency === 'OTHER') {
     const err = validateCustomCurrency(customCurrency.value)
     if (err) {
@@ -618,7 +697,7 @@ async function saveStep1() {
       .update({
         name: step1.value.name.trim(),
         address: step1.value.address.trim() || null,
-        currency: resolvedCurrency.value, // stores "USD" or "RM MYR"
+        currency: resolvedCurrency.value,
         timezone: step1.value.timezone,
         ...(logo_url && { logo_url }),
         updated_at: new Date().toISOString(),
@@ -664,12 +743,27 @@ async function saveStep2() {
       .single()
     if (catError) throw catError
 
+    // Upload item image if provided
+    let image_url = null
+    if (step2.value.imageFile) {
+      const ext = step2.value.imageFile.name.split('.').pop()
+      const itemId = crypto.randomUUID()
+      const path = `${restaurantId}/${itemId}.${ext}`
+      const { error: uploadError } = await supabase.storage
+        .from('menu-images')
+        .upload(path, step2.value.imageFile, { upsert: true })
+      if (uploadError) throw uploadError
+      const { data: urlData } = supabase.storage.from('menu-images').getPublicUrl(path)
+      image_url = urlData.publicUrl
+    }
+
     const { error: itemError } = await supabase.from('menu_items').insert({
       restaurant_id: restaurantId,
       category_id: category.id,
       name: step2.value.itemName.trim(),
       description: step2.value.itemDescription.trim() || null,
       price: parseFloat(step2.value.itemPrice) || 0,
+      image_url,
       sort_order: 0,
     })
     if (itemError) throw itemError
@@ -789,7 +883,6 @@ async function loadRestaurantData() {
     if (restaurant.logo_url) logoPreview.value = restaurant.logo_url
     restaurantSlug.value = restaurant.slug || ''
 
-    // Auto-detect custom currency on load
     const stored = restaurant.currency || 'USD'
     if (KNOWN_CODES.includes(stored)) {
       step1.value.currency = stored
@@ -1066,7 +1159,6 @@ select.field-input option {
   box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
 }
 
-/* Floating tooltip */
 .currency-tooltip {
   position: absolute;
   bottom: calc(100% + 10px);
@@ -1174,6 +1266,66 @@ select.field-input option {
 }
 .hidden-input {
   display: none;
+}
+
+/* ── Item image upload ── */
+.image-upload-area {
+  height: 130px;
+  border: 1.5px dashed rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.02);
+  overflow: hidden;
+  position: relative;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+}
+.image-upload-area:hover {
+  border-color: rgba(200, 115, 58, 0.45);
+  background: rgba(200, 115, 58, 0.03);
+}
+.image-upload-area.has-image {
+  border-style: solid;
+  border-color: rgba(200, 115, 58, 0.4);
+}
+.upload-preview {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.upload-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 12px;
+}
+.upload-placeholder svg {
+  color: rgba(255, 255, 255, 0.2);
+}
+.remove-image {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+.remove-image:hover {
+  background: rgba(239, 68, 68, 0.7);
 }
 
 /* ── Suggestion chips ── */

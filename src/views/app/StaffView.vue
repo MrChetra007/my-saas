@@ -148,7 +148,7 @@
       </div>
     </div>
 
-    <!-- Add Staff Modal -->
+    <!-- ══ Add Staff Modal ══ -->
     <Teleport to="body">
       <div v-if="addModal.open" class="modal-backdrop" @click.self="closeAddModal">
         <div class="modal">
@@ -195,21 +195,81 @@
                 <option value="cashier">Cashier</option>
                 <option value="waiter">Waiter</option>
               </select>
+              <p v-if="addModal.form.role" class="role-description">
+                {{ roleDescription(addModal.form.role) }}
+              </p>
             </div>
 
             <div class="form-group">
-              <label class="form-label">Password</label>
-              <input
-                v-model="addModal.form.password"
-                class="form-input"
-                type="text"
-                placeholder="Auto-generated if blank"
-                :disabled="addModal.submitting"
-              />
-            </div>
-
-            <div v-if="addModal.form.role" class="role-description">
-              {{ roleDescription(addModal.form.role) }}
+              <label class="form-label">
+                Password
+                <span class="field-required">required</span>
+              </label>
+              <div class="password-wrap">
+                <input
+                  v-model="addModal.form.password"
+                  class="form-input password-input"
+                  :type="addModal.showPassword ? 'text' : 'password'"
+                  placeholder="Enter a password for this staff member"
+                  :disabled="addModal.submitting"
+                  autocomplete="new-password"
+                />
+                <button
+                  type="button"
+                  class="password-toggle"
+                  @click="addModal.showPassword = !addModal.showPassword"
+                  :title="addModal.showPassword ? 'Hide password' : 'Show password'"
+                >
+                  <!-- Eye open -->
+                  <svg
+                    v-if="!addModal.showPassword"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                  <!-- Eye off -->
+                  <svg
+                    v-else
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                  >
+                    <path
+                      d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"
+                    />
+                    <path
+                      d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"
+                    />
+                    <line x1="1" y1="1" x2="23" y2="23" />
+                  </svg>
+                </button>
+              </div>
+              <!-- Strength bar -->
+              <div v-if="addModal.form.password" class="strength-bar-wrap">
+                <div class="strength-bar">
+                  <div
+                    class="strength-fill"
+                    :class="`strength-${passwordStrength(addModal.form.password).level}`"
+                    :style="{ width: passwordStrength(addModal.form.password).pct + '%' }"
+                  />
+                </div>
+                <span
+                  class="strength-label"
+                  :class="`strength-text-${passwordStrength(addModal.form.password).level}`"
+                >
+                  {{ passwordStrength(addModal.form.password).label }}
+                </span>
+              </div>
+              <p class="field-hint">Staff will use this password to log in. Min 8 characters.</p>
             </div>
           </div>
           <div class="modal-footer">
@@ -219,7 +279,12 @@
             <button
               class="btn-primary"
               @click="addStaff"
-              :disabled="addModal.submitting || !addModal.form.email || !addModal.form.role"
+              :disabled="
+                addModal.submitting ||
+                !addModal.form.email ||
+                !addModal.form.role ||
+                !addModal.form.password
+              "
             >
               <Loader2 v-if="addModal.submitting" :size="15" class="spin-icon" />
               <UserPlus v-else :size="15" />
@@ -230,7 +295,7 @@
       </div>
     </Teleport>
 
-    <!-- Edit Modal -->
+    <!-- ══ Edit Modal ══ -->
     <Teleport to="body">
       <div v-if="editModal.open" class="modal-backdrop" @click.self="closeEditModal">
         <div class="modal">
@@ -293,7 +358,7 @@
       </div>
     </Teleport>
 
-    <!-- Confirm Remove -->
+    <!-- ══ Confirm Remove ══ -->
     <Teleport to="body">
       <div v-if="confirm.open" class="modal-backdrop" @click.self="confirm.open = false">
         <div class="modal modal-sm">
@@ -324,6 +389,16 @@
         </div>
       </div>
     </Teleport>
+
+    <!-- ══ Success Modal ══ -->
+    <SuccessModal
+      v-model="successModal.open"
+      :title="successModal.title"
+      :message="successModal.message"
+      :details="successModal.details"
+      :warning="successModal.warning"
+      close-label="Done"
+    />
   </div>
 </template>
 
@@ -343,6 +418,7 @@ import {
 } from 'lucide-vue-next'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
+import SuccessModal from '@/components/SuccessModal.vue'
 
 const authStore = useAuthStore()
 
@@ -392,6 +468,7 @@ const addModal = ref({
   open: false,
   submitting: false,
   error: '',
+  showPassword: false,
   form: { fullName: '', email: '', role: '', password: '' },
 })
 
@@ -404,6 +481,35 @@ const editModal = ref({
 })
 
 const confirm = ref({ open: false, member: null, submitting: false })
+
+// ── Success Modal ────────────────────────────────
+const successModal = ref({
+  open: false,
+  title: '',
+  message: '',
+  details: [],
+  warning: '',
+})
+
+function showSuccess({ title, message, details = [], warning = '' }) {
+  successModal.value = { open: true, title, message, details, warning }
+}
+
+// ── Password strength ────────────────────────────
+function passwordStrength(pw) {
+  if (!pw) return { level: 'empty', label: '', pct: 0 }
+  let score = 0
+  if (pw.length >= 8) score++
+  if (pw.length >= 12) score++
+  if (/[A-Z]/.test(pw)) score++
+  if (/[0-9]/.test(pw)) score++
+  if (/[^A-Za-z0-9]/.test(pw)) score++
+
+  if (score <= 1) return { level: 'weak', label: 'Weak', pct: 25 }
+  if (score === 2) return { level: 'fair', label: 'Fair', pct: 50 }
+  if (score === 3) return { level: 'good', label: 'Good', pct: 75 }
+  return { level: 'strong', label: 'Strong', pct: 100 }
+}
 
 function resizeListener() {
   isMobile.value = window.innerWidth <= 768
@@ -445,13 +551,14 @@ async function fetchStaff() {
   loading.value = false
 }
 
-// ── Add Staff (via Edge Function — no session hijack) ─────
+// ── Add Staff ─────────────────────────────────────
 function openAddModal() {
   if (isAtLimit.value) return
   addModal.value = {
     open: true,
     submitting: false,
     error: '',
+    showPassword: false,
     form: { fullName: '', email: '', role: '', password: '' },
   }
 }
@@ -469,16 +576,24 @@ async function addStaff() {
     return
   }
 
+  if (!m.form.password.trim()) {
+    m.error = 'Please enter a password for this staff member.'
+    return
+  }
+
+  if (m.form.password.trim().length < 8) {
+    m.error = 'Password must be at least 8 characters.'
+    return
+  }
+
   m.submitting = true
   m.error = ''
 
   try {
-    const password = m.form.password.trim() || crypto.randomUUID().slice(0, 12)
-
     const { data, error } = await supabase.functions.invoke('create-staff-user', {
       body: {
         email: m.form.email.trim(),
-        password,
+        password: m.form.password.trim(),
         full_name: m.form.fullName.trim(),
         role: m.form.role,
         restaurant_id: authStore.profile.restaurant_id,
@@ -488,8 +603,19 @@ async function addStaff() {
     if (error) throw new Error(error.message)
     if (data?.error) throw new Error(data.error)
 
-    alert(`Staff added!\nEmail: ${m.form.email}\nPassword: ${password}`)
     m.open = false
+
+    showSuccess({
+      title: 'Staff Member Added!',
+      message: `${m.form.fullName || m.form.email} has been added as ${roleLabel(m.form.role)}.`,
+      details: [
+        { label: 'Email', value: m.form.email.trim(), copyable: true },
+        { label: 'Password', value: m.form.password.trim(), copyable: true },
+        { label: 'Role', value: roleLabel(m.form.role), copyable: false },
+      ],
+      warning: "Save these credentials now — the password won't be shown again.",
+    })
+
     await fetchStaff()
   } catch (err) {
     m.error = err.message || 'Failed to add staff'
@@ -537,6 +663,11 @@ async function saveEdit() {
       }
     }
     e.open = false
+
+    showSuccess({
+      title: 'Changes Saved',
+      message: `${e.form.fullName || 'Staff member'} has been updated successfully.`,
+    })
   } catch (err) {
     e.error = err.message || 'Failed to update'
   } finally {
@@ -1003,6 +1134,8 @@ function roleDescription(role) {
 
 .modal-body {
   padding: 24px;
+  max-height: 70vh;
+  overflow-y: auto;
 }
 
 .modal-error {
@@ -1012,6 +1145,7 @@ function roleDescription(role) {
   border-radius: 8px;
   color: #f87171;
   margin-bottom: 20px;
+  font-size: 13.5px;
 }
 
 .form-group {
@@ -1019,11 +1153,25 @@ function roleDescription(role) {
 }
 
 .form-label {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: 13px;
   font-weight: 600;
   color: var(--color-text-secondary);
   margin-bottom: 8px;
+}
+
+.field-required {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: rgba(200, 115, 58, 0.12);
+  border: 1px solid rgba(200, 115, 58, 0.25);
+  color: var(--color-accent, #c8733a);
 }
 
 .form-input,
@@ -1035,6 +1183,7 @@ function roleDescription(role) {
   border-radius: 8px;
   color: var(--color-text-primary);
   font-size: 15px;
+  box-sizing: border-box;
 }
 
 .form-input:focus,
@@ -1042,6 +1191,98 @@ function roleDescription(role) {
   outline: none;
   border-color: var(--color-accent);
   box-shadow: 0 0 0 3px var(--color-accent-muted);
+}
+
+/* ── Password field ─────────────────────────────── */
+.password-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-input {
+  padding-right: 46px !important;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 12px;
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: color 0.15s;
+}
+
+.password-toggle:hover {
+  color: var(--color-text-primary);
+}
+
+/* ── Strength bar ───────────────────────────────── */
+.strength-bar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.strength-bar {
+  flex: 1;
+  height: 4px;
+  background: var(--color-border-medium, rgba(255, 255, 255, 0.1));
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.strength-fill {
+  height: 100%;
+  border-radius: 99px;
+  transition:
+    width 0.3s ease,
+    background 0.3s ease;
+}
+
+.strength-weak {
+  background: #ef4444;
+}
+.strength-fair {
+  background: #f59e0b;
+}
+.strength-good {
+  background: #3b82f6;
+}
+.strength-strong {
+  background: #4ade80;
+}
+
+.strength-label {
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.strength-text-weak {
+  color: #ef4444;
+}
+.strength-text-fair {
+  color: #f59e0b;
+}
+.strength-text-good {
+  color: #3b82f6;
+}
+.strength-text-strong {
+  color: #4ade80;
+}
+
+.field-hint {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  margin-top: 6px;
 }
 
 .role-description {
@@ -1071,6 +1312,8 @@ function roleDescription(role) {
   border-radius: var(--radius-pill);
   font-weight: 500;
   cursor: pointer;
+  font-size: 14px;
+  font-family: inherit;
 }
 
 .btn-ghost:hover {
@@ -1088,7 +1331,10 @@ function roleDescription(role) {
   padding: 10px 20px;
   border-radius: var(--radius-pill);
   font-weight: 600;
+  font-size: 14px;
+  font-family: inherit;
   cursor: pointer;
+  transition: background 0.15s;
 }
 
 .btn-primary:hover:not(:disabled) {
@@ -1109,7 +1355,10 @@ function roleDescription(role) {
   padding: 10px 20px;
   border-radius: var(--radius-pill);
   font-weight: 600;
+  font-size: 14px;
+  font-family: inherit;
   cursor: pointer;
+  transition: background 0.15s;
 }
 
 .btn-danger:hover:not(:disabled) {
