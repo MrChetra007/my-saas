@@ -159,7 +159,6 @@
                       @blur="tooltipVisible = false"
                       autocomplete="off"
                     />
-                    <!-- Floating tooltip -->
                     <transition name="tooltip-fade">
                       <div v-if="customCurrencyError && tooltipVisible" class="currency-tooltip">
                         <svg
@@ -188,23 +187,27 @@
                 </div>
               </div>
 
-              <!-- Timezone -->
+              <!-- Timezone — auto-detected, read-only display -->
               <div class="field-group">
                 <label class="field-label">Timezone</label>
-                <select v-model="step1.timezone" class="field-input">
-                  <option value="UTC">UTC</option>
-                  <option value="America/New_York">Eastern (ET)</option>
-                  <option value="America/Chicago">Central (CT)</option>
-                  <option value="America/Denver">Mountain (MT)</option>
-                  <option value="America/Los_Angeles">Pacific (PT)</option>
-                  <option value="Europe/London">London (GMT)</option>
-                  <option value="Europe/Paris">Paris (CET)</option>
-                  <option value="Asia/Phnom_Penh">Phnom Penh (ICT)</option>
-                  <option value="Asia/Bangkok">Bangkok (ICT)</option>
-                  <option value="Asia/Singapore">Singapore (SGT)</option>
-                  <option value="Asia/Tokyo">Tokyo (JST)</option>
-                  <option value="Australia/Sydney">Sydney (AEDT)</option>
-                </select>
+                <div class="timezone-display">
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    class="tz-icon"
+                  >
+                    <circle cx="12" cy="12" r="10" />
+                    <polyline points="12 6 12 12 16 14" />
+                  </svg>
+                  <span class="tz-value">{{ step1.timezone }}</span>
+                </div>
+                <p class="tz-hint">
+                  Auto-detected from your browser. You can change this later in Settings.
+                </p>
               </div>
             </div>
           </div>
@@ -505,7 +508,7 @@ const totalSteps = 3
 const loading = ref(false)
 const error = ref('')
 
-// ── Known currencies (8 fixed) ───────────────────────
+// ── Known currencies ─────────────────────────────────
 const KNOWN_CURRENCIES = [
   { code: 'USD', symbol: '$' },
   { code: 'EUR', symbol: '€' },
@@ -518,13 +521,19 @@ const KNOWN_CURRENCIES = [
 ]
 const KNOWN_CODES = KNOWN_CURRENCIES.map((c) => c.code)
 
-// ── Step 1 ───────────────────────────────────────────
-const step1 = ref({ name: '', address: '', currency: 'USD', timezone: 'UTC' })
+// ── Step 1 — timezone auto-detected from browser ─────
+const step1 = ref({
+  name: '',
+  address: '',
+  currency: 'USD',
+  timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+})
+
 const logoInput = ref(null)
 const logoFile = ref(null)
 const logoPreview = ref('')
 
-// ── Custom currency state ────────────────────────────
+// ── Custom currency ──────────────────────────────────
 const customCurrency = ref('')
 const customCurrencyError = ref('')
 const tooltipVisible = ref(false)
@@ -541,21 +550,15 @@ function onCurrencyChange() {
 function validateCustomCurrency(val) {
   const v = val.trim()
   if (!v) return 'Please enter your custom currency.'
-
   const spaceIndex = v.indexOf(' ')
-  if (spaceIndex === -1) {
-    return 'Format: symbol · space · code — e.g. RM MYR'
-  }
-
+  if (spaceIndex === -1) return 'Format: symbol · space · code — e.g. RM MYR'
   const symbol = v.slice(0, spaceIndex)
   const code = v.slice(spaceIndex + 1).trim()
-
   if (!symbol) return 'Symbol is missing — e.g. RM MYR'
   if (!code) return 'Currency code is missing — e.g. RM MYR'
   if (code !== code.toUpperCase())
     return `Code must be uppercase — use "${code.toUpperCase()}" not "${code}"`
   if (!/^[A-Z]{2,5}$/.test(code)) return 'Currency code must be 2–5 letters — e.g. MYR, BRL, PHP'
-
   return ''
 }
 
@@ -593,7 +596,6 @@ const currencySymbol = computed(() => {
   return found ? found.symbol : '$'
 })
 
-// ── Item image handlers ──────────────────────────────
 function triggerItemImageUpload() {
   itemImageInput.value?.click()
 }
@@ -657,7 +659,6 @@ async function saveStep1() {
     error.value = 'Please enter your restaurant name.'
     return
   }
-
   if (step1.value.currency === 'OTHER') {
     const err = validateCustomCurrency(customCurrency.value)
     if (err) {
@@ -743,7 +744,6 @@ async function saveStep2() {
       .single()
     if (catError) throw catError
 
-    // Upload item image if provided
     let image_url = null
     if (step2.value.imageFile) {
       const ext = step2.value.imageFile.name.split('.').pop()
@@ -809,10 +809,7 @@ async function saveStep3() {
       const orderUrl = `${window.location.origin}/order/${restaurantSlug.value}/${newTableId.value}`
       const { error: updateError } = await supabase
         .from('tables')
-        .update({
-          name: step3.value.tableName.trim(),
-          qr_code_url: orderUrl,
-        })
+        .update({ name: step3.value.tableName.trim(), qr_code_url: orderUrl })
         .eq('id', newTableId.value)
       if (updateError) throw updateError
     }
@@ -879,7 +876,10 @@ async function loadRestaurantData() {
   if (restaurant) {
     step1.value.name = restaurant.name || ''
     step1.value.address = restaurant.address || ''
-    step1.value.timezone = restaurant.timezone || 'UTC'
+    // Keep auto-detected timezone unless one was already saved (and it's not UTC default)
+    if (restaurant.timezone && restaurant.timezone !== 'UTC') {
+      step1.value.timezone = restaurant.timezone
+    }
     if (restaurant.logo_url) logoPreview.value = restaurant.logo_url
     restaurantSlug.value = restaurant.slug || ''
 
@@ -1137,6 +1137,34 @@ select.field-input option {
   margin-top: 8px;
 }
 
+/* ── Timezone display (read-only) ── */
+.timezone-display {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 14px;
+  background: rgba(200, 115, 58, 0.06);
+  border: 1px solid rgba(200, 115, 58, 0.2);
+  border-radius: 8px;
+  min-height: 42px;
+}
+.tz-icon {
+  color: #c8733a;
+  flex-shrink: 0;
+}
+.tz-value {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+  word-break: break-all;
+}
+.tz-hint {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.3);
+  line-height: 1.5;
+  margin: 0;
+}
+
 /* ── Custom currency ── */
 .custom-currency-wrap {
   margin-top: 8px;
@@ -1144,21 +1172,17 @@ select.field-input option {
   flex-direction: column;
   gap: 6px;
 }
-
 .custom-currency-field {
   position: relative;
 }
-
 .custom-input {
   width: 100%;
   box-sizing: border-box;
 }
-
 .custom-currency-field.has-error .custom-input {
   border-color: rgba(239, 68, 68, 0.5) !important;
   box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
 }
-
 .currency-tooltip {
   position: absolute;
   bottom: calc(100% + 10px);
@@ -1179,7 +1203,6 @@ select.field-input option {
   z-index: 10;
   pointer-events: none;
 }
-
 .tooltip-arrow {
   position: absolute;
   bottom: -5px;
@@ -1191,7 +1214,6 @@ select.field-input option {
   border-right: 1px solid rgba(239, 68, 68, 0.4);
   border-bottom: 1px solid rgba(239, 68, 68, 0.4);
 }
-
 .tooltip-fade-enter-active,
 .tooltip-fade-leave-active {
   transition:
@@ -1203,7 +1225,6 @@ select.field-input option {
   opacity: 0;
   transform: translateX(-50%) translateY(4px);
 }
-
 .currency-format-hint {
   font-size: 11px;
   color: rgba(255, 255, 255, 0.3);

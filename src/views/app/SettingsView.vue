@@ -158,7 +158,6 @@
                     @blur="tooltipVisible = false"
                     autocomplete="off"
                   />
-                  <!-- Floating tooltip -->
                   <transition name="tooltip-fade">
                     <div v-if="customCurrencyError && tooltipVisible" class="currency-tooltip">
                       <AlertCircle :size="12" />
@@ -176,13 +175,31 @@
               </div>
             </div>
 
+            <!-- Timezone -->
             <div class="form-group">
               <label class="form-label">Timezone</label>
-              <select v-model="form.timezone" class="form-select" @change="markDirty">
+              <select v-model="form.timezone" class="form-select" @change="onTimezoneChange">
                 <option v-for="tz in timezones" :key="tz.value" :value="tz.value">
                   {{ tz.label }}
                 </option>
               </select>
+
+              <!-- Warning when timezone is changed -->
+              <div v-if="timezoneChanged" class="timezone-warning">
+                <AlertTriangle :size="13" class="tz-warning-icon" />
+                <div>
+                  <strong>Heads up!</strong> Changing your timezone affects when your promotions and
+                  happy hour discounts activate. Make sure your promotion time windows are still
+                  correct after saving.
+                </div>
+              </div>
+
+              <!-- Info hint when not changed -->
+              <p v-else class="form-hint tz-info-hint">
+                <Clock :size="11" />
+                Promotion time windows use this timezone. Currently:
+                <strong>{{ form.timezone }}</strong>
+              </p>
             </div>
           </div>
 
@@ -422,7 +439,7 @@ const LockIcon = Lock
 const authStore = useAuthStore()
 const route = useRoute()
 
-// ── Known currencies (8 fixed) ───────────────────────
+// ── Known currencies ─────────────────────────────────
 const KNOWN_CURRENCIES = [
   { code: 'USD', symbol: '$', name: 'US Dollar' },
   { code: 'EUR', symbol: '€', name: 'Euro' },
@@ -449,9 +466,10 @@ const slugConfirmModal = ref(false)
 const restaurant = ref({})
 const form = ref({ name: '', slug: '', address: '', logoUrl: '', currency: 'USD', timezone: 'UTC' })
 const savedSlug = ref('')
+const savedTimezone = ref('') // tracks the originally saved timezone
 const appOrigin = window.location.origin
 
-// ── Custom currency state ────────────────────────────
+// ── Custom currency ──────────────────────────────────
 const customCurrency = ref('')
 const customCurrencyError = ref('')
 const tooltipVisible = ref(false)
@@ -469,19 +487,15 @@ function onCurrencyChange() {
 function validateCustomCurrency(val) {
   const v = val.trim()
   if (!v) return 'Please enter your custom currency.'
-
   const spaceIndex = v.indexOf(' ')
   if (spaceIndex === -1) return 'Format: symbol · space · code — e.g. RM MYR'
-
   const symbol = v.slice(0, spaceIndex)
   const code = v.slice(spaceIndex + 1).trim()
-
   if (!symbol) return 'Symbol is missing — e.g. RM MYR'
   if (!code) return 'Currency code is missing — e.g. RM MYR'
   if (code !== code.toUpperCase())
     return `Code must be uppercase — use "${code.toUpperCase()}" not "${code}"`
   if (!/^[A-Z]{2,5}$/.test(code)) return 'Currency code must be 2–5 letters — e.g. MYR, BRL, PHP'
-
   return ''
 }
 
@@ -491,24 +505,30 @@ function onCustomCurrencyInput() {
   markDirty()
 }
 
-// Parse symbol from custom value (e.g. "RM MYR" → "RM")
 function parsedCustomSymbol(val) {
   const v = (val || customCurrency.value).trim()
   const spaceIndex = v.indexOf(' ')
   return spaceIndex !== -1 ? v.slice(0, spaceIndex) : v || '?'
 }
 
-// The value stored in DB
 const resolvedCurrency = computed(() => {
   if (form.value.currency === 'OTHER') return customCurrency.value.trim()
   return form.value.currency
 })
+
+// ── Timezone ──────────────────────────────────────────
+const timezoneChanged = computed(() => form.value.timezone !== savedTimezone.value)
+
+function onTimezoneChange() {
+  markDirty()
+}
 
 // ── Snapshot / dirty ───────────────────────────────
 let snapshot = ''
 function takeSnapshot() {
   snapshot = JSON.stringify({ form: form.value, customCurrency: customCurrency.value })
   savedSlug.value = form.value.slug
+  savedTimezone.value = form.value.timezone
 }
 function markDirty() {
   isDirty.value =
@@ -573,7 +593,7 @@ const planBadgeLabel = computed(() => {
   return 'Expired'
 })
 
-// ── Static data ────────────────────────────────────
+// ── Timezones ──────────────────────────────────────
 const timezones = [
   { value: 'UTC', label: 'UTC' },
   { value: 'America/New_York', label: 'Eastern Time (US & Canada)' },
@@ -595,19 +615,15 @@ const timezones = [
   { value: 'Pacific/Auckland', label: 'Auckland (NZST)' },
 ]
 
-// Currency preview — handles both known ISO codes and custom "RM MYR" format
+// ── Currency preview ───────────────────────────────
 const currencyPreview = computed(() => {
   const currency = form.value.currency
-
   if (currency === 'OTHER') {
-    // Use custom symbol with manually formatted number
     const err = validateCustomCurrency(customCurrency.value)
     if (err) return '—'
     const sym = parsedCustomSymbol()
     return `${sym} 1,234.50`
   }
-
-  // Try Intl for known ISO codes
   try {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(1234.5)
   } catch {
@@ -645,12 +661,11 @@ async function fetchSettings() {
       address: data.address || '',
       logoUrl: data.logo_url || '',
       timezone: data.timezone || 'UTC',
-      // If stored value is not one of the 8 known codes, switch to OTHER
       currency: KNOWN_CODES.includes(stored) ? stored : 'OTHER',
     }
 
     if (!KNOWN_CODES.includes(stored)) {
-      customCurrency.value = stored // populate the custom field
+      customCurrency.value = stored
     }
   }
   takeSnapshot()
@@ -698,7 +713,6 @@ function handleSave() {
     return
   }
 
-  // Validate custom currency before saving
   if (form.value.currency === 'OTHER') {
     const err = validateCustomCurrency(customCurrency.value)
     if (err) {
@@ -733,7 +747,7 @@ async function saveSettings() {
       slug: form.value.slug.trim(),
       address: form.value.address.trim() || null,
       logo_url: form.value.logoUrl || null,
-      currency: resolvedCurrency.value, // "USD" or "RM MYR"
+      currency: resolvedCurrency.value,
       timezone: form.value.timezone,
     })
     .eq('id', authStore.profile?.restaurant_id)
@@ -741,15 +755,18 @@ async function saveSettings() {
   if (error) {
     saveError.value = 'Failed to save: ' + error.message
   } else {
-    saveSuccess.value = slugChanged.value
-      ? 'Settings saved. Remember to reprint your QR codes!'
+    const messages = []
+    if (slugChanged.value) messages.push('Remember to reprint your QR codes!')
+    if (timezoneChanged.value) messages.push('Check your promotion time windows are still correct.')
+    saveSuccess.value = messages.length
+      ? `Settings saved. ${messages.join(' ')}`
       : 'Settings saved successfully.'
     takeSnapshot()
     isDirty.value = false
     await authStore.fetchProfile()
     setTimeout(() => {
       saveSuccess.value = ''
-    }, 4000)
+    }, 5000)
   }
   saving.value = false
 }
@@ -1236,6 +1253,30 @@ onUnmounted(() => {
   color: #facc15;
 }
 
+/* ── Timezone warning ── */
+.timezone-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 4px;
+  padding: 12px 14px;
+  background: rgba(250, 204, 21, 0.08);
+  border: 1px solid rgba(250, 204, 21, 0.25);
+  border-radius: 8px;
+  font-size: 13px;
+  color: #facc15;
+  line-height: 1.5;
+}
+.tz-warning-icon {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.tz-info-hint {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  margin-top: 2px;
+}
+
 /* ── Custom currency ── */
 .custom-currency-wrap {
   margin-top: 8px;
@@ -1243,22 +1284,17 @@ onUnmounted(() => {
   flex-direction: column;
   gap: 6px;
 }
-
 .custom-currency-field {
   position: relative;
 }
-
 .custom-input {
   width: 100%;
   box-sizing: border-box;
 }
-
 .custom-currency-field.has-error .custom-input {
   border-color: #ef4444 !important;
   box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12) !important;
 }
-
-/* Floating tooltip */
 .currency-tooltip {
   position: absolute;
   bottom: calc(100% + 10px);
@@ -1279,7 +1315,6 @@ onUnmounted(() => {
   z-index: 50;
   pointer-events: none;
 }
-
 .tooltip-arrow {
   position: absolute;
   bottom: -5px;
@@ -1291,7 +1326,6 @@ onUnmounted(() => {
   border-right: 1px solid rgba(239, 68, 68, 0.4);
   border-bottom: 1px solid rgba(239, 68, 68, 0.4);
 }
-
 .tooltip-fade-enter-active,
 .tooltip-fade-leave-active {
   transition:
@@ -1303,7 +1337,6 @@ onUnmounted(() => {
   opacity: 0;
   transform: translateX(-50%) translateY(4px);
 }
-
 .currency-format-hint {
   font-size: 12px;
   color: var(--color-text-muted);
