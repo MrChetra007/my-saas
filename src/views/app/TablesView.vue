@@ -224,7 +224,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
 import QRCode from 'qrcode'
@@ -246,6 +246,29 @@ const LIMITS = {
   pro: Infinity,
   enterprise: Infinity,
 }
+
+let realtimeChannel = null
+
+function subscribeRealtime() {
+  if (!restaurantId.value) return
+  realtimeChannel = supabase
+    .channel('tables-page')
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'tables',
+        filter: `restaurant_id=eq.${restaurantId.value}`,
+      },
+      () => loadTables(),
+    )
+    .subscribe()
+}
+
+onUnmounted(() => {
+  if (realtimeChannel) supabase.removeChannel(realtimeChannel)
+})
 
 const resolvedPlan = computed(() => {
   const p = restaurantPlan.value
@@ -363,6 +386,7 @@ onMounted(async () => {
 
   // Run plan fetch in parallel with table load (per auth reference pattern)
   await Promise.all([fetchPlan(), loadTables()])
+  subscribeRealtime() // ← add this
 })
 
 async function loadTables() {

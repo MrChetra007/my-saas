@@ -86,7 +86,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, onUnmounted } from 'vue'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
 import { LayoutGrid, Armchair, Power, Info } from 'lucide-vue-next'
@@ -108,6 +108,30 @@ async function fetchTables() {
   if (!error && data) tables.value = data
   loading.value = false
 }
+let realtimeChannel = null
+
+function subscribeRealtime() {
+  const restaurantId = authStore.profile?.restaurant_id
+  if (!restaurantId) return
+
+  realtimeChannel = supabase
+    .channel('kitchen-tables')
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'tables',
+        filter: `restaurant_id=eq.${restaurantId}`,
+      },
+      () => fetchTables(),
+    )
+    .subscribe()
+}
+
+onUnmounted(() => {
+  if (realtimeChannel) supabase.removeChannel(realtimeChannel)
+})
 
 async function toggleTable(table) {
   toggling.value = table.id
@@ -132,7 +156,10 @@ async function toggleTable(table) {
   }
 }
 
-onMounted(fetchTables)
+onMounted(async () => {
+  await fetchTables()
+  subscribeRealtime()
+})
 </script>
 
 <style scoped>

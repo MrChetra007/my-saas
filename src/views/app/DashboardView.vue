@@ -453,6 +453,82 @@ async function loadRestaurant() {
   }
 }
 
+// async function fetchDashboard() {
+//   loading.value = true
+//   const restaurantId = authStore.profile?.restaurant_id
+//   if (!restaurantId) return
+
+//   const { start, end } = getTodayRange()
+
+//   const { data: orders, error } = await supabase
+//     .from('orders')
+//     .select(
+//       'id, status, created_at, total_amount, order_items(id, quantity, menu_items(name, price)), tables(name)',
+//     )
+//     .eq('restaurant_id', restaurantId)
+//     .gte('created_at', start)
+//     .lte('created_at', end)
+//     .order('created_at', { ascending: false })
+
+//   if (error) {
+//     console.error('Dashboard fetch error:', error)
+//     loading.value = false
+//     return
+//   }
+
+//   const { count: totalTables } = await supabase
+//     .from('tables')
+//     .select('id', { count: 'exact', head: true })
+//     .eq('restaurant_id', restaurantId)
+
+//   const paidOrders = orders.filter((o) => o.status === 'paid')
+//   const revenue = paidOrders.reduce((sum, o) => sum + (o.total_amount || 0), 0)
+//   const pendingList = orders.filter((o) => ['pending', 'cooking'].includes(o.status))
+//   const activeTableIds = new Set(pendingList.map((o) => o.tables?.name).filter(Boolean))
+
+//   stats.value = {
+//     revenue,
+//     totalOrders: orders.length,
+//     paidOrders: paidOrders.length,
+//     pendingOrders: pendingList.length,
+//     activeTables: activeTableIds.size,
+//     totalTables: totalTables || 0,
+//     avgOrderValue: paidOrders.length ? revenue / paidOrders.length : 0,
+//   }
+
+//   // Avg prep time (cooking orders, time from created_at to now)
+//   if (pendingList.length) {
+//     const avgMs =
+//       pendingList.reduce((sum, o) => sum + (Date.now() - new Date(o.created_at)), 0) /
+//       pendingList.length
+//     avgPrepTime.value = Math.round(avgMs / 60000)
+//   } else {
+//     avgPrepTime.value = 0
+//   }
+
+//   pendingOrders.value = pendingList.slice(0, 8)
+
+//   // Top items with revenue
+//   const itemMap = {}
+//   for (const order of orders) {
+//     for (const oi of order.order_items || []) {
+//       const name = oi.menu_items?.name || 'Unknown'
+//       const price = oi.menu_items?.price || 0
+//       if (!itemMap[name]) itemMap[name] = { qty: 0, revenue: 0 }
+//       itemMap[name].qty += oi.quantity || 1
+//       itemMap[name].revenue += (oi.quantity || 1) * price
+//     }
+//   }
+//   topItems.value = Object.entries(itemMap)
+//     .map(([name, data]) => ({ name, ...data }))
+//     .sort((a, b) => b.qty - a.qty)
+//     .slice(0, 5)
+
+//   loading.value = false
+// }
+
+// ── Realtime ──────────────────────────────────────────────────────
+
 async function fetchDashboard() {
   loading.value = true
   const restaurantId = authStore.profile?.restaurant_id
@@ -481,17 +557,22 @@ async function fetchDashboard() {
     .select('id', { count: 'exact', head: true })
     .eq('restaurant_id', restaurantId)
 
+  const { count: activeTablesCount } = await supabase
+    .from('tables')
+    .select('id', { count: 'exact', head: true })
+    .eq('restaurant_id', restaurantId)
+    .eq('is_active', true)
+
   const paidOrders = orders.filter((o) => o.status === 'paid')
   const revenue = paidOrders.reduce((sum, o) => sum + (o.total_amount || 0), 0)
   const pendingList = orders.filter((o) => ['pending', 'cooking'].includes(o.status))
-  const activeTableIds = new Set(pendingList.map((o) => o.tables?.name).filter(Boolean))
 
   stats.value = {
     revenue,
     totalOrders: orders.length,
     paidOrders: paidOrders.length,
     pendingOrders: pendingList.length,
-    activeTables: activeTableIds.size,
+    activeTables: activeTablesCount || 0,
     totalTables: totalTables || 0,
     avgOrderValue: paidOrders.length ? revenue / paidOrders.length : 0,
   }
@@ -527,11 +608,10 @@ async function fetchDashboard() {
   loading.value = false
 }
 
-// ── Realtime ──────────────────────────────────────────────────────
-
 function subscribeRealtime() {
   const restaurantId = authStore.profile?.restaurant_id
   if (!restaurantId) return
+
   realtimeChannel = supabase
     .channel('dashboard-orders')
     .on(
@@ -540,6 +620,16 @@ function subscribeRealtime() {
         event: '*',
         schema: 'public',
         table: 'orders',
+        filter: `restaurant_id=eq.${restaurantId}`,
+      },
+      () => fetchDashboard(),
+    )
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'tables',
         filter: `restaurant_id=eq.${restaurantId}`,
       },
       () => fetchDashboard(),

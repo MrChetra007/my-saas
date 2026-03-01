@@ -346,7 +346,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
 import {
@@ -383,6 +383,36 @@ const sheetOpen = ref(false)
 
 // ── Auto Promo ────────────────────────────────────────────────
 const autoPromo = ref(null)
+
+let realtimeChannel = null
+
+function subscribeRealtime() {
+  const rid = authStore.profile?.restaurant_id
+  if (!rid) return
+
+  realtimeChannel = supabase
+    .channel('new-order-tables')
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'tables',
+        filter: `restaurant_id=eq.${rid}`,
+      },
+      (payload) => {
+        // Patch only the changed table instead of refetching all
+        const updated = payload.new
+        const idx = tables.value.findIndex((t) => t.id === updated.id)
+        if (idx !== -1) tables.value[idx] = { ...tables.value[idx], ...updated }
+      },
+    )
+    .subscribe()
+}
+
+onUnmounted(() => {
+  if (realtimeChannel) supabase.removeChannel(realtimeChannel)
+})
 
 async function checkAutoPromotions() {
   const rid = authStore.profile?.restaurant_id
@@ -589,6 +619,7 @@ onMounted(async () => {
 
   // Check for active auto promotions on load
   await checkAutoPromotions()
+  subscribeRealtime() // ← add this
 })
 </script>
 
