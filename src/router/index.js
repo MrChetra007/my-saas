@@ -29,6 +29,11 @@ const routes = [
     component: () => import('@/views/public/Privacypolicy.vue'),
     meta: { public: true },
   },
+  {
+    path: '/refund',
+    component: () => import('@/views/public/Refund.vue'),
+    meta: { public: true },
+  },
   //for customers to place orders without logging in
   {
     path: '/order/:slug/:tableId',

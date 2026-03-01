@@ -748,6 +748,7 @@
           <a href="#about" @click.prevent="scrollTo('about')" class="footer-link">About</a>
           <RouterLink to="/terms" class="footer-link">Terms of Service</RouterLink>
           <RouterLink to="/privacy" class="footer-link">Privacy Policy</RouterLink>
+          <RouterLink to="/refund" class="footer-link">Refund Policy</RouterLink>
           <RouterLink to="/login" class="footer-link">Login</RouterLink>
           <RouterLink to="/signup" class="footer-link">Sign up</RouterLink>
         </div>
