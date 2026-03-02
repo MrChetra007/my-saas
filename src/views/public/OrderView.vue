@@ -748,13 +748,16 @@ function startCountdown() {
   if (countdownInterval) clearInterval(countdownInterval)
 
   if (!autoPromo.value?.ends_at) {
-    // No expiry — badge shows without a timer
     promoCountdown.value = '∞'
     return
   }
 
   const tick = () => {
-    const ms = new Date(autoPromo.value.ends_at) - Date.now()
+    // Combine today's date with the time-only string from Supabase e.g. "06:00:00"
+    const todayDate = new Date().toISOString().split('T')[0] // "2026-03-02"
+    const endsAt = new Date(`${todayDate}T${autoPromo.value.ends_at}`)
+
+    const ms = endsAt - Date.now()
     if (ms <= 0) {
       promoCountdown.value = ''
       clearInterval(countdownInterval)
@@ -768,6 +771,7 @@ function startCountdown() {
     }
     promoCountdown.value = formatCountdown(ms)
   }
+
   tick()
   countdownInterval = setInterval(tick, 1000)
 }
@@ -813,13 +817,16 @@ async function checkPromotion() {
   }
 
   // Filter expired promos client-side — avoids PostgREST or() syntax issues with timestamps
-  if (data.ends_at && new Date(data.ends_at) < new Date()) {
-    if (autoPromo.value) showToast('The automatic discount has ended.', 'warning')
-    autoPromo.value = null
-    codePromoHint.value = null
-    return
+  if (data.ends_at) {
+    const todayDate = new Date().toISOString().split('T')[0]
+    const endsAt = new Date(`${todayDate}T${data.ends_at}`)
+    if (endsAt < new Date()) {
+      if (autoPromo.value) showToast('The automatic discount has ended.', 'warning')
+      autoPromo.value = null
+      codePromoHint.value = null
+      return
+    }
   }
-
   data.value = Number(data.value)
 
   if (data.is_auto) {
