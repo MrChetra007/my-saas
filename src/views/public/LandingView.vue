@@ -632,7 +632,7 @@
               <div class="about-avatar-ring" />
             </div>
             <div class="about-info">
-              <div class="about-name">Sozin</div>
+              <div class="about-name">Seth Sochetra</div>
               <div class="about-role">Founder &amp; Developer</div>
               <p class="about-bio">
                 Passionate about building tools that make restaurant operations effortless. Qrserve
