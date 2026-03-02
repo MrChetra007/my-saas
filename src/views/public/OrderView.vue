@@ -94,7 +94,7 @@
           <div class="summary-title">Your order</div>
           <div class="summary-items">
             <div v-for="item in placedItems" :key="item.id" class="summary-item">
-              <span class="summary-qty">×{{ item.quantity }}</span>
+              <span class="summary-qty">x{{ item.quantity }}</span>
               <span class="summary-name">{{ item.name }}</span>
               <span class="summary-price">
                 {{ currencySymbol }}{{ (item.unit_price * item.quantity).toFixed(2) }}
@@ -104,7 +104,7 @@
           <div v-if="placedDiscountAmount > 0" class="summary-discount-row">
             <span>Discount</span>
             <span class="summary-discount-val">
-              −{{ currencySymbol }}{{ placedDiscountAmount.toFixed(2) }}
+              -{{ currencySymbol }}{{ placedDiscountAmount.toFixed(2) }}
             </span>
           </div>
           <div class="summary-total">
@@ -138,7 +138,39 @@
           </div>
         </div>
 
-        <!-- Auto promo announcement -->
+        <!-- Floating flame badge — auto promo -->
+        <Transition name="promo-badge">
+          <div
+            v-if="autoPromo && (promoCountdown || promoFlashing)"
+            class="promo-flame-badge"
+            :class="{ 'is-flashing': promoFlashing }"
+          >
+            <span class="flame-emoji">🔥</span>
+            <div class="flame-badge-text">
+              <span class="flame-discount">
+                {{
+                  autoPromo.type === 'percentage'
+                    ? `${autoPromo.value}% OFF`
+                    : `${currencySymbol}${autoPromo.value} OFF`
+                }}
+              </span>
+              <span class="flame-timer">{{ promoCountdown || 'Expired!' }}</span>
+            </div>
+          </div>
+        </Transition>
+
+        <!-- Floating hint badge — code promo (no code revealed) -->
+        <Transition name="promo-badge">
+          <div v-if="codePromoHint && !appliedPromo" class="promo-code-hint-badge">
+            <span class="hint-emoji">🏷️</span>
+            <div class="flame-badge-text">
+              <span class="hint-discount">Discount available</span>
+              <span class="hint-sub">Use a code at checkout</span>
+            </div>
+          </div>
+        </Transition>
+
+        <!-- Auto promo announcement banner -->
         <div v-if="autoPromo" class="header-promo-banner">
           <Tag :size="14" />
           <span>
@@ -153,7 +185,7 @@
         </div>
       </div>
 
-      <!-- ── Category filter tabs ── -->
+      <!-- Category filter tabs -->
       <div class="category-tabs-wrap">
         <div class="category-tabs">
           <button
@@ -176,7 +208,7 @@
         </div>
       </div>
 
-      <!-- ── Menu content ── -->
+      <!-- Menu content -->
       <div class="menu-content" ref="menuContentEl">
         <template v-if="activeCatFilter === 'all'">
           <div
@@ -290,7 +322,7 @@
 
       <div style="height: 100px" />
 
-      <!-- ── Cart bar ───────────────────────── -->
+      <!-- Cart bar -->
       <Transition name="cart-bar">
         <div v-if="cartItemCount > 0" class="cart-bar" @click="openCart">
           <div class="cart-bar-left">
@@ -302,7 +334,7 @@
       </Transition>
     </template>
 
-    <!-- ══ ITEM DETAIL MODAL ══════════════════ -->
+    <!-- ITEM DETAIL MODAL -->
     <Teleport to="body">
       <div v-if="itemModal.open" class="modal-backdrop" @click.self="itemModal.open = false">
         <div class="modal modal-item">
@@ -328,13 +360,13 @@
               {{ currencySymbol }}{{ Number(itemModal.item?.price).toFixed(2) }}
             </div>
             <div class="field-group">
-              <label class="field-label"
-                >Special instructions <span class="optional">(optional)</span></label
-              >
+              <label class="field-label">
+                Special instructions <span class="optional">(optional)</span>
+              </label>
               <textarea
                 v-model="itemModal.notes"
                 class="field-input field-textarea"
-                placeholder="e.g. no onions, extra sauce…"
+                placeholder="e.g. no onions, extra sauce..."
                 rows="2"
               />
             </div>
@@ -356,7 +388,7 @@
       </div>
     </Teleport>
 
-    <!-- ══ CART MODAL ════════════════════════ -->
+    <!-- CART MODAL -->
     <Teleport to="body">
       <div v-if="cartOpen" class="modal-backdrop" @click.self="cartOpen = false">
         <div class="modal modal-cart">
@@ -381,17 +413,18 @@
             </div>
 
             <div class="field-group" style="margin-top: 16px">
-              <label class="field-label"
-                >Order notes <span class="optional">(optional)</span></label
-              >
+              <label class="field-label">
+                Order notes <span class="optional">(optional)</span>
+              </label>
               <textarea
                 v-model="orderNotes"
                 class="field-input field-textarea"
-                placeholder="Any notes for the kitchen…"
+                placeholder="Any notes for the kitchen..."
                 rows="2"
               />
             </div>
 
+            <!-- Auto promo applied banner -->
             <div v-if="autoPromo && !appliedPromo" class="auto-promo-banner">
               <Tag :size="14" />
               <div>
@@ -406,6 +439,7 @@
               </div>
             </div>
 
+            <!-- Manual promo code input -->
             <div v-if="!appliedPromo" class="promo-section">
               <div class="promo-input-row">
                 <input
@@ -422,12 +456,13 @@
                   @click="applyPromoCode"
                   :disabled="promoLoading || !promoInput.trim()"
                 >
-                  {{ promoLoading ? '…' : 'Apply' }}
+                  {{ promoLoading ? '...' : 'Apply' }}
                 </button>
               </div>
               <p v-if="promoError" class="promo-error">{{ promoError }}</p>
             </div>
 
+            <!-- Applied code promo tag -->
             <div v-if="appliedPromo" class="applied-promo-tag">
               <CheckCircle :size="16" class="applied-check" />
               <div class="applied-info">
@@ -461,9 +496,9 @@
                   }}
                 </span>
               </span>
-              <span class="cart-discount-val"
-                >−{{ currencySymbol }}{{ discountAmount.toFixed(2) }}</span
-              >
+              <span class="cart-discount-val">
+                -{{ currencySymbol }}{{ discountAmount.toFixed(2) }}
+              </span>
             </div>
             <div class="cart-total-row" :class="{ 'has-discount': discountAmount > 0 }">
               <span class="cart-total-label">Total</span>
@@ -474,7 +509,7 @@
               <div v-else class="btn-spinner" />
               {{
                 placing
-                  ? 'Placing order…'
+                  ? 'Placing order...'
                   : `Place Order · ${currencySymbol}${orderTotal.toFixed(2)}`
               }}
             </button>
@@ -487,7 +522,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { supabase } from '@/lib/supabase'
 import { v4 as uuidv4 } from 'uuid'
@@ -511,11 +546,9 @@ import {
 
 const route = useRoute()
 
-// ── Restaurant ID from URL query param (?rid=...) ─────────────────────────────
-// This is embedded in the QR code by Tables.vue so we always know which
-// restaurant to scope promotions to — even before the DB fetch completes.
 const restaurantIdFromUrl = route.query.rid || null
 
+// ── Core state ────────────────────────────────────────────────────────────────
 const loading = ref(true)
 const notFound = ref(false)
 const restaurant = ref({})
@@ -533,17 +566,15 @@ const activeCatFilter = ref('all')
 const cartOpen = ref(false)
 const menuContentEl = ref(null)
 const scrollSentinel = ref(null)
-
 const visibleCatCount = ref(2)
-const allItemsLoaded = computed(() => visibleCatCount.value >= activeCategories.value.length)
 
 let statusChannel = null
 let menuChannel = null
 let scrollObserver = null
-let autoPromoInterval = null
+let promoPollingInterval = null
 
-// ── Resolved restaurant ID (URL param takes priority, falls back to fetched) ──
 const resolvedRestaurantId = computed(() => restaurantIdFromUrl || restaurant.value?.id || null)
+const allItemsLoaded = computed(() => visibleCatCount.value >= activeCategories.value.length)
 
 // ── Toast ─────────────────────────────────────────────────────────────────────
 const toast = ref({ show: false, message: '', type: 'success', icon: CheckCircle })
@@ -551,24 +582,17 @@ let toastTimer = null
 
 function showToast(message, type = 'success') {
   if (toastTimer) clearTimeout(toastTimer)
-  const iconMap = {
-    success: CheckCircle,
-    error: XCircle,
-    info: Flame,
-    warning: Clock,
-  }
+  const iconMap = { success: CheckCircle, error: XCircle, info: Flame, warning: Clock }
   toast.value = { show: true, message, type, icon: iconMap[type] ?? CheckCircle }
   toastTimer = setTimeout(() => (toast.value.show = false), 4000)
 }
 
 // ── Audio ─────────────────────────────────────────────────────────────────────
 let audioCtx = null
-
 function getAudioCtx() {
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)()
   return audioCtx
 }
-
 function playStatusChime(type = 'cooking') {
   try {
     const ctx = getAudioCtx()
@@ -604,24 +628,28 @@ function playStatusChime(type = 'cooking') {
   }
 }
 
-// ── Cart ──────────────────────────────────────────────────────────────────────
+// ── Cart state ────────────────────────────────────────────────────────────────
 const cart = ref([])
 const cartItemCount = computed(() => cart.value.reduce((n, l) => n + l.qty, 0))
 const cartSubtotal = computed(() => cart.value.reduce((n, l) => n + l.price * l.qty, 0))
 
-// ── Promotions ────────────────────────────────────────────────────────────────
+// ── Promotion state ───────────────────────────────────────────────────────────
 const promoInput = ref('')
 const appliedPromoCode = ref('')
 const promoError = ref('')
 const promoLoading = ref(false)
-const appliedPromo = ref(null)
-const autoPromo = ref(null)
+const appliedPromo = ref(null) // manually entered & validated code promo
+const autoPromo = ref(null) // is_auto=true: applied live in cart
+const codePromoHint = ref(null) // is_auto=false: hint badge only, no value shown
 
+// ── Discount calculation ──────────────────────────────────────────────────────
+// Auto promos are always live. Code promos only count after the user applies them.
 const discountAmount = computed(() => {
   const promo = appliedPromo.value || autoPromo.value
   if (!promo || cartSubtotal.value === 0) return 0
-  if (promo.type === 'percentage') return Math.round(cartSubtotal.value * promo.value) / 100
-  return Math.min(promo.value, cartSubtotal.value)
+  const val = Number(promo.value)
+  if (promo.type === 'percentage') return Math.round(cartSubtotal.value * val) / 100
+  return Math.min(val, cartSubtotal.value)
 })
 
 const orderTotal = computed(() => Math.max(0, cartSubtotal.value - discountAmount.value))
@@ -637,16 +665,7 @@ const placedTotal = computed(() =>
 // ── Currency ──────────────────────────────────────────────────────────────────
 const currencySymbol = computed(() => {
   const currency = restaurant.value.currency || 'USD'
-  const map = {
-    USD: '$',
-    EUR: '€',
-    GBP: '£',
-    KHR: '៛',
-    THB: '฿',
-    SGD: 'S$',
-    AUD: 'A$',
-    JPY: '¥',
-  }
+  const map = { USD: '$', EUR: '€', GBP: '£', KHR: '៛', THB: '฿', SGD: 'S$', AUD: 'A$', JPY: '¥' }
   if (map[currency]) return map[currency]
   const spaceIndex = currency.indexOf(' ')
   if (spaceIndex !== -1) return currency.slice(0, spaceIndex)
@@ -657,14 +676,13 @@ const currencySymbol = computed(() => {
 const activeCategories = computed(() =>
   categories.value.filter((c) => c.is_active && c.items?.length > 0),
 )
-
 const filteredCategoryItems = computed(() => {
   if (activeCatFilter.value === 'all') return []
   const cat = activeCategories.value.find((c) => c.id === activeCatFilter.value)
   return cat?.items || []
 })
 
-// ── Status screen helpers ─────────────────────────────────────────────────────
+// ── Order status helpers ──────────────────────────────────────────────────────
 const statusIcon = computed(() => {
   if (orderStatus.value === 'pending') return Clock
   if (orderStatus.value === 'cooking') return ChefHat
@@ -672,22 +690,19 @@ const statusIcon = computed(() => {
   if (orderStatus.value === 'rejected') return X
   return CheckCircle
 })
-
 const statusClass = computed(() => ({
   'status-pending': orderStatus.value === 'pending',
   'status-cooking': orderStatus.value === 'cooking',
   'status-ready': ['ready', 'paid'].includes(orderStatus.value),
   'status-rejected': orderStatus.value === 'rejected',
 }))
-
 const statusTitle = computed(() => {
   if (orderStatus.value === 'pending') return 'Order received!'
-  if (orderStatus.value === 'cooking') return 'Being prepared…'
+  if (orderStatus.value === 'cooking') return 'Being prepared...'
   if (orderStatus.value === 'ready') return 'Your order is ready!'
   if (orderStatus.value === 'rejected') return 'Order not accepted'
   return 'Order complete!'
 })
-
 const statusDesc = computed(() => {
   if (orderStatus.value === 'pending')
     return 'The kitchen has your order and will confirm it shortly.'
@@ -697,19 +712,173 @@ const statusDesc = computed(() => {
   return 'Thank you for dining with us!'
 })
 
-// ── Status change handler ─────────────────────────────────────────────────────
 function handleStatusChange(newStatus) {
   orderStatus.value = newStatus
   if (newStatus === 'cooking') {
     playStatusChime('cooking')
     showToast('Kitchen accepted your order — now cooking! 🍳', 'info')
-  } else if (newStatus === 'ready') {
+  }
+  if (newStatus === 'ready') {
     playStatusChime('ready')
     showToast('Your order is ready for pickup! 🎉', 'success')
-  } else if (newStatus === 'rejected') {
+  }
+  if (newStatus === 'rejected') {
     playStatusChime('rejected')
     showToast('Your order was not accepted. Please ask staff.', 'error')
   }
+}
+
+// ── Promo countdown (for auto promos with ends_at) ────────────────────────────
+const promoCountdown = ref('')
+const promoFlashing = ref(false)
+let countdownInterval = null
+
+function formatCountdown(ms) {
+  if (ms <= 0) return null
+  const totalSec = Math.floor(ms / 1000)
+  const h = Math.floor(totalSec / 3600)
+  const m = Math.floor((totalSec % 3600) / 60)
+  const s = totalSec % 60
+  if (h > 0) return `${h}h ${String(m).padStart(2, '0')}m`
+  if (m > 0) return `${m}m ${String(s).padStart(2, '0')}s`
+  return `${s}s`
+}
+
+function startCountdown() {
+  if (countdownInterval) clearInterval(countdownInterval)
+
+  if (!autoPromo.value?.ends_at) {
+    // No expiry — badge shows without a timer
+    promoCountdown.value = '∞'
+    return
+  }
+
+  const tick = () => {
+    const ms = new Date(autoPromo.value.ends_at) - Date.now()
+    if (ms <= 0) {
+      promoCountdown.value = ''
+      clearInterval(countdownInterval)
+      countdownInterval = null
+      promoFlashing.value = true
+      setTimeout(() => {
+        promoFlashing.value = false
+        autoPromo.value = null
+      }, 1200)
+      return
+    }
+    promoCountdown.value = formatCountdown(ms)
+  }
+  tick()
+  countdownInterval = setInterval(tick, 1000)
+}
+
+watch(autoPromo, (val) => {
+  if (val) {
+    startCountdown()
+  } else {
+    if (countdownInterval) clearInterval(countdownInterval)
+    countdownInterval = null
+    promoCountdown.value = ''
+    promoFlashing.value = false
+  }
+})
+
+// ── Unified promotion check ───────────────────────────────────────────────────
+// Runs on mount + every 60s. Queries promotions table directly.
+//   is_auto = true  → 🔥 flame badge + live cart discount
+//   is_auto = false → 🏷️ hint badge only (no discount until code entered)
+async function checkPromotion() {
+  const rid = resolvedRestaurantId.value
+  if (!rid) return
+
+  const { data, error } = await supabase
+    .from('promotions')
+    .select('id, name, type, value, code, ends_at, is_auto')
+    .eq('restaurant_id', rid)
+    .eq('is_active', true)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (error) {
+    console.warn('[checkPromotion] error:', error.message)
+    return
+  }
+
+  if (!data) {
+    if (autoPromo.value) showToast('The automatic discount has ended.', 'warning')
+    autoPromo.value = null
+    codePromoHint.value = null
+    return
+  }
+
+  // Filter expired promos client-side — avoids PostgREST or() syntax issues with timestamps
+  if (data.ends_at && new Date(data.ends_at) < new Date()) {
+    if (autoPromo.value) showToast('The automatic discount has ended.', 'warning')
+    autoPromo.value = null
+    codePromoHint.value = null
+    return
+  }
+
+  data.value = Number(data.value)
+
+  if (data.is_auto) {
+    codePromoHint.value = null
+    if (!autoPromo.value || autoPromo.value.id !== data.id) {
+      if (autoPromo.value !== null) showToast(`🎉 "${data.name}" discount is now active!`, 'info')
+      autoPromo.value = data
+    }
+  } else {
+    // Code-type: hint only — never reveal the code or auto-apply
+    autoPromo.value = null
+    if (!codePromoHint.value || codePromoHint.value.id !== data.id) {
+      codePromoHint.value = data
+    }
+  }
+}
+
+function startPromoPolling() {
+  if (promoPollingInterval) clearInterval(promoPollingInterval)
+  promoPollingInterval = setInterval(checkPromotion, 60_000)
+}
+
+// ── Manual promo code ─────────────────────────────────────────────────────────
+async function applyPromoCode() {
+  promoError.value = ''
+  if (!promoInput.value.trim()) return
+
+  const rid = resolvedRestaurantId.value
+  if (!rid) {
+    promoError.value = 'Unable to validate code. Please try again.'
+    return
+  }
+
+  promoLoading.value = true
+  const { data, error } = await supabase.rpc('validate_promotion', {
+    p_restaurant_id: rid,
+    p_code: promoInput.value.trim(),
+    p_order_total: cartSubtotal.value,
+  })
+  promoLoading.value = false
+
+  if (error || !data || data.length === 0) {
+    promoError.value = 'Invalid or expired code.'
+    return
+  }
+
+  data[0].value = Number(data[0].value)
+  appliedPromo.value = data[0]
+  appliedPromoCode.value = promoInput.value.trim().toUpperCase()
+  promoInput.value = ''
+  promoError.value = ''
+  codePromoHint.value = null // hide hint once code applied
+}
+
+function removePromoCode() {
+  appliedPromo.value = null
+  appliedPromoCode.value = ''
+  promoError.value = ''
+  checkPromotion() // re-check so hint badge can reappear
 }
 
 // ── Cart helpers ──────────────────────────────────────────────────────────────
@@ -752,7 +921,7 @@ function decrementCart(idx) {
 }
 
 function openCart() {
-  checkAutoPromotions()
+  checkPromotion()
   cartOpen.value = true
 }
 
@@ -765,93 +934,13 @@ function resetOrder() {
   appliedPromo.value = null
   appliedPromoCode.value = ''
   autoPromo.value = null
+  codePromoHint.value = null
   if (statusChannel) {
     supabase.removeChannel(statusChannel)
     statusChannel = null
   }
-  checkAutoPromotions()
-  startAutoPromoPolling()
-}
-
-// ── Promotions ────────────────────────────────────────────────────────────────
-async function checkAutoPromotions() {
-  const rid = resolvedRestaurantId.value
-  if (!rid) return
-
-  const { data } = await supabase.rpc('get_active_auto_promotions', {
-    p_restaurant_id: rid,
-  })
-
-  const newPromo = data && data.length > 0 ? data[0] : null
-
-  if (newPromo && (!autoPromo.value || autoPromo.value.id !== newPromo.id)) {
-    if (autoPromo.value !== null) {
-      showToast(`🎉 "${newPromo.name}" discount is now active!`, 'info')
-    }
-    autoPromo.value = newPromo
-  } else if (!newPromo && autoPromo.value) {
-    showToast('The automatic discount has ended.', 'warning')
-    autoPromo.value = null
-  }
-}
-
-function startAutoPromoPolling() {
-  if (autoPromoInterval) clearInterval(autoPromoInterval)
-  autoPromoInterval = setInterval(checkAutoPromotions, 60_000)
-}
-
-async function applyPromoCode() {
-  promoError.value = ''
-  if (!promoInput.value.trim()) return
-
-  const rid = resolvedRestaurantId.value
-  console.log('[PromoCode] resolvedRestaurantId:', rid)
-  console.log('[PromoCode] code entered:', promoInput.value.trim())
-  console.log('[PromoCode] cartSubtotal:', cartSubtotal.value)
-
-  if (!rid) {
-    console.warn('[PromoCode] No restaurant ID available — aborting')
-    promoError.value = 'Unable to validate code. Please try again.'
-    return
-  }
-
-  promoLoading.value = true
-  const { data, error } = await supabase.rpc('validate_promotion', {
-    p_restaurant_id: rid,
-    p_code: promoInput.value.trim(),
-    p_order_total: cartSubtotal.value,
-  })
-  promoLoading.value = false
-
-  console.log('[PromoCode] RPC response data:', data)
-  console.log('[PromoCode] RPC response error:', error)
-
-  if (error) {
-    console.error('[PromoCode] Supabase RPC error:', error.message, error.details, error.hint)
-    promoError.value = 'Invalid or expired code.'
-    return
-  }
-
-  if (!data || data.length === 0) {
-    console.warn('[PromoCode] No matching promo found for:', {
-      restaurant_id: rid,
-      code: promoInput.value.trim(),
-    })
-    promoError.value = 'Invalid or expired code.'
-    return
-  }
-
-  console.log('[PromoCode] ✅ Promo applied:', data[0])
-  appliedPromo.value = data[0]
-  appliedPromoCode.value = promoInput.value.trim().toUpperCase()
-  promoInput.value = ''
-  promoError.value = ''
-}
-
-function removePromoCode() {
-  appliedPromo.value = null
-  appliedPromoCode.value = ''
-  promoError.value = ''
+  checkPromotion()
+  startPromoPolling()
 }
 
 // ── Infinite scroll ───────────────────────────────────────────────────────────
@@ -900,7 +989,7 @@ function subscribeToMenuAvailability(restaurantId) {
     .subscribe()
 }
 
-// ── Load menu ─────────────────────────────────────────────────────────────────
+// ── Mount ─────────────────────────────────────────────────────────────────────
 onMounted(async () => {
   const slug = route.params.slug
   tableId.value = route.params.tableId
@@ -916,8 +1005,6 @@ onMounted(async () => {
     loading.value = false
     return
   }
-
-  // Merge fetched data — if rid was in URL, it should match; trust the DB id
   restaurant.value = rest
 
   const { data: table } = await supabase
@@ -955,8 +1042,8 @@ onMounted(async () => {
   loading.value = false
   subscribeToMenuAvailability(rest.id)
 
-  await checkAutoPromotions()
-  startAutoPromoPolling()
+  await checkPromotion()
+  startPromoPolling()
 
   setTimeout(() => setupInfiniteScroll(), 400)
 })
@@ -967,7 +1054,8 @@ onUnmounted(() => {
   if (scrollObserver) scrollObserver.disconnect()
   if (audioCtx) audioCtx.close()
   if (toastTimer) clearTimeout(toastTimer)
-  if (autoPromoInterval) clearInterval(autoPromoInterval)
+  if (promoPollingInterval) clearInterval(promoPollingInterval)
+  if (countdownInterval) clearInterval(countdownInterval)
 })
 
 // ── Place order ───────────────────────────────────────────────────────────────
@@ -995,14 +1083,15 @@ async function placeOrder() {
     })
     if (orderErr) throw orderErr
 
-    const orderItemsPayload = cart.value.map((line) => ({
-      order_id: orderId,
-      menu_item_id: line.itemId,
-      quantity: line.qty,
-      unit_price: line.price,
-      notes: line.notes || null,
-    }))
-    const { error: itemsError } = await supabase.from('order_items').insert(orderItemsPayload)
+    const { error: itemsError } = await supabase.from('order_items').insert(
+      cart.value.map((line) => ({
+        order_id: orderId,
+        menu_item_id: line.itemId,
+        quantity: line.qty,
+        unit_price: line.price,
+        notes: line.notes || null,
+      })),
+    )
     if (itemsError) throw itemsError
 
     if (usedPromo) await supabase.rpc('apply_promotion_to_order', { p_promotion_id: usedPromo.id })
@@ -1014,14 +1103,17 @@ async function placeOrder() {
       quantity: line.qty,
     }))
     placedDiscountAmount.value = finalDiscount
-
     cartOpen.value = false
     orderPlaced.value = true
     orderStatus.value = 'pending'
 
-    if (autoPromoInterval) {
-      clearInterval(autoPromoInterval)
-      autoPromoInterval = null
+    if (promoPollingInterval) {
+      clearInterval(promoPollingInterval)
+      promoPollingInterval = null
+    }
+    if (countdownInterval) {
+      clearInterval(countdownInterval)
+      countdownInterval = null
     }
 
     statusChannel = supabase
@@ -1053,6 +1145,7 @@ async function placeOrder() {
   padding: 0;
 }
 
+/* ── Toast ───────────────────────────────────────────────────────────────────*/
 .toast {
   position: fixed;
   top: 16px;
@@ -1105,6 +1198,7 @@ async function placeOrder() {
   transform: translateX(-50%) translateY(-8px) scale(0.95);
 }
 
+/* ── Page shell ──────────────────────────────────────────────────────────────*/
 .order-page {
   min-height: 100vh;
   background: #111111;
@@ -1166,6 +1260,7 @@ async function placeOrder() {
   }
 }
 
+/* ── Restaurant header ───────────────────────────────────────────────────────*/
 .restaurant-header {
   padding: 24px 16px 20px;
   background: #161616;
@@ -1184,6 +1279,7 @@ async function placeOrder() {
   display: flex;
   align-items: center;
   gap: 16px;
+  padding-right: 130px;
 }
 .restaurant-logo {
   width: 56px;
@@ -1245,6 +1341,166 @@ async function placeOrder() {
   font-weight: 700;
 }
 
+/* ── Flame badge (auto promo) ────────────────────────────────────────────────*/
+.promo-flame-badge {
+  position: absolute;
+  top: 24px;
+  right: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px 8px 10px;
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.18), rgba(200, 115, 58, 0.22));
+  border: 1.5px solid rgba(239, 68, 68, 0.4);
+  border-radius: 999px;
+  backdrop-filter: blur(8px);
+  animation: flame-pulse 2s ease-in-out infinite;
+  font-family: 'DM Sans', sans-serif;
+  pointer-events: none;
+  z-index: 30;
+}
+@media (min-width: 640px) {
+  .promo-flame-badge {
+    right: 24px;
+    top: 32px;
+  }
+}
+.promo-flame-badge.is-flashing {
+  animation: flash-out 0.25s ease-in-out infinite;
+}
+
+.flame-emoji {
+  font-size: 20px;
+  line-height: 1;
+  animation: flame-flicker 0.8s ease-in-out infinite alternate;
+}
+.flame-badge-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+.flame-discount {
+  font-size: 12px;
+  font-weight: 800;
+  color: #ff6b6b;
+  letter-spacing: 0.04em;
+  line-height: 1;
+}
+.flame-timer {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 180, 120, 0.9);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+
+@keyframes flame-pulse {
+  0%,
+  100% {
+    box-shadow:
+      0 4px 20px rgba(239, 68, 68, 0.25),
+      0 0 0 0 rgba(239, 68, 68, 0.3);
+  }
+  50% {
+    box-shadow:
+      0 4px 20px rgba(239, 68, 68, 0.38),
+      0 0 0 6px rgba(239, 68, 68, 0);
+  }
+}
+@keyframes flame-flicker {
+  from {
+    transform: rotate(-5deg) scale(0.95);
+  }
+  to {
+    transform: rotate(5deg) scale(1.05);
+  }
+}
+@keyframes flash-out {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.08;
+  }
+}
+
+/* ── Hint badge (code promo) ─────────────────────────────────────────────────*/
+.promo-code-hint-badge {
+  position: absolute;
+  top: 24px;
+  right: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px 8px 10px;
+  background: linear-gradient(135deg, rgba(250, 204, 21, 0.12), rgba(200, 115, 58, 0.14));
+  border: 1.5px solid rgba(250, 204, 21, 0.3);
+  border-radius: 999px;
+  backdrop-filter: blur(8px);
+  animation: hint-pulse 3s ease-in-out infinite;
+  font-family: 'DM Sans', sans-serif;
+  pointer-events: none;
+  z-index: 30;
+}
+@media (min-width: 640px) {
+  .promo-code-hint-badge {
+    right: 24px;
+    top: 32px;
+  }
+}
+
+.hint-emoji {
+  font-size: 18px;
+  line-height: 1;
+}
+.hint-discount {
+  font-size: 12px;
+  font-weight: 800;
+  color: #facc15;
+  letter-spacing: 0.04em;
+  line-height: 1;
+}
+.hint-sub {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(250, 204, 21, 0.7);
+  line-height: 1;
+}
+
+@keyframes hint-pulse {
+  0%,
+  100% {
+    box-shadow:
+      0 4px 16px rgba(250, 204, 21, 0.15),
+      0 0 0 0 rgba(250, 204, 21, 0.2);
+  }
+  50% {
+    box-shadow:
+      0 4px 16px rgba(250, 204, 21, 0.25),
+      0 0 0 5px rgba(250, 204, 21, 0);
+  }
+}
+
+/* Badge transition (shared by both badges) */
+.promo-badge-enter-active {
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.promo-badge-leave-active {
+  transition: all 0.35s ease;
+}
+.promo-badge-enter-from {
+  opacity: 0;
+  transform: translateY(-10px) scale(0.8);
+}
+.promo-badge-leave-to {
+  opacity: 0;
+  transform: translateY(-6px) scale(0.88);
+}
+
+/* ── Category tabs ───────────────────────────────────────────────────────────*/
 .category-tabs-wrap {
   position: sticky;
   top: 104px;
@@ -1257,7 +1513,6 @@ async function placeOrder() {
     top: 132px;
   }
 }
-
 .category-tabs {
   display: flex;
   gap: 4px;
@@ -1268,7 +1523,6 @@ async function placeOrder() {
 .category-tabs::-webkit-scrollbar {
   display: none;
 }
-
 .cat-tab {
   display: flex;
   align-items: center;
@@ -1297,6 +1551,7 @@ async function placeOrder() {
   box-shadow: 0 4px 12px rgba(200, 115, 58, 0.3);
 }
 
+/* ── Menu ────────────────────────────────────────────────────────────────────*/
 .menu-content {
   padding: 0 16px 24px;
 }
@@ -1305,7 +1560,6 @@ async function placeOrder() {
     padding: 0 24px 32px;
   }
 }
-
 .cat-section {
   padding-top: 28px;
 }
@@ -1327,7 +1581,6 @@ async function placeOrder() {
   background: rgba(255, 255, 255, 0.07);
   margin-left: 8px;
 }
-
 .items-list {
   display: flex;
   flex-direction: column;
@@ -1356,7 +1609,6 @@ async function placeOrder() {
   cursor: default;
   background: #0e0e0e;
 }
-
 .item-info {
   flex: 1;
   min-width: 0;
@@ -1437,7 +1689,6 @@ async function placeOrder() {
 .thumb-placeholder-icon {
   color: rgba(255, 255, 255, 0.15);
 }
-
 .add-btn {
   position: absolute;
   bottom: -8px;
@@ -1469,7 +1720,6 @@ async function placeOrder() {
   font-size: 13px;
   font-weight: 700;
 }
-
 .scroll-sentinel {
   height: 1px;
 }
@@ -1487,6 +1737,7 @@ async function placeOrder() {
   color: rgba(255, 255, 255, 0.2);
 }
 
+/* ── Cart bar ─────────────────────────────────────────────────────────────── */
 .cart-bar {
   position: fixed;
   bottom: 20px;
@@ -1548,6 +1799,7 @@ async function placeOrder() {
   transform: translateX(-50%) translateY(20px);
 }
 
+/* ── Status screen ───────────────────────────────────────────────────────────*/
 .status-screen {
   min-height: 100vh;
   background: #111111;
@@ -1640,7 +1892,6 @@ async function placeOrder() {
   border-color: rgba(220, 38, 38, 0.3);
   color: #dc2626;
 }
-
 .status-title {
   font-family: 'Fraunces', serif;
   font-size: 24px;
@@ -1782,7 +2033,6 @@ async function placeOrder() {
   font-weight: 700;
   color: #ffffff;
 }
-
 .btn-order-again {
   width: 100%;
   padding: 14px;
@@ -1806,6 +2056,7 @@ async function placeOrder() {
   box-shadow: 0 8px 24px rgba(200, 115, 58, 0.3);
 }
 
+/* ── Modals ───────────────────────────────────────────────────────────────── */
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -1822,7 +2073,6 @@ async function placeOrder() {
     padding: 24px;
   }
 }
-
 .modal {
   background: #161616;
   border-radius: 20px 20px 0 0;
@@ -1878,7 +2128,6 @@ async function placeOrder() {
   background: rgba(0, 0, 0, 0.7);
   transform: scale(1.1);
 }
-
 .item-modal-image {
   position: relative;
   height: 240px;
@@ -1907,7 +2156,6 @@ async function placeOrder() {
 .placeholder-icon-lg {
   color: rgba(255, 255, 255, 0.1);
 }
-
 .item-modal-body {
   padding: 24px;
   display: flex;
@@ -2048,6 +2296,7 @@ async function placeOrder() {
   font-weight: 700;
   color: #c8733a;
 }
+
 .promo-section {
   margin-top: 16px;
 }
@@ -2245,6 +2494,7 @@ async function placeOrder() {
   margin-top: 12px;
 }
 
+/* ── Controls ─────────────────────────────────────────────────────────────── */
 .qty-control {
   display: flex;
   align-items: center;
@@ -2287,7 +2537,6 @@ async function placeOrder() {
   font-size: 15px;
   min-width: 20px;
 }
-
 .btn-add-to-cart {
   flex: 1;
   padding: 14px;
@@ -2307,6 +2556,7 @@ async function placeOrder() {
   transform: translateY(-2px);
 }
 
+/* ── Form fields ──────────────────────────────────────────────────────────── */
 .field-group {
   display: flex;
   flex-direction: column;
