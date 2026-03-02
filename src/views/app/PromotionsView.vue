@@ -67,9 +67,10 @@
       >
         <!-- Card Header -->
         <div class="promo-card-header">
-          <div class="promo-badge" :class="promo.code ? 'badge-code' : 'badge-auto'">
-            <component :is="promo.code ? Ticket : Clock" :size="14" class="badge-icon" />
-            <span>{{ promo.code ? 'Code' : 'Auto' }}</span>
+          <!-- ✅ Fixed: use is_auto from DB instead of inferring from code -->
+          <div class="promo-badge" :class="promo.is_auto ? 'badge-auto' : 'badge-code'">
+            <component :is="promo.is_auto ? Clock : Ticket" :size="14" class="badge-icon" />
+            <span>{{ promo.is_auto ? 'Auto' : 'Code' }}</span>
           </div>
           <label class="toggle">
             <input type="checkbox" :checked="promo.is_active" @change="toggleActive(promo)" />
@@ -80,8 +81,9 @@
         <!-- Name & Code -->
         <div class="promo-info">
           <h3 class="promo-name">{{ promo.name }}</h3>
-          <div v-if="promo.code" class="promo-code-tag">
-            <span class="code-text">{{ promo.code.toUpperCase() }}</span>
+          <!-- ✅ Fixed: use is_auto instead of promo.code as the condition -->
+          <div v-if="!promo.is_auto" class="promo-code-tag">
+            <span class="code-text">{{ promo.code?.toUpperCase() }}</span>
             <button
               class="copy-btn"
               @click="copyCode(promo.code)"
@@ -375,21 +377,15 @@ import {
 const authStore = useAuthStore()
 const restaurantId = computed(() => authStore.profile?.restaurant_id)
 
-// ✅ Fixed
 const currencySymbol = computed(() => {
   const currency = authStore.restaurantCurrency || 'USD'
   const map = { USD: '$', EUR: '€', GBP: '£', JPY: '¥', AUD: 'A$', SGD: 'S$', KHR: '៛', THB: '฿' }
-
-  // Known currency — use the map
   if (map[currency]) return map[currency]
-
-  // Custom currency: "RM MYR" → extract symbol before the space
   const spaceIndex = currency.indexOf(' ')
   if (spaceIndex !== -1) return currency.slice(0, spaceIndex)
-
-  // Fallback
   return currency || '$'
 })
+
 // ─── State ───────────────────────────────────────────────────
 const promotions = ref([])
 const loading = ref(true)
@@ -439,7 +435,8 @@ function openModal(promo = null) {
     editingPromo.value = promo
     form.value = {
       name: promo.name,
-      isAuto: !promo.code,
+      // ✅ Fixed: read is_auto from DB record
+      isAuto: promo.is_auto ?? false,
       code: promo.code || '',
       type: promo.type,
       value: promo.value,
@@ -468,15 +465,13 @@ function validate() {
   if (!form.value.value || form.value.value <= 0) return 'Discount value must be greater than 0.'
   if (form.value.type === 'percentage' && form.value.value > 100)
     return 'Percentage cannot exceed 100.'
-  if (form.value.isAuto && (!form.value.starts_at || !form.value.ends_at)) {
+  if (form.value.isAuto && (!form.value.starts_at || !form.value.ends_at))
     return 'Auto discounts require a time window.'
-  }
   if (
     (form.value.starts_at && !form.value.ends_at) ||
     (!form.value.starts_at && form.value.ends_at)
-  ) {
+  )
     return 'Please set both start and end times.'
-  }
   return null
 }
 
@@ -489,6 +484,8 @@ async function savePromo() {
   const payload = {
     restaurant_id: restaurantId.value,
     name: form.value.name.trim(),
+    // ✅ Fixed: persist is_auto to the database
+    is_auto: form.value.isAuto,
     code: form.value.isAuto ? null : form.value.code.trim().toUpperCase(),
     type: form.value.type,
     value: form.value.value,
