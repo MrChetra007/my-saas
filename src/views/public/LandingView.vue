@@ -904,7 +904,7 @@ const starterFeatures = [
   'Up to 3 staff accounts',
   'Unlimited orders',
   'QR code ordering',
-  'Kitchen & cashier views',
+  'Kitchen , cashier & waiter views',
   'Menu management',
 ]
 const proFeatures = [

@@ -42,7 +42,7 @@
                   <li><Check :size="14" /> Up to 3 staff accounts</li>
                   <li><Check :size="14" /> Unlimited orders</li>
                   <li><Check :size="14" /> QR code ordering</li>
-                  <li><Check :size="14" /> Kitchen & cashier views</li>
+                  <li><Check :size="14" /> Kitchen, cashier & waiter views</li>
                   <li><Check :size="14" /> Menu management</li>
                 </ul>
 
