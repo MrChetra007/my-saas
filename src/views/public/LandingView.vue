@@ -83,10 +83,10 @@
 
     <!-- ── Hero ─────────────────────────────────────── -->
     <section class="hero">
-      <div class="hero-bg-img" />
+      <div class="hero-bg-img" :style="{ transform: `translateY(${parallaxY}px)` }" />
       <div class="hero-overlay" />
       <div class="hero-inner">
-        <div class="hero-left">
+        <div class="hero-left animate-hero-left">
           <div class="badge">
             <span class="badge-dot" />
             No app download required
@@ -122,7 +122,7 @@
         </div>
 
         <!-- Right — Order card -->
-        <div class="hero-right">
+        <div class="hero-right animate-hero-right">
           <div class="order-card">
             <div class="order-card-header">
               <span class="order-table">Table 4</span>
@@ -165,13 +165,33 @@
       </div>
     </section>
 
+    <!-- ── Cinematic photo strip ──────────────────────── -->
+    <div class="photo-strip reveal-fade" ref="el => observeEl(el)">
+      <div class="photo-strip-inner">
+        <div class="photo-strip-img photo-strip-img--1" />
+        <div class="photo-strip-img photo-strip-img--2" />
+        <div class="photo-strip-img photo-strip-img--3" />
+      </div>
+      <div class="photo-strip-overlay">
+        <span class="photo-strip-label">Trusted by restaurants across Southeast Asia</span>
+      </div>
+    </div>
+
     <!-- ── How It Works ───────────────────────────────── -->
     <section class="section" id="how-it-works">
       <div class="section-inner">
-        <span class="section-label">How it works</span>
-        <h2 class="section-title">Three steps to a smoother service</h2>
+        <span class="section-label reveal-fade" :ref="(el) => observeEl(el)">How it works</span>
+        <h2 class="section-title reveal-up" :ref="(el) => observeEl(el)">
+          Three steps to a smoother service
+        </h2>
         <div class="steps-grid">
-          <div class="step-card" v-for="step in steps" :key="step.num">
+          <div
+            class="step-card reveal-stagger"
+            v-for="(step, i) in steps"
+            :key="step.num"
+            :ref="(el) => observeEl(el)"
+            :style="{ '--stagger-i': i }"
+          >
             <div class="step-icon-wrap" v-html="step.icon" />
             <div class="step-num">{{ step.num }}</div>
             <h3 class="step-title">{{ step.title }}</h3>
@@ -185,7 +205,7 @@
     <section class="section section-elevated" id="features">
       <div class="section-inner">
         <div class="feature-row">
-          <div class="feature-text">
+          <div class="feature-text reveal-from-left" :ref="(el) => observeEl(el)">
             <span class="section-label">QR Ordering</span>
             <h2 class="section-title text-left">Orders without the wait</h2>
             <p class="feature-desc">
@@ -197,122 +217,135 @@
             </ul>
             <RouterLink to="/signup" class="btn-pill">Get Started →</RouterLink>
           </div>
-          <div class="feature-mockup">
-            <div class="phone-mockup">
-              <div class="phone-header">
-                <span class="phone-dot" /><span class="phone-dot" /><span class="phone-dot" />
-              </div>
-              <div class="phone-body">
-                <div class="phone-restaurant">
-                  <div class="phone-brand-icon">
-                    <svg width="11" height="11" viewBox="0 0 32 32" fill="none">
-                      <rect
-                        x="2"
-                        y="2"
-                        width="10"
-                        height="10"
-                        rx="2"
-                        stroke="white"
-                        stroke-width="2.5"
-                      />
-                      <rect x="5" y="5" width="4" height="4" rx="0.5" fill="white" />
-                      <rect
-                        x="20"
-                        y="2"
-                        width="10"
-                        height="10"
-                        rx="2"
-                        stroke="white"
-                        stroke-width="2.5"
-                      />
-                      <rect x="23" y="5" width="4" height="4" rx="0.5" fill="white" />
-                      <rect
-                        x="2"
-                        y="20"
-                        width="10"
-                        height="10"
-                        rx="2"
-                        stroke="white"
-                        stroke-width="2.5"
-                      />
-                      <rect x="5" y="23" width="4" height="4" rx="0.5" fill="white" />
-                      <line
-                        x1="22"
-                        y1="21"
-                        x2="22"
-                        y2="30"
-                        stroke="white"
-                        stroke-width="2.5"
-                        stroke-linecap="round"
-                      />
-                      <line
-                        x1="26"
-                        y1="21"
-                        x2="26"
-                        y2="30"
-                        stroke="white"
-                        stroke-width="2.5"
-                        stroke-linecap="round"
-                      />
-                      <line
-                        x1="30"
-                        y1="21"
-                        x2="30"
-                        y2="30"
-                        stroke="white"
-                        stroke-width="2.5"
-                        stroke-linecap="round"
-                      />
-                      <path
-                        d="M22 21 Q22 25 26 27 Q30 25 30 21"
-                        stroke="white"
-                        stroke-width="2.5"
-                        stroke-linecap="round"
+          <div class="feature-mockup reveal-from-right" :ref="(el) => observeEl(el)">
+            <!-- Real QR scan photo + phone mockup layered -->
+            <div class="feature-img-wrap">
+              <div class="feature-photo feature-photo--qr" />
+              <!-- <div class="phone-mockup feature-phone-overlay">
+                <div class="phone-header">
+                  <span class="phone-dot" /><span class="phone-dot" /><span class="phone-dot" />
+                </div>
+                <div class="phone-body">
+                  <div class="phone-restaurant">
+                    <div class="phone-brand-icon">
+                      <svg width="11" height="11" viewBox="0 0 32 32" fill="none">
+                        <rect
+                          x="2"
+                          y="2"
+                          width="10"
+                          height="10"
+                          rx="2"
+                          stroke="white"
+                          stroke-width="2.5"
+                        />
+                        <rect x="5" y="5" width="4" height="4" rx="0.5" fill="white" />
+                        <rect
+                          x="20"
+                          y="2"
+                          width="10"
+                          height="10"
+                          rx="2"
+                          stroke="white"
+                          stroke-width="2.5"
+                        />
+                        <rect x="23" y="5" width="4" height="4" rx="0.5" fill="white" />
+                        <rect
+                          x="2"
+                          y="20"
+                          width="10"
+                          height="10"
+                          rx="2"
+                          stroke="white"
+                          stroke-width="2.5"
+                        />
+                        <rect x="5" y="23" width="4" height="4" rx="0.5" fill="white" />
+                        <line
+                          x1="22"
+                          y1="21"
+                          x2="22"
+                          y2="30"
+                          stroke="white"
+                          stroke-width="2.5"
+                          stroke-linecap="round"
+                        />
+                        <line
+                          x1="26"
+                          y1="21"
+                          x2="26"
+                          y2="30"
+                          stroke="white"
+                          stroke-width="2.5"
+                          stroke-linecap="round"
+                        />
+                        <line
+                          x1="30"
+                          y1="21"
+                          x2="30"
+                          y2="30"
+                          stroke="white"
+                          stroke-width="2.5"
+                          stroke-linecap="round"
+                        />
+                        <path
+                          d="M22 21 Q22 25 26 27 Q30 25 30 21"
+                          stroke="white"
+                          stroke-width="2.5"
+                          stroke-linecap="round"
+                          fill="none"
+                        />
+                      </svg>
+                    </div>
+                    Bella Italia
+                  </div>
+                  <span class="phone-table-tag">Table 7</span>
+                  <div class="phone-cats">
+                    <span class="cat active">All</span>
+                    <span class="cat">Starters</span>
+                    <span class="cat">Mains</span>
+                    <span class="cat">Drinks</span>
+                  </div>
+                  <div class="phone-item" v-for="item in phoneItems" :key="item.name">
+                    <div>
+                      <div class="phone-item-name">{{ item.name }}</div>
+                      <div class="phone-item-price">{{ item.price }}</div>
+                    </div>
+                    <button class="phone-add-btn">
+                      <svg
+                        width="13"
+                        height="13"
+                        viewBox="0 0 24 24"
                         fill="none"
-                      />
-                    </svg>
+                        stroke="currentColor"
+                        stroke-width="2.5"
+                        stroke-linecap="round"
+                      >
+                        <line x1="12" y1="5" x2="12" y2="19" />
+                        <line x1="5" y1="12" x2="19" y2="12" />
+                      </svg>
+                    </button>
                   </div>
-                  Bella Italia
                 </div>
-                <span class="phone-table-tag">Table 7</span>
-                <div class="phone-cats">
-                  <span class="cat active">All</span>
-                  <span class="cat">Starters</span>
-                  <span class="cat">Mains</span>
-                  <span class="cat">Drinks</span>
-                </div>
-                <div class="phone-item" v-for="item in phoneItems" :key="item.name">
-                  <div>
-                    <div class="phone-item-name">{{ item.name }}</div>
-                    <div class="phone-item-price">{{ item.price }}</div>
-                  </div>
-                  <button class="phone-add-btn">
-                    <svg
-                      width="13"
-                      height="13"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="2.5"
-                      stroke-linecap="round"
-                    >
-                      <line x1="12" y1="5" x2="12" y2="19" />
-                      <line x1="5" y1="12" x2="19" y2="12" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
+              </div> -->
             </div>
           </div>
         </div>
       </div>
     </section>
 
+    <!-- ── Full-bleed kitchen photo break ─────────────── -->
+    <div class="fullbleed-break reveal-fade" :ref="(el) => observeEl(el)">
+      <div class="fullbleed-photo fullbleed-photo--kitchen" />
+      <div class="fullbleed-content">
+        <span class="fullbleed-eyebrow">Kitchen Display System</span>
+        <p class="fullbleed-headline">From order to plate,<br />nothing gets lost.</p>
+      </div>
+    </div>
+
     <!-- ── Feature: Kitchen Display ───────────────────── -->
     <section class="section">
       <div class="section-inner">
         <div class="feature-row reverse">
-          <div class="feature-mockup">
+          <div class="feature-mockup reveal-from-left" :ref="(el) => observeEl(el)">
             <div class="kd-card">
               <div class="kd-header">
                 <span class="kd-title">
@@ -351,7 +384,7 @@
               </div>
             </div>
           </div>
-          <div class="feature-text">
+          <div class="feature-text reveal-from-right" :ref="(el) => observeEl(el)">
             <span class="section-label">Kitchen Display</span>
             <h2 class="section-title text-left">Real-time kitchen sync</h2>
             <p class="feature-desc">
@@ -371,7 +404,7 @@
     <section class="section section-elevated">
       <div class="section-inner">
         <div class="feature-row">
-          <div class="feature-text">
+          <div class="feature-text reveal-from-left" :ref="(el) => observeEl(el)">
             <span class="section-label">Analytics</span>
             <h2 class="section-title text-left">Know your numbers</h2>
             <p class="feature-desc">
@@ -385,7 +418,7 @@
             </ul>
             <RouterLink to="/signup" class="btn-pill">Get Started →</RouterLink>
           </div>
-          <div class="feature-mockup">
+          <div class="feature-mockup reveal-from-right" :ref="(el) => observeEl(el)">
             <div class="analytics-card">
               <div class="analytics-header">
                 <span class="analytics-label">
@@ -406,7 +439,7 @@
                 </span>
                 <span class="live-badge">Live</span>
               </div>
-              <div class="analytics-big">$2,841</div>
+              <div class="analytics-big">${{ displayRevenue }}</div>
               <div class="analytics-delta">↑ 18% vs yesterday</div>
               <div class="chart">
                 <div class="chart-bars">
@@ -423,7 +456,7 @@
                 </div>
               </div>
               <div class="analytics-stats">
-                <div v-for="s in analyticsStats" :key="s.label" class="stat">
+                <div v-for="s in displayStats" :key="s.label" class="stat">
                   <div class="stat-val">{{ s.value }}</div>
                   <div class="stat-lbl">{{ s.label }}</div>
                 </div>
@@ -437,10 +470,16 @@
     <!-- ── Testimonials ───────────────────────────────── -->
     <section class="section">
       <div class="section-inner">
-        <span class="section-label">Testimonials</span>
-        <h2 class="section-title">Loved by restaurants</h2>
+        <span class="section-label reveal-fade" :ref="(el) => observeEl(el)">Testimonials</span>
+        <h2 class="section-title reveal-up" :ref="(el) => observeEl(el)">Loved by restaurants</h2>
         <div class="testimonials-grid">
-          <div class="t-card" v-for="t in testimonials" :key="t.name">
+          <div
+            class="t-card reveal-stagger"
+            v-for="(t, i) in testimonials"
+            :key="t.name"
+            :ref="(el) => observeEl(el)"
+            :style="{ '--stagger-i': i }"
+          >
             <div class="t-stars">
               <svg
                 v-for="n in 5"
@@ -472,20 +511,38 @@
     <!-- ── Pricing ────────────────────────────────────── -->
     <section class="section section-elevated" id="pricing">
       <div class="section-inner">
-        <span class="section-label">Pricing</span>
-        <h2 class="section-title">Simple, honest pricing</h2>
-        <p class="section-subtitle">14-day free trial on all plans. No credit card required.</p>
+        <span class="section-label reveal-fade" :ref="(el) => observeEl(el)">Pricing</span>
+        <h2 class="section-title reveal-up" :ref="(el) => observeEl(el)">Simple, honest pricing</h2>
+        <p class="section-subtitle reveal-up" :ref="(el) => observeEl(el)">
+          14-day free trial on all plans. No credit card required.
+        </p>
         <div class="pricing-grid">
-          <div class="pricing-card">
-            <div class="pricing-name">Starter</div>
+          <div
+            class="pricing-card reveal-stagger"
+            v-for="(plan, i) in ['starter', 'pro']"
+            :key="plan"
+            :ref="(el) => observeEl(el)"
+            :style="{ '--stagger-i': i }"
+            :class="{ featured: plan === 'pro' }"
+          >
+            <template v-if="plan === 'pro'">
+              <div class="pricing-badge">Recommended</div>
+            </template>
+            <div class="pricing-name">{{ plan === 'starter' ? 'Starter' : 'Pro' }}</div>
             <div class="pricing-price">
               <span class="price-dollar">$</span>
-              <span class="price-num">49</span>
+              <span class="price-num">{{ plan === 'starter' ? '49' : '99' }}</span>
               <span class="price-period">/mo</span>
             </div>
-            <p class="pricing-desc">Perfect for small restaurants getting started.</p>
+            <p class="pricing-desc">
+              {{
+                plan === 'starter'
+                  ? 'Perfect for small restaurants getting started.'
+                  : 'For restaurants running their full operation digitally.'
+              }}
+            </p>
             <ul class="pricing-features">
-              <li v-for="f in starterFeatures" :key="f">
+              <li v-for="f in plan === 'starter' ? starterFeatures : proFeatures" :key="f">
                 <svg
                   width="13"
                   height="13"
@@ -501,35 +558,11 @@
                 {{ f }}
               </li>
             </ul>
-            <RouterLink to="/signup" class="pricing-btn secondary">Start free trial</RouterLink>
-          </div>
-          <div class="pricing-card featured">
-            <div class="pricing-badge">Recommended</div>
-            <div class="pricing-name">Pro</div>
-            <div class="pricing-price">
-              <span class="price-dollar">$</span>
-              <span class="price-num">99</span>
-              <span class="price-period">/mo</span>
-            </div>
-            <p class="pricing-desc">For restaurants running their full operation digitally.</p>
-            <ul class="pricing-features">
-              <li v-for="f in proFeatures" :key="f">
-                <svg
-                  width="13"
-                  height="13"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="var(--color-accent)"
-                  stroke-width="2.5"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
-                {{ f }}
-              </li>
-            </ul>
-            <RouterLink to="/signup" class="pricing-btn primary">Start free trial</RouterLink>
+            <RouterLink
+              to="/signup"
+              :class="['pricing-btn', plan === 'starter' ? 'secondary' : 'primary']"
+              >Start free trial</RouterLink
+            >
           </div>
         </div>
       </div>
@@ -538,9 +571,9 @@
     <!-- ── FAQ ───────────────────────────────────────── -->
     <section class="section" id="faq">
       <div class="section-inner section-inner-narrow">
-        <span class="section-label">FAQ</span>
-        <h2 class="section-title">Common questions</h2>
-        <div class="faq-list">
+        <span class="section-label reveal-fade" :ref="(el) => observeEl(el)">FAQ</span>
+        <h2 class="section-title reveal-up" :ref="(el) => observeEl(el)">Common questions</h2>
+        <div class="faq-list reveal-up" :ref="(el) => observeEl(el)">
           <div
             v-for="(item, i) in faq"
             :key="i"
@@ -585,7 +618,7 @@
     <!-- ── Final CTA ──────────────────────────────────── -->
     <section class="cta-section">
       <div class="cta-glow" />
-      <div class="cta-panel">
+      <div class="cta-panel reveal-up" :ref="(el) => observeEl(el)">
         <div class="cta-logo-wrap">
           <div class="cta-icon">
             <img src="/favicon.png" alt="" />
@@ -621,11 +654,12 @@
     <!-- ── About & Contact ────────────────────────────── -->
     <section class="section about-section" id="about">
       <div class="section-inner">
-        <span class="section-label">About & Contact</span>
-        <h2 class="section-title">The person behind QRserve</h2>
+        <span class="section-label reveal-fade" :ref="(el) => observeEl(el)">About & Contact</span>
+        <h2 class="section-title reveal-up" :ref="(el) => observeEl(el)">
+          The person behind QRserve
+        </h2>
 
-        <div class="about-card">
-          <!-- Profile -->
+        <div class="about-card reveal-up" :ref="(el) => observeEl(el)">
           <div class="about-profile">
             <div class="about-avatar-wrap">
               <img class="about-avatar" src="@/assets/images/profile.jpg" alt="Sozin" />
@@ -644,7 +678,6 @@
 
           <div class="about-divider" />
 
-          <!-- Contact Form -->
           <form class="about-contact-form" @submit.prevent="sendEmail">
             <div class="form-row">
               <div class="form-group">
@@ -714,18 +747,17 @@
                 {{ emailStatus === 'sending' ? 'Sending…' : 'Send Message' }}
               </button>
               <transition name="fade-msg">
-                <span v-if="emailStatus === 'success'" class="form-status success">
-                  ✓ Message sent! We'll get back to you soon.
-                </span>
-                <span v-else-if="emailStatus === 'error'" class="form-status error">
-                  ✗ Something went wrong. Please try again.
-                </span>
+                <span v-if="emailStatus === 'success'" class="form-status success"
+                  >✓ Message sent! We'll get back to you soon.</span
+                >
+                <span v-else-if="emailStatus === 'error'" class="form-status error"
+                  >✗ Something went wrong. Please try again.</span
+                >
               </transition>
             </div>
           </form>
         </div>
 
-        <!-- Footer note -->
         <p class="about-footer-note">Made with <span>♥</span> for restaurants everywhere</p>
       </div>
     </section>
@@ -761,29 +793,60 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, reactive } from 'vue'
+import { ref, onMounted, onUnmounted, reactive, computed } from 'vue'
 
 const scrolled = ref(false)
 const mobileMenuOpen = ref(false)
 const openFaq = ref(null)
+const parallaxY = ref(0)
+
+// Counter animation state
+const revenueCounter = ref(0)
+const ordersCounter = ref(0)
+const completionCounter = ref(0)
+const countersStarted = ref(false)
+
+const displayRevenue = computed(() => revenueCounter.value.toLocaleString())
+const displayStats = computed(() => [
+  { value: ordersCounter.value.toString(), label: 'Orders today' },
+  { value: '$' + (ordersCounter.value > 0 ? (2841 / 142).toFixed(1) : '0.0'), label: 'Avg. order' },
+  { value: completionCounter.value + '%', label: 'Completion' },
+])
+
+function animateCounter(setter, target, duration = 1600) {
+  const start = performance.now()
+  function step(now) {
+    const elapsed = now - start
+    const progress = Math.min(elapsed / duration, 1)
+    // Ease out expo
+    const eased = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress)
+    setter(Math.round(eased * target))
+    if (progress < 1) requestAnimationFrame(step)
+  }
+  requestAnimationFrame(step)
+}
+
+function startCounters() {
+  if (countersStarted.value) return
+  countersStarted.value = true
+  animateCounter((v) => (revenueCounter.value = v), 2841, 1800)
+  animateCounter((v) => (ordersCounter.value = v), 142, 1600)
+  animateCounter((v) => (completionCounter.value = v), 94, 1400)
+}
 
 // Contact form
 const contactForm = reactive({ name: '', email: '', message: '' })
-const emailStatus = ref('') // '' | 'sending' | 'success' | 'error'
+const emailStatus = ref('')
 
 async function sendEmail() {
   emailStatus.value = 'sending'
   try {
-    await window.emailjs.send(
-      'service_cgdixfi', // e.g. 'service_abc123'
-      'template_vjd8hsd', // e.g. 'template_xyz456'
-      {
-        from_name: contactForm.name,
-        from_email: contactForm.email,
-        message: contactForm.message,
-        to_name: 'Sozin',
-      },
-    )
+    await window.emailjs.send('service_cgdixfi', 'template_vjd8hsd', {
+      from_name: contactForm.name,
+      from_email: contactForm.email,
+      message: contactForm.message,
+      to_name: 'Sozin',
+    })
     emailStatus.value = 'success'
     contactForm.name = ''
     contactForm.email = ''
@@ -796,16 +859,54 @@ async function sendEmail() {
   }
 }
 
+// ── Intersection Observer for scroll animations ─────────
+let observer = null
+
+function observeEl(el) {
+  if (!el || !observer) return
+  observer.observe(el)
+}
+
 function handleScroll() {
   scrolled.value = window.scrollY > 20
+  // Parallax: move bg at 30% of scroll speed
+  parallaxY.value = window.scrollY * 0.3
 }
+
 function scrollTo(id) {
   document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
-onMounted(() => {
-  window.addEventListener('scroll', handleScroll)
 
-  // Scroll to hash on direct URL load (e.g. /#pricing)
+onMounted(() => {
+  window.addEventListener('scroll', handleScroll, { passive: true })
+
+  observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('is-visible')
+          // Trigger counters when analytics card enters view
+          if (
+            entry.target.closest?.('.analytics-card') ||
+            entry.target.classList.contains('analytics-card')
+          ) {
+            startCounters()
+          }
+          // Also check children for analytics card
+          if (entry.target.querySelector?.('.analytics-card')) {
+            startCounters()
+          }
+          observer.unobserve(entry.target)
+        }
+      })
+    },
+    { threshold: 0.15, rootMargin: '0px 0px -60px 0px' },
+  )
+
+  // Observe analytics card specifically for counters
+  const analyticsCard = document.querySelector('.analytics-card')
+  if (analyticsCard) observer.observe(analyticsCard)
+
   const hash = window.location.hash?.slice(1)
   if (hash) {
     setTimeout(() => {
@@ -813,7 +914,11 @@ onMounted(() => {
     }, 300)
   }
 })
-onUnmounted(() => window.removeEventListener('scroll', handleScroll))
+
+onUnmounted(() => {
+  window.removeEventListener('scroll', handleScroll)
+  observer?.disconnect()
+})
 
 const orderItems = [
   { qty: 1, name: 'Nasi Goreng', price: '$12.00' },
@@ -876,11 +981,6 @@ const kitchenOrders = [
 
 const chartBars = [32, 48, 41, 60, 55, 70, 65, 80, 75, 90, 85, 100]
 const chartLabels = ['9am', '11am', '1pm', '3pm', '5pm', '7pm']
-const analyticsStats = [
-  { value: '142', label: 'Orders today' },
-  { value: '$20.0', label: 'Avg. order' },
-  { value: '94%', label: 'Completion' },
-]
 
 const testimonials = [
   {
@@ -904,7 +1004,7 @@ const starterFeatures = [
   'Up to 3 staff accounts',
   'Unlimited orders',
   'QR code ordering',
-  'Kitchen , cashier & waiter views',
+  'Kitchen, cashier & waiter views',
   'Menu management',
 ]
 const proFeatures = [
@@ -947,7 +1047,255 @@ const faq = [
 </script>
 
 <style scoped>
-/* ── Contact Form ─────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════
+   SCROLL ANIMATION CLASSES
+   ═══════════════════════════════════════════════════════ */
+
+/* Base hidden states */
+.reveal-fade,
+.reveal-up,
+.reveal-from-left,
+.reveal-from-right,
+.reveal-stagger {
+  opacity: 0;
+  transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  transition-property: opacity, transform;
+  will-change: opacity, transform;
+}
+
+.reveal-fade {
+  transition-duration: 0.8s;
+}
+
+.reveal-up {
+  transform: translateY(36px);
+  transition-duration: 0.85s;
+}
+
+.reveal-from-left {
+  transform: translateX(-48px);
+  transition-duration: 0.9s;
+}
+
+.reveal-from-right {
+  transform: translateX(48px);
+  transition-duration: 0.9s;
+}
+
+.reveal-stagger {
+  transform: translateY(32px);
+  transition-duration: 0.8s;
+  transition-delay: calc(var(--stagger-i, 0) * 80ms);
+}
+
+/* Visible state — added by IntersectionObserver */
+.reveal-fade.is-visible,
+.reveal-up.is-visible,
+.reveal-from-left.is-visible,
+.reveal-from-right.is-visible,
+.reveal-stagger.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+/* Hero entrance animations (CSS-only, on load) */
+.animate-hero-left {
+  animation: heroSlideLeft 1s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.animate-hero-right {
+  animation: heroSlideRight 1.1s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both;
+}
+@keyframes heroSlideLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-40px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes heroSlideRight {
+  from {
+    opacity: 0;
+    transform: translateX(40px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   PHOTO STRIP
+   ═══════════════════════════════════════════════════════ */
+.photo-strip {
+  position: relative;
+  height: 260px;
+  overflow: hidden;
+}
+.photo-strip-inner {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr 1fr;
+  height: 100%;
+  gap: 3px;
+}
+.photo-strip-img {
+  background-size: cover;
+  background-position: center;
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.photo-strip-img:hover {
+  transform: scale(1.04);
+}
+.photo-strip-img--1 {
+  background-image: url('https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=600&auto=format&fit=crop&q=70');
+}
+.photo-strip-img--2 {
+  background-image: url('https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=900&auto=format&fit=crop&q=70');
+}
+.photo-strip-img--3 {
+  background-image: url('https://images.unsplash.com/photo-1466978913421-dad2ebd01d17?w=600&auto=format&fit=crop&q=70');
+}
+.photo-strip-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--color-bg-base) 70%, transparent),
+    transparent 30%,
+    transparent 70%,
+    color-mix(in srgb, var(--color-bg-base) 70%, transparent)
+  );
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 20px;
+  pointer-events: none;
+}
+.photo-strip-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-text-faint);
+}
+
+/* ═══════════════════════════════════════════════════════
+   FEATURE PHOTO LAYERED MOCKUPS
+   ═══════════════════════════════════════════════════════ */
+.feature-img-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 360px;
+}
+.feature-photo {
+  width: 100%;
+  height: 260px;
+  border-radius: var(--radius-card);
+  background-size: cover;
+  background-position: center;
+  box-shadow: var(--shadow-float);
+}
+.feature-photo--qr {
+  background-image: url('https://i.pinimg.com/1200x/98/7b/4f/987b4fd815b48a7676870ccc7b91a262.jpg');
+}
+.feature-photo--kds {
+  background-image: url('https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=700&auto=format&fit=crop&q=70');
+}
+.feature-phone-overlay {
+  position: absolute;
+  bottom: -24px;
+  right: -24px;
+  width: 160px;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.45);
+  z-index: 2;
+}
+.feature-kd-overlay {
+  position: absolute;
+  bottom: -20px;
+  left: -20px;
+  width: 220px;
+  font-size: 11px;
+  z-index: 2;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.45);
+}
+.feature-kd-overlay .kd-header {
+  padding: 10px 12px;
+}
+.feature-kd-overlay .kd-body {
+  padding: 10px;
+  gap: 6px;
+}
+.feature-kd-overlay .kd-order {
+  padding: 8px 10px;
+  gap: 5px;
+}
+.feature-kd-overlay .kd-table {
+  font-size: 12px;
+}
+.feature-kd-overlay .kd-items {
+  font-size: 10px;
+}
+.feature-kd-overlay .kd-btn {
+  font-size: 10px;
+  padding: 4px 10px;
+}
+
+/* ═══════════════════════════════════════════════════════
+   FULL-BLEED BREAK
+   ═══════════════════════════════════════════════════════ */
+.fullbleed-break {
+  position: relative;
+  height: 380px;
+  overflow: hidden;
+}
+.fullbleed-photo {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  filter: brightness(0.38);
+}
+.fullbleed-photo--kitchen {
+  background-image: url('https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=1400&auto=format&fit=crop&q=70');
+}
+.fullbleed-content {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  text-align: center;
+  padding: 0 24px;
+}
+.fullbleed-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+  background: var(--color-accent-muted);
+  border: 1px solid var(--color-accent-border);
+  padding: 5px 14px;
+  border-radius: var(--radius-pill);
+}
+.fullbleed-headline {
+  font-family: var(--font-display);
+  font-size: clamp(28px, 4vw, 52px);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  color: var(--color-text-primary);
+  line-height: 1.1;
+}
+
+/* ═══════════════════════════════════════════════════════
+   CONTACT FORM
+   ═══════════════════════════════════════════════════════ */
 .about-contact-form {
   display: flex;
   flex-direction: column;
@@ -1022,8 +1370,6 @@ const faq = [
 .form-status.error {
   color: var(--color-status-error, #f87171);
 }
-
-/* Spinner animation */
 .spin-icon {
   animation: spin-anim 0.8s linear infinite;
 }
@@ -1032,8 +1378,6 @@ const faq = [
     transform: rotate(360deg);
   }
 }
-
-/* Status fade transition */
 .fade-msg-enter-active,
 .fade-msg-leave-active {
   transition: opacity 0.3s ease;
@@ -1043,7 +1387,6 @@ const faq = [
   opacity: 0;
 }
 
-/* Responsive */
 @media (max-width: 600px) {
   .form-row {
     grid-template-columns: 1fr;
@@ -1052,7 +1395,10 @@ const faq = [
     padding: 20px 24px 24px;
   }
 }
-/* ── Brand icon ─────────────────────────────────────────── */
+
+/* ═══════════════════════════════════════════════════════
+   BRAND / NAV
+   ═══════════════════════════════════════════════════════ */
 .qrder-icon {
   width: 36px;
   height: 36px;
@@ -1070,8 +1416,6 @@ const faq = [
   color: var(--color-text-primary);
   letter-spacing: -0.5px;
 }
-
-/* ── Nav ──────────────────────────────────────────────── */
 .nav {
   position: fixed;
   top: 0;
@@ -1124,7 +1468,9 @@ const faq = [
   gap: 10px;
 }
 
-/* ── Buttons ──────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════
+   BUTTONS
+   ═══════════════════════════════════════════════════════ */
 .btn-ghost {
   font-family: var(--font-body);
   font-size: 14px;
@@ -1219,7 +1565,9 @@ const faq = [
   text-align: center;
 }
 
-/* ── Hero ─────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════
+   HERO
+   ═══════════════════════════════════════════════════════ */
 .hero {
   position: relative;
   min-height: 100vh;
@@ -1231,9 +1579,13 @@ const faq = [
   position: absolute;
   inset: 0;
   z-index: 0;
-  background: url('https://images.unsplash.com/photo-1556742393-d75f468bfcb0?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDF8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D')
+  background: url('https://images.unsplash.com/photo-1556742393-d75f468bfcb0?q=80&w=1170&auto=format&fit=crop')
     center/cover no-repeat;
   filter: brightness(0.35);
+  /* Extra height for parallax travel */
+  top: -15%;
+  bottom: -15%;
+  will-change: transform;
 }
 .hero-overlay {
   position: absolute;
@@ -1318,12 +1670,12 @@ const faq = [
   font-size: 13px;
   color: var(--color-text-faint);
 }
-
 .hero-right {
   flex: 1;
   display: flex;
   justify-content: center;
 }
+
 .order-card {
   background: var(--color-bg-surface);
   border: 1.5px solid var(--color-border-subtle);
@@ -1437,7 +1789,9 @@ const faq = [
   letter-spacing: 0.05em;
 }
 
-/* ── Sections ─────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════
+   SECTIONS
+   ═══════════════════════════════════════════════════════ */
 .section {
   padding: 96px 40px;
   position: relative;
@@ -1487,7 +1841,9 @@ const faq = [
   margin-top: -24px;
 }
 
-/* ── Steps ────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════
+   STEPS
+   ═══════════════════════════════════════════════════════ */
 .steps-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -1543,7 +1899,9 @@ const faq = [
   line-height: 1.65;
 }
 
-/* ── Feature rows ─────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════
+   FEATURE ROWS
+   ═══════════════════════════════════════════════════════ */
 .feature-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1592,7 +1950,9 @@ const faq = [
   justify-content: center;
 }
 
-/* Phone mockup */
+/* ═══════════════════════════════════════════════════════
+   PHONE MOCKUP
+   ═══════════════════════════════════════════════════════ */
 .phone-mockup {
   background: var(--color-bg-surface);
   border: 1.5px solid var(--color-border-subtle);
@@ -1707,7 +2067,9 @@ const faq = [
   background: var(--color-accent-hover);
 }
 
-/* Kitchen display */
+/* ═══════════════════════════════════════════════════════
+   KITCHEN DISPLAY
+   ═══════════════════════════════════════════════════════ */
 .kd-card {
   background: var(--color-bg-surface);
   border: 1.5px solid var(--color-border-subtle);
@@ -1818,7 +2180,9 @@ const faq = [
   color: var(--color-status-success);
 }
 
-/* Analytics */
+/* ═══════════════════════════════════════════════════════
+   ANALYTICS
+   ═══════════════════════════════════════════════════════ */
 .analytics-card {
   background: var(--color-bg-surface);
   border: 1.5px solid var(--color-border-subtle);
@@ -1859,6 +2223,7 @@ const faq = [
   color: var(--color-text-primary);
   letter-spacing: -2px;
   line-height: 1;
+  transition: all 0.1s;
 }
 .analytics-delta {
   font-size: 13px;
@@ -1916,7 +2281,9 @@ const faq = [
   color: var(--color-text-muted);
 }
 
-/* ── Testimonials ─────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════
+   TESTIMONIALS
+   ═══════════════════════════════════════════════════════ */
 .testimonials-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1981,7 +2348,9 @@ const faq = [
   margin-top: 2px;
 }
 
-/* ── Pricing ──────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════
+   PRICING
+   ═══════════════════════════════════════════════════════ */
 .pricing-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -2106,7 +2475,9 @@ const faq = [
   box-shadow: var(--shadow-glow);
 }
 
-/* ── FAQ ──────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════
+   FAQ
+   ═══════════════════════════════════════════════════════ */
 .faq-list {
   width: 100%;
   display: flex;
@@ -2142,7 +2513,9 @@ const faq = [
   padding-top: 12px;
 }
 
-/* ── CTA ──────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════
+   CTA
+   ═══════════════════════════════════════════════════════ */
 .cta-section {
   position: relative;
   padding: 100px 40px;
@@ -2235,11 +2608,12 @@ const faq = [
   color: var(--color-text-faint);
 }
 
-/* ── About & Contact ──────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════
+   ABOUT
+   ═══════════════════════════════════════════════════════ */
 .about-section {
   background: var(--color-bg-base);
 }
-
 .about-card {
   background: var(--color-bg-surface);
   border: 1px solid var(--color-border-subtle);
@@ -2252,7 +2626,6 @@ const faq = [
 .about-card:hover {
   border-color: var(--color-border-medium);
 }
-
 .about-profile {
   display: flex;
   align-items: center;
@@ -2270,7 +2643,6 @@ const faq = [
   background: linear-gradient(180deg, var(--color-accent), transparent);
   border-radius: 4px 0 0 4px;
 }
-
 .about-avatar-wrap {
   position: relative;
   flex-shrink: 0;
@@ -2303,7 +2675,6 @@ const faq = [
     transform: rotate(360deg);
   }
 }
-
 .about-info {
   flex: 1;
   display: flex;
@@ -2331,67 +2702,11 @@ const faq = [
   margin-top: 4px;
   max-width: 480px;
 }
-
 .about-divider {
   height: 1px;
   background: var(--color-border-subtle);
   margin: 0 32px;
 }
-
-.about-contact-row {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 20px 32px;
-  transition: background 0.15s;
-}
-.about-contact-row:hover {
-  background: rgba(255, 255, 255, 0.02);
-}
-
-.about-contact-icon {
-  width: 36px;
-  height: 36px;
-  border-radius: 9px;
-  background: var(--color-accent-muted);
-  border: 1px solid var(--color-accent-border);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  color: var(--color-accent);
-}
-.about-contact-icon svg {
-  width: 16px;
-  height: 16px;
-}
-
-.about-contact-text {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-.about-contact-label {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--color-text-muted);
-}
-.about-contact-value {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--color-text-primary);
-}
-.about-contact-value a {
-  color: var(--color-text-primary);
-  text-decoration: none;
-  transition: color 0.15s;
-}
-.about-contact-value a:hover {
-  color: var(--color-accent-hover);
-}
-
 .about-footer-note {
   font-size: 13px;
   color: var(--color-text-muted);
@@ -2401,7 +2716,9 @@ const faq = [
   font-weight: 600;
 }
 
-/* ── Footer ───────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════
+   FOOTER
+   ═══════════════════════════════════════════════════════ */
 .footer {
   background: var(--color-bg-base);
   border-top: 1px solid var(--color-border-subtle);
@@ -2460,7 +2777,9 @@ const faq = [
   flex-shrink: 0;
 }
 
-/* ── Responsive ───────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════
+   RESPONSIVE
+   ═══════════════════════════════════════════════════════ */
 @media (max-width: 960px) {
   .nav-links,
   .nav-actions {
@@ -2518,6 +2837,35 @@ const faq = [
   .about-info {
     align-items: center;
   }
+  .feature-img-wrap {
+    max-width: 100%;
+  }
+  .feature-phone-overlay {
+    right: 10px;
+    bottom: -16px;
+    width: 130px;
+  }
+  .feature-kd-overlay {
+    left: 10px;
+    bottom: -16px;
+    width: 180px;
+  }
+  .fullbleed-photo {
+    background-attachment: scroll;
+  }
+  .photo-strip {
+    height: 180px;
+  }
+  /* Reduce animation distances on mobile */
+  .reveal-from-left {
+    transform: translateX(-24px);
+  }
+  .reveal-from-right {
+    transform: translateX(24px);
+  }
+  .reveal-up {
+    transform: translateY(20px);
+  }
 }
 @media (max-width: 600px) {
   .section {
@@ -2537,11 +2885,17 @@ const faq = [
   .about-profile {
     padding: 24px;
   }
-  .about-contact-row {
-    padding: 18px 24px;
-  }
   .about-divider {
     margin: 0 24px;
+  }
+  .photo-strip-inner {
+    grid-template-columns: 1fr 1fr;
+  }
+  .photo-strip-img--3 {
+    display: none;
+  }
+  .fullbleed-break {
+    height: 260px;
   }
 }
 </style>
