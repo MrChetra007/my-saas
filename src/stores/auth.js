@@ -7,7 +7,7 @@ export const useAuthStore = defineStore('auth', {
     profile: null,
     loading: true,
     restaurantTimezone: 'UTC',
-    restaurantCurrency: 'USD', // 👈 added
+    restaurantCurrency: 'USD',
   }),
 
   getters: {
@@ -18,6 +18,7 @@ export const useAuthStore = defineStore('auth', {
     isKitchen: (state) => state.profile?.role === 'kitchen',
     isCashier: (state) => state.profile?.role === 'cashier',
     isWaiter: (state) => state.profile?.role === 'waiter',
+    isSuperAdmin: (state) => state.profile?.is_super_admin === true, // 👈 new
   },
 
   actions: {
@@ -64,7 +65,11 @@ export const useAuthStore = defineStore('auth', {
       console.log('AuthStore: fetchProfile start for', this.user.id)
 
       const { data, error } = await Promise.race([
-        supabase.from('users').select('*').eq('id', this.user.id).maybeSingle(),
+        supabase
+          .from('users')
+          .select('*, is_super_admin') // 👈 explicit select (or keep * if your RLS allows)
+          .eq('id', this.user.id)
+          .maybeSingle(),
         new Promise((_, reject) =>
           setTimeout(() => reject(new Error('fetchProfile timed out')), 10000),
         ),
@@ -77,19 +82,20 @@ export const useAuthStore = defineStore('auth', {
 
       this.profile = data
 
-      // Fetch timezone + currency in one query
-      if (data?.restaurant_id) {
+      // Super admins have no restaurant — skip restaurant fetch
+      if (data?.restaurant_id && !data?.is_super_admin) {
+        // 👈 guard
         const { data: restaurant } = await supabase
           .from('restaurants')
-          .select('timezone, currency') // 👈 added currency
+          .select('timezone, currency')
           .eq('id', data.restaurant_id)
           .single()
 
         this.restaurantTimezone = restaurant?.timezone || 'UTC'
-        this.restaurantCurrency = restaurant?.currency || 'USD' // 👈 added
+        this.restaurantCurrency = restaurant?.currency || 'USD'
       }
 
-      console.log('AuthStore: fetchProfile success', !!data)
+      console.log('AuthStore: fetchProfile success', !!data, 'super_admin:', !!data?.is_super_admin)
     },
 
     async signOut() {

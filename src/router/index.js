@@ -2,7 +2,6 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
 
-// ── Role Home Helper ─────────────────────────────────
 export function roleHome(role) {
   switch (role) {
     case 'kitchen':
@@ -12,29 +11,20 @@ export function roleHome(role) {
     case 'waiter':
       return '/waiter'
     default:
-      return '/app/dashboard' // admin
+      return '/app/dashboard'
   }
 }
 
 const routes = [
   // ── Public ──────────────────────────────────────
   { path: '/', component: () => import('@/views/public/LandingView.vue'), meta: { public: true } },
-  {
-    path: '/terms',
-    component: () => import('@/views/public/Terms.vue'),
-    meta: { public: true },
-  },
+  { path: '/terms', component: () => import('@/views/public/Terms.vue'), meta: { public: true } },
   {
     path: '/privacy',
     component: () => import('@/views/public/Privacypolicy.vue'),
     meta: { public: true },
   },
-  {
-    path: '/refund',
-    component: () => import('@/views/public/Refund.vue'),
-    meta: { public: true },
-  },
-  //for customers to place orders without logging in
+  { path: '/refund', component: () => import('@/views/public/Refund.vue'), meta: { public: true } },
   {
     path: '/order/:slug/:tableId',
     component: () => import('@/views/public/OrderView.vue'),
@@ -52,9 +42,9 @@ const routes = [
     path: '/reset-password',
     component: () => import('@/views/auth/ResetPasswordView.vue'),
     meta: { public: true },
-  }, // ← add this
+  },
 
-  // ── Onboarding (admin only) ──────────────────────
+  // ── Onboarding ──────────────────────────────────
   {
     path: '/onboarding',
     name: 'onboarding',
@@ -70,11 +60,11 @@ const routes = [
     meta: { requiresAuth: true },
   },
 
-  // ── Admin (everything stays the same) ───────────
+  // ── Admin ───────────────────────────────────────
   {
     path: '/app',
     component: () => import('@/layouts/AppLayout.vue'),
-    meta: { requiresAuth: true, roles: ['admin'] },
+    meta: { requiresAuth: true, roles: ['admin'] }, // 👈 back to admin only
     redirect: '/app/dashboard',
     children: [
       { path: 'dashboard', component: () => import('@/views/app/DashboardView.vue') },
@@ -102,6 +92,27 @@ const routes = [
     ],
   },
 
+  // ── Super Admin ─────────────────────────────────  👈 new block
+  {
+    path: '/super-admin',
+    component: () => import('@/layouts/SuperAdminLayout.vue'),
+    meta: { requiresAuth: true, superAdminOnly: true },
+    redirect: '/super-admin/dashboard',
+    children: [
+      { path: 'dashboard', component: () => import('@/views/super-admin/SuperAdminDashboard.vue') },
+      {
+        path: 'restaurants',
+        component: () => import('@/views/super-admin/SuperAdminRestaurants.vue'),
+      },
+      { path: 'users', component: () => import('@/views/super-admin/SuperAdminUsers.vue') },
+      {
+        path: 'subscriptions',
+        component: () => import('@/views/super-admin/SuperAdminSubscriptions.vue'),
+      },
+      { path: 'settings', component: () => import('@/views/super-admin/SuperAdminSettings.vue') },
+      // add more super admin views here as you build them
+    ],
+  },
   // ── Kitchen ──────────────────────────────────────
   {
     path: '/kitchen',
@@ -133,7 +144,6 @@ const routes = [
     redirect: '/waiter/new-order',
     children: [
       { path: 'new-order', component: () => import('@/views/waiter/WaiterNewOrderView.vue') },
-      { path: 'new-order', component: () => import('@/views/waiter/WaiterNewOrderView.vue') },
       { path: 'tables', component: () => import('@/views/waiter/WaiterTablesView.vue') },
       { path: 'orders', component: () => import('@/views/waiter/WaiterOrdersView.vue') },
     ],
@@ -146,14 +156,13 @@ const routes = [
 const router = createRouter({ history: createWebHistory(), routes })
 
 function isTrialExpired(plan, trialEndsAt) {
-  if (['pro', 'starter', 'pro'].includes(plan)) return false
+  if (['pro', 'starter'].includes(plan)) return false
   if (plan === 'expired') return true
   if (!trialEndsAt) return true
-  return new Date(trialEndsAt) < new Date() // to > for testing, change to < for production
+  return new Date(trialEndsAt) < new Date()
 }
 
 router.beforeEach(async (to) => {
-  // If a Supabase ?code= lands on the wrong route, forward it to reset-password
   if (to.query.code && to.path !== '/reset-password') {
     return { path: '/reset-password', query: { code: to.query.code } }
   }
@@ -169,12 +178,22 @@ router.beforeEach(async (to) => {
   if (!authStore.profile) await authStore.fetchProfile()
   if (!authStore.profile) return to.name !== 'onboarding' ? '/onboarding' : true
 
+  // ── Super Admin ──────────────────────────────────
+  if (authStore.isSuperAdmin) {
+    // If they try to access anything outside /super-admin, send them home
+    if (!to.path.startsWith('/super-admin')) return '/super-admin/dashboard'
+    return true // no subscription, no onboarding, no trial checks — ever
+  }
+
+  // ── Block super-admin routes from normal users ───
+  if (to.meta.superAdminOnly) return '/login'
+
   const role = authStore.profile.role
 
   // Block wrong roles from wrong paths
   if (to.meta.roles && !to.meta.roles.includes(role)) return roleHome(role)
 
-  // Onboarding + trial checks only apply to admin
+  // Onboarding + trial checks (admin only)
   if (role === 'admin') {
     const { data: restaurant } = await supabase
       .from('restaurants')
