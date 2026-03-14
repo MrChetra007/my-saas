@@ -346,6 +346,8 @@ function initials(str) {
     .slice(0, 2)
 }
 
+// ✅ Only uses columns that exist in your actual users table:
+// id, restaurant_id, full_name, role, is_active, created_at, email, is_super_admin
 function detailFields(u) {
   return [
     { label: 'User ID', value: `<code>${u.id}</code>` },
@@ -357,7 +359,6 @@ function detailFields(u) {
     { label: 'Status', value: u.is_active !== false ? 'Active' : 'Inactive' },
     { label: 'Super admin', value: u.is_super_admin ? 'Yes' : 'No' },
     { label: 'Created', value: formatDate(u.created_at) },
-    { label: 'Last sign in', value: formatDate(u.last_sign_in_at) },
   ]
 }
 
@@ -376,12 +377,10 @@ const icons = {
 // ── Fetch ──────────────────────────────────────────────
 onMounted(async () => {
   try {
-    // Fetch all users
+    // ✅ Exact columns from your users table — no extra fields
     const { data: userList, error: uErr } = await supabase
       .from('users')
-      .select(
-        'id, full_name, email, role, restaurant_id, is_active, is_super_admin, created_at, last_sign_in_at',
-      )
+      .select('id, full_name, email, role, restaurant_id, is_active, is_super_admin, created_at')
       .order('created_at', { ascending: false })
 
     if (uErr) throw uErr
@@ -448,7 +447,6 @@ onMounted(async () => {
   gap: 10px;
   flex-wrap: wrap;
 }
-
 .search-wrap {
   position: relative;
   display: flex;
@@ -491,7 +489,6 @@ onMounted(async () => {
   padding: 0;
   line-height: 1;
 }
-
 .filter-group {
   display: flex;
   gap: 4px;
@@ -520,7 +517,6 @@ onMounted(async () => {
   color: #c2410c;
   font-weight: 600;
 }
-
 .filter-select {
   height: 36px;
   padding: 0 10px;
@@ -546,7 +542,6 @@ onMounted(async () => {
   border-radius: 14px;
   overflow: hidden;
 }
-
 .u-table {
   width: 100%;
   border-collapse: collapse;
@@ -669,7 +664,6 @@ onMounted(async () => {
   background: #f8f7f4;
   color: #a8a49e;
 }
-
 .status-dot {
   width: 6px;
   height: 6px;
@@ -740,7 +734,6 @@ onMounted(async () => {
 .modal-sm {
   max-width: 420px;
 }
-
 @keyframes modalIn {
   from {
     opacity: 0;
@@ -751,7 +744,6 @@ onMounted(async () => {
     transform: scale(1) translateY(0);
   }
 }
-
 .modal-header {
   display: flex;
   align-items: center;
@@ -848,7 +840,7 @@ onMounted(async () => {
   font-family: monospace;
 }
 
-/* ── Confirm modals ─────────────────────────────────── */
+/* ── Confirm ────────────────────────────────────────── */
 .confirm-text {
   font-size: 13.5px;
   color: #3d3d3a;
@@ -898,7 +890,6 @@ onMounted(async () => {
   opacity: 0.6;
   cursor: not-allowed;
 }
-
 .btn-secondary {
   height: 36px;
   padding: 0 16px;
@@ -916,7 +907,6 @@ onMounted(async () => {
   background: #f3f1ee;
   color: #1a1917;
 }
-
 .btn-danger {
   height: 36px;
   padding: 0 16px;
@@ -937,7 +927,6 @@ onMounted(async () => {
   opacity: 0.6;
   cursor: not-allowed;
 }
-
 .btn-success {
   height: 36px;
   padding: 0 16px;
