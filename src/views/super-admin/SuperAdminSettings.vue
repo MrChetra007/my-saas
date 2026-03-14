@@ -130,15 +130,151 @@
         </div>
       </div>
 
+      <!-- ── Pricing config ────────────────────────────── -->
+      <div class="panel panel-wide">
+        <div class="panel-header">
+          <span v-html="icons.dollar" class="panel-icon" />
+          <div>
+            <h3 class="panel-title">Pricing configuration</h3>
+            <p class="panel-desc">
+              Set prices per billing type. Used for MRR calculations on the dashboard.
+            </p>
+          </div>
+        </div>
+
+        <div class="panel-body">
+          <!-- Pricing table -->
+          <div class="pricing-table">
+            <!-- Header -->
+            <div class="pricing-header">
+              <div class="pricing-cell plan-col"></div>
+              <div class="pricing-cell">
+                <span class="billing-pill manual">Manual</span>
+                <p class="billing-desc">Cash / bank transfer — you set expiry date manually</p>
+              </div>
+              <div class="pricing-cell">
+                <span class="billing-pill ls">LemonSqueezy</span>
+                <p class="billing-desc">Auto billing — customer pays online, webhook handles it</p>
+              </div>
+            </div>
+
+            <!-- Starter row -->
+            <div class="pricing-row">
+              <div class="pricing-cell plan-col">
+                <span class="plan-pill starter">Starter</span>
+              </div>
+              <div class="pricing-cell">
+                <div class="input-prefix-wrap">
+                  <span class="input-prefix input-prefix-text">$</span>
+                  <input
+                    v-model.number="appForm.starter_price_manual"
+                    class="form-input with-prefix"
+                    type="number"
+                    min="0"
+                    placeholder="e.g. 15"
+                  />
+                  <span class="input-suffix">/mo</span>
+                </div>
+              </div>
+              <div class="pricing-cell">
+                <div class="input-prefix-wrap">
+                  <span class="input-prefix input-prefix-text">$</span>
+                  <input
+                    v-model.number="appForm.starter_price_ls"
+                    class="form-input with-prefix"
+                    type="number"
+                    min="0"
+                    placeholder="e.g. 49"
+                  />
+                  <span class="input-suffix">/mo</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Pro row -->
+            <div class="pricing-row">
+              <div class="pricing-cell plan-col">
+                <span class="plan-pill pro">Pro</span>
+              </div>
+              <div class="pricing-cell">
+                <div class="input-prefix-wrap">
+                  <span class="input-prefix input-prefix-text">$</span>
+                  <input
+                    v-model.number="appForm.pro_price_manual"
+                    class="form-input with-prefix"
+                    type="number"
+                    min="0"
+                    placeholder="e.g. 25"
+                  />
+                  <span class="input-suffix">/mo</span>
+                </div>
+              </div>
+              <div class="pricing-cell">
+                <div class="input-prefix-wrap">
+                  <span class="input-prefix input-prefix-text">$</span>
+                  <input
+                    v-model.number="appForm.pro_price_ls"
+                    class="form-input with-prefix"
+                    type="number"
+                    min="0"
+                    placeholder="e.g. 99"
+                  />
+                  <span class="input-suffix">/mo</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Preview bar -->
+          <div class="config-preview">
+            <div class="preview-item">
+              <span class="preview-label">Starter · Manual</span>
+              <span class="preview-value"
+                >${{ appForm.starter_price_manual }}<span class="preview-unit">/mo</span></span
+              >
+            </div>
+            <div class="preview-divider" />
+            <div class="preview-item">
+              <span class="preview-label">Pro · Manual</span>
+              <span class="preview-value"
+                >${{ appForm.pro_price_manual }}<span class="preview-unit">/mo</span></span
+              >
+            </div>
+            <div class="preview-divider" />
+            <div class="preview-item">
+              <span class="preview-label">Starter · LemonSqueezy</span>
+              <span class="preview-value"
+                >${{ appForm.starter_price_ls }}<span class="preview-unit">/mo</span></span
+              >
+            </div>
+            <div class="preview-divider" />
+            <div class="preview-item">
+              <span class="preview-label">Pro · LemonSqueezy</span>
+              <span class="preview-value"
+                >${{ appForm.pro_price_ls }}<span class="preview-unit">/mo</span></span
+              >
+            </div>
+          </div>
+        </div>
+
+        <div class="panel-footer">
+          <div v-if="pricingMsg" class="save-msg" :class="pricingMsg.type">
+            <span v-html="pricingMsg.type === 'success' ? icons.check : icons.error" />
+            {{ pricingMsg.text }}
+          </div>
+          <button class="btn-primary" :disabled="pricingSaving" @click="savePricing">
+            {{ pricingSaving ? 'Saving…' : 'Save pricing' }}
+          </button>
+        </div>
+      </div>
+
       <!-- ── App-wide settings ─────────────────────────── -->
       <div class="panel panel-wide">
         <div class="panel-header">
           <span v-html="icons.settings" class="panel-icon" />
           <div>
             <h3 class="panel-title">App-wide configuration</h3>
-            <p class="panel-desc">
-              These values are used across the super admin dashboard for calculations and defaults.
-            </p>
+            <p class="panel-desc">Trial duration and expiry warning threshold.</p>
           </div>
         </div>
 
@@ -159,34 +295,6 @@
           </div>
 
           <div class="form-group">
-            <label class="form-label">Starter plan price (USD/mo)</label>
-            <div class="input-prefix-wrap">
-              <span class="input-prefix input-prefix-text">$</span>
-              <input
-                v-model.number="appForm.starter_price"
-                class="form-input with-prefix"
-                type="number"
-                min="0"
-              />
-            </div>
-            <div class="form-hint">Used to calculate MRR on the dashboard.</div>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Pro plan price (USD/mo)</label>
-            <div class="input-prefix-wrap">
-              <span class="input-prefix input-prefix-text">$</span>
-              <input
-                v-model.number="appForm.pro_price"
-                class="form-input with-prefix"
-                type="number"
-                min="0"
-              />
-            </div>
-            <div class="form-hint">Used to calculate MRR on the dashboard.</div>
-          </div>
-
-          <div class="form-group">
             <label class="form-label">Expiry warning threshold (days)</label>
             <div class="input-prefix-wrap">
               <span class="input-prefix" v-html="icons.clock" />
@@ -198,32 +306,7 @@
                 max="60"
               />
             </div>
-            <div class="form-hint">
-              Show warning on dashboard when plan expires within this many days.
-            </div>
-          </div>
-        </div>
-
-        <!-- Preview -->
-        <div class="config-preview">
-          <div class="preview-item">
-            <span class="preview-label">Trial</span>
-            <span class="preview-value">{{ appForm.trial_days }} days</span>
-          </div>
-          <div class="preview-divider" />
-          <div class="preview-item">
-            <span class="preview-label">Starter MRR per customer</span>
-            <span class="preview-value">${{ appForm.starter_price }}/mo</span>
-          </div>
-          <div class="preview-divider" />
-          <div class="preview-item">
-            <span class="preview-label">Pro MRR per customer</span>
-            <span class="preview-value">${{ appForm.pro_price }}/mo</span>
-          </div>
-          <div class="preview-divider" />
-          <div class="preview-item">
-            <span class="preview-label">Expiry warning</span>
-            <span class="preview-value">{{ appForm.expiry_warning_days }} days before</span>
+            <div class="form-hint">Highlight expiring plans on dashboard within this window.</div>
           </div>
         </div>
 
@@ -248,15 +331,12 @@ import { useAuthStore } from '@/stores/auth'
 
 const authStore = useAuthStore()
 
-// ── Profile form ───────────────────────────────────────
+// ── Profile ────────────────────────────────────────────
 const profileSaving = ref(false)
 const profileMsg = ref(null)
-const profileForm = ref({
-  full_name: '',
-  email: '',
-})
+const profileForm = ref({ full_name: '', email: '' })
 
-// ── Password form ──────────────────────────────────────
+// ── Password ───────────────────────────────────────────
 const passwordSaving = ref(false)
 const passwordMsg = ref(null)
 const showPw = ref(false)
@@ -268,20 +348,29 @@ const passwordValid = computed(
     passwordForm.value.password === passwordForm.value.confirm,
 )
 
-// ── App settings form ──────────────────────────────────
-// Stored in localStorage for now — swap for a DB table if needed later
+// ── Pricing + App settings ─────────────────────────────
+// All stored in localStorage under one key
+// To persist to DB later: swap localStorage calls for supabase.from('app_settings')
+const pricingSaving = ref(false)
+const pricingMsg = ref(null)
 const appSaving = ref(false)
 const appMsg = ref(null)
-const appForm = ref({
-  trial_days: 14,
-  starter_price: 29,
-  pro_price: 59,
-  expiry_warning_days: 14,
-})
 
 const APP_SETTINGS_KEY = 'sa_app_settings'
 
-// ── Computed ───────────────────────────────────────────
+const appForm = ref({
+  // Manual pricing (cash / bank transfer — you handle manually)
+  starter_price_manual: 15,
+  pro_price_manual: 25,
+  // LemonSqueezy pricing (auto billing — customer pays online)
+  starter_price_ls: 49,
+  pro_price_ls: 99,
+  // General
+  trial_days: 14,
+  expiry_warning_days: 14,
+})
+
+// ── Initials ───────────────────────────────────────────
 const initials = computed(() => {
   const name = authStore.profile?.full_name || ''
   return (
@@ -299,19 +388,14 @@ async function saveProfile() {
   profileSaving.value = true
   profileMsg.value = null
   try {
-    // Update full_name in users table
     const { error: dbErr } = await supabase
       .from('users')
       .update({ full_name: profileForm.value.full_name })
       .eq('id', authStore.user.id)
-
     if (dbErr) throw dbErr
 
-    // Update email via Supabase auth if changed
     if (profileForm.value.email !== authStore.user?.email) {
-      const { error: emailErr } = await supabase.auth.updateUser({
-        email: profileForm.value.email,
-      })
+      const { error: emailErr } = await supabase.auth.updateUser({ email: profileForm.value.email })
       if (emailErr) throw emailErr
       profileMsg.value = {
         type: 'success',
@@ -321,7 +405,6 @@ async function saveProfile() {
       profileMsg.value = { type: 'success', text: 'Profile saved successfully.' }
     }
 
-    // Refresh profile in store
     await authStore.fetchProfile()
     setTimeout(() => {
       profileMsg.value = null
@@ -339,9 +422,7 @@ async function savePassword() {
   passwordSaving.value = true
   passwordMsg.value = null
   try {
-    const { error } = await supabase.auth.updateUser({
-      password: passwordForm.value.password,
-    })
+    const { error } = await supabase.auth.updateUser({ password: passwordForm.value.password })
     if (error) throw error
     passwordMsg.value = { type: 'success', text: 'Password updated successfully.' }
     passwordForm.value = { password: '', confirm: '' }
@@ -355,8 +436,24 @@ async function savePassword() {
   }
 }
 
+// ── Save pricing ───────────────────────────────────────
+async function savePricing() {
+  pricingSaving.value = true
+  pricingMsg.value = null
+  try {
+    localStorage.setItem(APP_SETTINGS_KEY, JSON.stringify(appForm.value))
+    pricingMsg.value = { type: 'success', text: 'Pricing saved.' }
+    setTimeout(() => {
+      pricingMsg.value = null
+    }, 3000)
+  } catch {
+    pricingMsg.value = { type: 'error', text: 'Failed to save.' }
+  } finally {
+    pricingSaving.value = false
+  }
+}
+
 // ── Save app settings ──────────────────────────────────
-// Persisted to localStorage — export as a composable/store if you want DB persistence
 async function saveAppSettings() {
   appSaving.value = true
   appMsg.value = null
@@ -366,14 +463,14 @@ async function saveAppSettings() {
     setTimeout(() => {
       appMsg.value = null
     }, 3000)
-  } catch (err) {
+  } catch {
     appMsg.value = { type: 'error', text: 'Failed to save.' }
   } finally {
     appSaving.value = false
   }
 }
 
-// ── Load saved settings on mount ──────────────────────
+// ── Load on mount ──────────────────────────────────────
 onMounted(() => {
   profileForm.value.full_name = authStore.profile?.full_name || ''
   profileForm.value.email = authStore.user?.email || ''
@@ -390,6 +487,7 @@ onMounted(() => {
 const icons = {
   user: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
   lock: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`,
+  dollar: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>`,
   settings: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>`,
   eye: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`,
   eyeOff: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`,
@@ -550,7 +648,6 @@ const icons = {
   font-weight: 600;
   color: #3d3d3a;
 }
-
 .form-input {
   height: 38px;
   padding: 0 12px;
@@ -573,7 +670,6 @@ const icons = {
   color: #a8a49e;
 }
 
-/* ── Input with icon prefix ─────────────────────────── */
 .input-wrap {
   position: relative;
   display: flex;
@@ -611,8 +707,17 @@ const icons = {
   font-weight: 600;
   color: #a8a49e;
 }
+.input-suffix {
+  position: absolute;
+  right: 10px;
+  font-size: 12px;
+  color: #a8a49e;
+  font-weight: 500;
+  pointer-events: none;
+}
 .form-input.with-prefix {
-  padding-left: 34px;
+  padding-left: 28px;
+  padding-right: 36px;
 }
 
 /* ── Password mismatch ──────────────────────────────── */
@@ -627,12 +732,93 @@ const icons = {
   border-radius: 8px;
 }
 
+/* ── Pricing table ──────────────────────────────────── */
+.pricing-table {
+  border: 1px solid #e8e6e1;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.pricing-header {
+  display: grid;
+  grid-template-columns: 120px 1fr 1fr;
+  background: #fafaf9;
+  border-bottom: 1px solid #e8e6e1;
+}
+
+.pricing-row {
+  display: grid;
+  grid-template-columns: 120px 1fr 1fr;
+  border-bottom: 1px solid #f0ede8;
+}
+.pricing-row:last-child {
+  border-bottom: none;
+}
+.pricing-row:hover {
+  background: #fafaf9;
+}
+
+.pricing-cell {
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+}
+
+.plan-col {
+  border-right: 1px solid #e8e6e1;
+  background: #fafaf9;
+}
+
+.billing-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 20px;
+  width: fit-content;
+}
+.billing-pill.manual {
+  background: #f0fdf4;
+  color: #15803d;
+}
+.billing-pill.ls {
+  background: #fff7ed;
+  color: #c2410c;
+}
+
+.billing-desc {
+  font-size: 11.5px;
+  color: #a8a49e;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.plan-pill {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 20px;
+  display: inline-block;
+  width: fit-content;
+}
+.plan-pill.starter {
+  background: #eff6ff;
+  color: #2563eb;
+}
+.plan-pill.pro {
+  background: #fdf4ff;
+  color: #9333ea;
+}
+
 /* ── Config preview ─────────────────────────────────── */
 .config-preview {
   display: flex;
   align-items: center;
   gap: 0;
-  margin: 0 20px 4px;
   background: #fafaf9;
   border: 1px solid #f0ede8;
   border-radius: 10px;
@@ -653,10 +839,16 @@ const icons = {
   letter-spacing: 0.05em;
 }
 .preview-value {
-  font-size: 15px;
-  font-weight: 700;
+  font-size: 16px;
+  font-weight: 750;
   color: #1a1917;
   letter-spacing: -0.3px;
+}
+.preview-unit {
+  font-size: 11px;
+  font-weight: 500;
+  color: #a8a49e;
+  margin-left: 1px;
 }
 .preview-divider {
   width: 1px;
@@ -724,6 +916,10 @@ const icons = {
   .preview-divider {
     width: auto;
     height: 1px;
+  }
+  .pricing-header,
+  .pricing-row {
+    grid-template-columns: 90px 1fr 1fr;
   }
 }
 </style>
