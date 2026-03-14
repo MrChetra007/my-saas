@@ -64,7 +64,7 @@ const routes = [
   {
     path: '/app',
     component: () => import('@/layouts/AppLayout.vue'),
-    meta: { requiresAuth: true, roles: ['admin'] }, // 👈 back to admin only
+    meta: { requiresAuth: true, roles: ['admin'] },
     redirect: '/app/dashboard',
     children: [
       { path: 'dashboard', component: () => import('@/views/app/DashboardView.vue') },
@@ -92,7 +92,7 @@ const routes = [
     ],
   },
 
-  // ── Super Admin ─────────────────────────────────  👈 new block
+  // ── Super Admin ──────────────────────────────────
   {
     path: '/super-admin',
     component: () => import('@/layouts/SuperAdminLayout.vue'),
@@ -110,9 +110,9 @@ const routes = [
         component: () => import('@/views/super-admin/SuperAdminSubscriptions.vue'),
       },
       { path: 'settings', component: () => import('@/views/super-admin/SuperAdminSettings.vue') },
-      // add more super admin views here as you build them
     ],
   },
+
   // ── Kitchen ──────────────────────────────────────
   {
     path: '/kitchen',
@@ -155,14 +155,38 @@ const routes = [
 
 const router = createRouter({ history: createWebHistory(), routes })
 
-function isTrialExpired(plan, trialEndsAt) {
-  if (['pro', 'starter'].includes(plan)) return false
-  if (plan === 'expired') return true
+// ---------------------------------------------------------------------------
+// isTrialExpired — supports both billing types
+//
+// LemonSqueezy: webhook keeps `plan` field updated → trust it directly
+// Manual:       super admin sets plan_expires_at → check the date
+// Trial:        falls back to trial_ends_at for both types on signup
+// ---------------------------------------------------------------------------
+function isTrialExpired(plan, trialEndsAt, billingType, planExpiresAt) {
+  // ── LemonSqueezy: webhook manages everything ──────
+  if (billingType === 'lemonsqueezy') {
+    if (['pro', 'starter'].includes(plan)) return false // active LS sub
+    if (plan === 'expired') return true // webhook cancelled it
+    // fallthrough to trial check below
+  }
+
+  // ── Manual: check plan_expires_at date ────────────
+  if (billingType === 'manual') {
+    if (plan === 'expired') return true
+    if (['pro', 'starter'].includes(plan)) {
+      if (!planExpiresAt) return false // no expiry = indefinite (test accounts)
+      return new Date(planExpiresAt) < new Date() // expired if date passed
+    }
+    // fallthrough to trial check below
+  }
+
+  // ── Trial fallback (new signups, both billing types) ──
   if (!trialEndsAt) return true
   return new Date(trialEndsAt) < new Date()
 }
 
 router.beforeEach(async (to) => {
+  // Forward Supabase ?code= to reset-password
   if (to.query.code && to.path !== '/reset-password') {
     return { path: '/reset-password', query: { code: to.query.code } }
   }
@@ -178,11 +202,10 @@ router.beforeEach(async (to) => {
   if (!authStore.profile) await authStore.fetchProfile()
   if (!authStore.profile) return to.name !== 'onboarding' ? '/onboarding' : true
 
-  // ── Super Admin ──────────────────────────────────
+  // ── Super Admin: bypass everything ──────────────
   if (authStore.isSuperAdmin) {
-    // If they try to access anything outside /super-admin, send them home
     if (!to.path.startsWith('/super-admin')) return '/super-admin/dashboard'
-    return true // no subscription, no onboarding, no trial checks — ever
+    return true
   }
 
   // ── Block super-admin routes from normal users ───
@@ -193,24 +216,44 @@ router.beforeEach(async (to) => {
   // Block wrong roles from wrong paths
   if (to.meta.roles && !to.meta.roles.includes(role)) return roleHome(role)
 
-  // Onboarding + trial checks (admin only)
+  // ── Onboarding + trial checks (admin only) ───────
   if (role === 'admin') {
     const { data: restaurant } = await supabase
       .from('restaurants')
-      .select('onboarding_completed, plan, trial_ends_at')
+      .select('onboarding_completed, plan, trial_ends_at, billing_type, plan_expires_at') // 👈 new fields
       .eq('id', authStore.profile.restaurant_id)
       .single()
 
+    // Onboarding gate
     const onboarded = restaurant?.onboarding_completed === true
     if (!onboarded && to.name !== 'onboarding') return '/onboarding'
     if (onboarded && to.name === 'onboarding') return '/app/dashboard'
 
+    // Trial / subscription gate
     const skipTrialCheck = to.name === 'trial-expired' || to.path === '/app/settings'
     if (!skipTrialCheck && to.path.startsWith('/app')) {
-      if (isTrialExpired(restaurant?.plan, restaurant?.trial_ends_at)) return '/trial-expired'
+      if (
+        isTrialExpired(
+          restaurant?.plan,
+          restaurant?.trial_ends_at,
+          restaurant?.billing_type, // 👈 pass billing type
+          restaurant?.plan_expires_at, // 👈 pass manual expiry date
+        )
+      )
+        return '/trial-expired'
     }
+
+    // If already expired but somehow on trial-expired, redirect away if still valid
     if (to.name === 'trial-expired') {
-      if (!isTrialExpired(restaurant?.plan, restaurant?.trial_ends_at)) return '/app/dashboard'
+      if (
+        !isTrialExpired(
+          restaurant?.plan,
+          restaurant?.trial_ends_at,
+          restaurant?.billing_type,
+          restaurant?.plan_expires_at,
+        )
+      )
+        return '/app/dashboard'
     }
   }
 
