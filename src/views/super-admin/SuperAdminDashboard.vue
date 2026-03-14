@@ -101,7 +101,9 @@
             <span v-html="icons.inbox" />
             No recent upgrades
           </div>
-          <table class="upgrade-table" v-else>
+
+          <!-- Desktop table -->
+          <table class="upgrade-table desktop-only" v-else>
             <thead>
               <tr>
                 <th>Restaurant</th>
@@ -138,6 +140,41 @@
               </tr>
             </tbody>
           </table>
+
+          <!-- Mobile cards -->
+          <div class="upgrade-cards mobile-only" v-if="recentUpgrades.length > 0">
+            <div class="upgrade-card" v-for="r in recentUpgrades" :key="r.id">
+              <div class="upgrade-card-top">
+                <div class="table-name">
+                  <span class="table-avatar">{{ r.name[0].toUpperCase() }}</span>
+                  <span class="upgrade-card-name">{{ r.name }}</span>
+                </div>
+                <span class="price-tag">${{ getPlanPrice(r.billing_type, r.plan) }}/mo</span>
+              </div>
+              <div class="upgrade-card-badges">
+                <span class="plan-badge" :class="r.plan">{{ r.plan }}</span>
+                <span class="billing-badge" :class="r.billing_type">
+                  {{ r.billing_type === 'lemonsqueezy' ? 'LemonSqueezy' : 'Manual' }}
+                </span>
+              </div>
+              <div class="upgrade-card-dates">
+                <span class="upgrade-card-date-item">
+                  <span class="upgrade-card-date-label">Upgraded</span>
+                  <span class="upgrade-card-date-value">{{ formatDate(r.updated_at) }}</span>
+                </span>
+                <span class="upgrade-card-date-item">
+                  <span class="upgrade-card-date-label">Expires</span>
+                  <span class="upgrade-card-date-value">
+                    {{
+                      r.billing_type === 'lemonsqueezy'
+                        ? 'Auto renew'
+                        : formatDate(r.plan_expires_at)
+                    }}
+                  </span>
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
         <div v-else class="skeleton-rows">
           <div class="skeleton-row" v-for="i in 4" :key="i" />
@@ -155,16 +192,31 @@ import { useAuthStore } from '@/stores/auth'
 const authStore = useAuthStore()
 const loading = ref(true)
 
-// ── Pricing config ─────────────────────────────────────
-// Manual = cash/bank transfer (cheaper, you do work manually)
-// LemonSqueezy = auto billing (premium for convenience)
-const PLAN_PRICE = {
-  manual: { starter: 15, pro: 25 },
-  lemonsqueezy: { starter: 49, pro: 99 },
+// ── Pricing — reads from localStorage set in Settings page ────────
+// Falls back to defaults if not yet configured
+const APP_SETTINGS_KEY = 'sa_app_settings'
+
+function loadPrices() {
+  try {
+    const saved = localStorage.getItem(APP_SETTINGS_KEY)
+    if (saved) {
+      const p = JSON.parse(saved)
+      return {
+        manual: { starter: p.starter_price_manual ?? 15, pro: p.pro_price_manual ?? 25 },
+        lemonsqueezy: { starter: p.starter_price_ls ?? 49, pro: p.pro_price_ls ?? 99 },
+      }
+    }
+  } catch {}
+  return {
+    manual: { starter: 15, pro: 25 },
+    lemonsqueezy: { starter: 49, pro: 99 },
+  }
 }
 
+const PLAN_PRICE = loadPrices()
+
 function getPlanPrice(billingType, plan) {
-  return PLAN_PRICE[billingType]?.[plan] ?? 0
+  return PLAN_PRICE[billingType ?? 'manual']?.[plan] ?? 0
 }
 
 // ── Data refs ──────────────────────────────────────────
@@ -179,10 +231,8 @@ const expiringSoon = ref([])
 const recentUpgrades = ref([])
 const allRestaurants = ref([])
 
-// ── Computed helpers ───────────────────────────────────
-const firstName = computed(() => {
-  return authStore.profile?.full_name?.split(' ')[0] || 'Admin'
-})
+// ── Computed ───────────────────────────────────────────
+const firstName = computed(() => authStore.profile?.full_name?.split(' ')[0] || 'Admin')
 
 const timeOfDay = computed(() => {
   const h = new Date().getHours()
@@ -191,23 +241,21 @@ const timeOfDay = computed(() => {
   return 'evening'
 })
 
-const todayFormatted = computed(() => {
-  return new Date().toLocaleDateString('en-US', {
+const todayFormatted = computed(() =>
+  new Date().toLocaleDateString('en-US', {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
     day: 'numeric',
-  })
-})
+  }),
+)
 
-// ── MRR: calculated per restaurant based on billing type + plan ───
-const mrr = computed(() => {
-  return allRestaurants.value
+const mrr = computed(() =>
+  allRestaurants.value
     .filter((r) => ['starter', 'pro'].includes(r.plan))
-    .reduce((sum, r) => sum + getPlanPrice(r.billing_type ?? 'manual', r.plan), 0)
-})
+    .reduce((sum, r) => sum + getPlanPrice(r.billing_type ?? 'manual', r.plan), 0),
+)
 
-// MRR split for subtitle
 const mrrManual = computed(() =>
   allRestaurants.value
     .filter((r) => ['starter', 'pro'].includes(r.plan) && r.billing_type === 'manual')
@@ -307,14 +355,12 @@ function formatDate(val) {
 
 function daysUntil(dateStr) {
   if (!dateStr) return null
-  const diff = new Date(dateStr) - new Date()
-  return Math.ceil(diff / (1000 * 60 * 60 * 24))
+  return Math.ceil((new Date(dateStr) - new Date()) / (1000 * 60 * 60 * 24))
 }
 
 // ── Fetch ──────────────────────────────────────────────
 onMounted(async () => {
   try {
-    // All restaurants with billing info for accurate MRR
     const { data: restaurants, error: rErr } = await supabase
       .from('restaurants')
       .select('id, name, plan, billing_type, plan_expires_at, updated_at')
@@ -325,7 +371,6 @@ onMounted(async () => {
     allRestaurants.value = restaurants
     totalRestaurants.value = restaurants.length
 
-    // Breakdown counts
     lsCount.value = restaurants.filter(
       (r) => r.billing_type === 'lemonsqueezy' && ['starter', 'pro'].includes(r.plan),
     ).length
@@ -336,19 +381,16 @@ onMounted(async () => {
     expiredCount.value = restaurants.filter((r) => r.plan === 'expired').length
     activeSubscriptions.value = lsCount.value + manualCount.value
 
-    // Expiring soon — manual plans within 14 days
     expiringSoon.value = restaurants
       .filter((r) => r.billing_type === 'manual' && r.plan_expires_at)
       .map((r) => ({ ...r, daysLeft: daysUntil(r.plan_expires_at) }))
       .filter((r) => r.daysLeft !== null && r.daysLeft >= 0 && r.daysLeft <= 14)
       .sort((a, b) => a.daysLeft - b.daysLeft)
 
-    // Recently upgraded — paid plans sorted by updated_at
     recentUpgrades.value = restaurants
       .filter((r) => ['starter', 'pro'].includes(r.plan))
       .slice(0, 8)
 
-    // Total users count
     const { count, error: uErr } = await supabase
       .from('users')
       .select('id', { count: 'exact', head: true })
@@ -377,7 +419,7 @@ onMounted(async () => {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 16px;
+  gap: 12px;
   flex-wrap: wrap;
 }
 .dash-title {
@@ -404,13 +446,13 @@ onMounted(async () => {
 .stat-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
+  gap: 12px;
 }
 .stat-card {
   background: #ffffff;
   border: 1px solid #e8e6e1;
   border-radius: 14px;
-  padding: 20px;
+  padding: 18px;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -433,15 +475,15 @@ onMounted(async () => {
   justify-content: space-between;
 }
 .stat-label {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   color: #6b6963;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 .stat-icon {
-  width: 34px;
-  height: 34px;
+  width: 32px;
+  height: 32px;
   border-radius: 9px;
   display: flex;
   align-items: center;
@@ -449,14 +491,14 @@ onMounted(async () => {
   flex-shrink: 0;
 }
 .stat-value {
-  font-size: 28px;
+  font-size: 26px;
   font-weight: 750;
   color: #1a1917;
   letter-spacing: -0.8px;
   line-height: 1;
 }
 .stat-sub {
-  font-size: 12px;
+  font-size: 11.5px;
   color: #a8a49e;
   font-weight: 500;
 }
@@ -465,8 +507,7 @@ onMounted(async () => {
 .bottom-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  grid-template-rows: auto auto;
-  gap: 16px;
+  gap: 12px;
 }
 .panel {
   background: #ffffff;
@@ -519,7 +560,7 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   gap: 8px;
-  min-width: 120px;
+  min-width: 110px;
 }
 .breakdown-dot {
   width: 8px;
@@ -547,7 +588,7 @@ onMounted(async () => {
   text-align: right;
 }
 .breakdown-bar-wrap {
-  width: 100px;
+  width: 80px;
   height: 6px;
   background: #f3f1ee;
   border-radius: 99px;
@@ -619,7 +660,7 @@ onMounted(async () => {
   color: #e11d48;
 }
 
-/* ── Upgrade table ──────────────────────────────────── */
+/* ── Upgrade table (desktop) ────────────────────────── */
 .upgrade-table {
   width: 100%;
   border-collapse: collapse;
@@ -673,12 +714,72 @@ onMounted(async () => {
   justify-content: center;
   flex-shrink: 0;
 }
-
-/* ── Price tag ──────────────────────────────────────── */
 .price-tag {
   font-size: 12px;
   font-weight: 650;
   color: #1a1917;
+}
+
+/* ── Upgrade cards (mobile) ─────────────────────────── */
+.upgrade-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.upgrade-card {
+  padding: 12px 14px;
+  background: #fafaf9;
+  border: 1px solid #f0ede8;
+  border-radius: 11px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.upgrade-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.upgrade-card-name {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #1a1917;
+}
+.upgrade-card-badges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.upgrade-card-dates {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.upgrade-card-date-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.upgrade-card-date-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: #a8a49e;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.upgrade-card-date-value {
+  font-size: 12.5px;
+  color: #3d3d3a;
+  font-weight: 500;
+}
+
+/* ── Visibility helpers ─────────────────────────────── */
+.desktop-only {
+  display: table;
+}
+.mobile-only {
+  display: none;
 }
 
 /* ── Badges ─────────────────────────────────────────── */
@@ -752,17 +853,32 @@ onMounted(async () => {
 }
 
 /* ── Responsive ─────────────────────────────────────── */
+
+/* Large tablet */
 @media (max-width: 1100px) {
   .stat-grid {
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+/* Tablet */
 @media (max-width: 768px) {
+  .dashboard {
+    gap: 16px;
+  }
   .stat-grid {
     grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  .stat-card {
+    padding: 14px;
+  }
+  .stat-value {
+    font-size: 22px;
   }
   .bottom-grid {
     grid-template-columns: 1fr;
+    gap: 10px;
   }
   .panel-wide {
     grid-column: 1;
@@ -770,17 +886,71 @@ onMounted(async () => {
   .breakdown-bar-wrap {
     width: 60px;
   }
+  .dash-date {
+    display: none;
+  }
 }
-@media (max-width: 480px) {
+
+/* Mobile */
+@media (max-width: 560px) {
+  .dash-title {
+    font-size: 18px;
+  }
+  .dash-subtitle {
+    font-size: 12.5px;
+  }
+  .stat-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+  .stat-card {
+    padding: 12px;
+    gap: 6px;
+  }
+  .stat-label {
+    font-size: 10px;
+  }
+  .stat-value {
+    font-size: 20px;
+  }
+  .stat-sub {
+    font-size: 10.5px;
+  }
+  .stat-icon {
+    width: 28px;
+    height: 28px;
+  }
+  .panel {
+    padding: 14px;
+  }
+  .desktop-only {
+    display: none;
+  }
+  .mobile-only {
+    display: flex;
+    flex-direction: column;
+  }
+  .breakdown-left {
+    min-width: 90px;
+  }
+  .breakdown-bar-wrap {
+    width: 50px;
+  }
+  .expire-name {
+    font-size: 12px;
+  }
+}
+
+/* Small mobile */
+@media (max-width: 380px) {
   .stat-grid {
     grid-template-columns: 1fr 1fr;
   }
   .stat-value {
-    font-size: 22px;
+    font-size: 18px;
   }
-  .upgrade-table {
-    display: block;
-    overflow-x: auto;
+  .stat-sub {
+    display: none;
   }
 }
 </style>
