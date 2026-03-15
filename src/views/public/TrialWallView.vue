@@ -86,7 +86,7 @@
               <div class="plan-name">Starter</div>
               <div class="plan-price">
                 <span class="price-dollar">$</span>
-                <span class="price-amount">29</span>
+                <span class="price-amount">49</span>
                 <span class="price-mo">/mo</span>
               </div>
               <p class="plan-tagline">Perfect for small restaurants getting started.</p>
@@ -116,7 +116,7 @@
               <div class="plan-name plan-name-pro">Pro</div>
               <div class="plan-price plan-price-pro">
                 <span class="price-dollar">$</span>
-                <span class="price-amount">69</span>
+                <span class="price-amount">99</span>
                 <span class="price-mo">/mo</span>
               </div>
               <p class="plan-tagline">For restaurants running their full operation digitally.</p>
