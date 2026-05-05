@@ -177,7 +177,7 @@ async function handleLogout() {
   display: flex;
   height: 100dvh;
   background: var(--bg);
-  font-family: 'DM Sans', 'Helvetica Neue', sans-serif;
+  font-family: 'DM Sans', 'Noto Sans Khmer', 'Helvetica Neue', sans-serif;
   overflow: hidden;
 }
 

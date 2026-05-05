@@ -203,7 +203,7 @@ async function signOut() {
 .waiter-layout {
   display: flex;
   height: 100vh;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'DM Sans', 'Noto Sans Khmer', sans-serif;
   background: #111111;
   color: #ffffff;
   -webkit-font-smoothing: antialiased;

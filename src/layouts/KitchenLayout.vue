@@ -78,7 +78,7 @@ async function signOut() {
   height: 100vh;
   background: #111827;
   color: #f9fafb;
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'DM Sans', 'Noto Sans Khmer', sans-serif;
 }
 .kitchen-header {
   display: flex;
