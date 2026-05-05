@@ -1,45 +1,46 @@
 <template>
   <div class="settings-page">
-    <!-- ── Header ─────────────────────────────────── -->
+    <!-- Header -->
     <div class="page-header">
       <div>
-        <h1 class="page-title">Settings</h1>
-        <p class="page-subtitle">Manage your restaurant profile & preferences</p>
+        <h1 class="page-title">{{ $t('settings.title') }}</h1>
+        <p class="page-subtitle">{{ $t('settings.subtitle') }}</p>
       </div>
       <button class="btn-save" @click="handleSave" :disabled="saving || !isDirty">
         <Loader2 v-if="saving" :size="15" class="spin" />
         <Save v-else :size="15" />
-        {{ saving ? 'Saving…' : 'Save Changes' }}
+        {{ saving ? $t('settings.saving') : $t('settings.save') }}
       </button>
     </div>
 
-    <!-- ── Upgrade success banner ─────────────────── -->
-    <div v-if="showUpgradedBanner" class="upgrade-banner">
-      <PartyPopper :size="22" class="banner-icon" />
-      <div>
-        <strong>Welcome to {{ planDisplayName }}!</strong><br />
-        Your subscription is now active. Enjoy full access.
-      </div>
-      <button class="banner-close" @click="showUpgradedBanner = false">
-        <X :size="16" />
-      </button>
-    </div>
-
-    <!-- ── Loading ────────────────────────────────── -->
+    <!-- Loading State -->
     <div v-if="loading" class="loading-state">
       <Loader2 :size="32" class="spin" />
-      <span>Loading settings…</span>
+      <span>{{ $t('settings.loading') }}</span>
     </div>
 
-    <template v-else>
-      <!-- ── Restaurant Profile ─────────────────── -->
+    <!-- Main Content -->
+    <div v-else>
+      <!-- Upgrade success banner -->
+      <div v-if="showUpgradedBanner" class="upgrade-banner">
+        <PartyPopper :size="22" class="banner-icon" />
+        <div>
+          <strong>{{ $t('settings.welcomeUpgraded', { plan: planDisplayName }) }}</strong><br />
+          {{ $t('settings.welcomeUpgraded', { plan: planDisplayName }) }}
+        </div>
+        <button class="banner-close" @click="showUpgradedBanner = false">
+          <X :size="16" />
+        </button>
+      </div>
+
+      <!-- Restaurant Profile -->
       <div class="section-card">
         <div class="section-header">
           <div class="section-header-left">
             <Store :size="18" class="section-icon" />
             <div>
-              <h2 class="section-title">Restaurant Profile</h2>
-              <p class="section-desc">This information appears on your customer ordering page.</p>
+              <h2 class="section-title">{{ $t('settings.restaurantProfile') }}</h2>
+              <p class="section-desc">{{ $t('settings.restaurantProfileDesc') }}</p>
             </div>
           </div>
         </div>
@@ -61,61 +62,60 @@
                 />
                 <Loader2 v-if="uploadingLogo" :size="14" class="spin" />
                 <Upload v-else :size="14" />
-                {{ uploadingLogo ? 'Uploading…' : form.logoUrl ? 'Replace Logo' : 'Upload Logo' }}
+                {{ uploadingLogo ? $t('settings.uploading') : (form.logoUrl ? $t('settings.replaceLogo') : $t('settings.uploadLogo')) }}
               </label>
               <button v-if="form.logoUrl" class="btn-remove" @click="removeLogo">
-                <Trash2 :size="13" /> Remove
+                <Trash2 :size="13" /> {{ $t('settings.removeLogo') }}
               </button>
-              <p class="logo-hint">Recommended: 512×512 PNG or JPG, max 2MB</p>
+              <p class="logo-hint">{{ $t('settings.logoHint') }}</p>
             </div>
           </div>
 
           <!-- Fields -->
           <div class="form-grid">
             <div class="form-group">
-              <label class="form-label">Restaurant Name <span class="required">*</span></label>
+              <label class="form-label">{{ $t('settings.restaurantName') }} <span class="required">*</span></label>
               <input
                 v-model="form.name"
                 class="form-input"
-                placeholder="e.g. Ember & Oak"
+                :placeholder="$t('settings.restaurantName')"
                 @input="markDirty"
               />
             </div>
 
             <div class="form-group">
-              <label class="form-label">URL Slug</label>
+              <label class="form-label">{{ $t('settings.urlSlug') }}</label>
               <div class="slug-base-url">
-                <span class="slug-row-label">Base URL</span>
+                <span class="slug-row-label">{{ $t('settings.baseUrl') }}</span>
                 <span class="slug-base-value">{{ appOrigin }}/order/</span>
               </div>
               <div class="slug-name-row">
-                <span class="slug-row-label">Slug name</span>
+                <span class="slug-row-label">{{ $t('settings.slugName') }}</span>
                 <div class="slug-name-input-wrap" :class="{ 'slug-changed': slugChanged }">
                   <input
                     v-model="form.slug"
                     class="form-input slug-name-input"
-                    placeholder="ember-oak"
+                    :placeholder="$t('settings.slugName')"
                     @input="markDirty"
                   />
-                  <span v-if="slugChanged" class="slug-changed-badge">changed</span>
+                  <span v-if="slugChanged" class="slug-changed-badge">{{ $t('settings.slugChanged') }}</span>
                 </div>
               </div>
               <div class="slug-full-preview">
                 {{ appOrigin }}/order/<strong>{{ form.slug || '…' }}</strong>
               </div>
               <p v-if="slugChanged" class="form-hint warning">
-                <AlertTriangle :size="11" /> This will break all existing QR codes — you'll need to
-                reprint them.
+                <AlertTriangle :size="11" /> {{ $t('settings.slugWarning') }}
               </p>
-              <p v-else class="form-hint">Customers reach your menu at this URL.</p>
+              <p v-else class="form-hint">{{ $t('settings.slugPreview') }}</p>
             </div>
 
             <div class="form-group full-width">
-              <label class="form-label">Address</label>
+              <label class="form-label">{{ $t('settings.address') }}</label>
               <input
                 v-model="form.address"
                 class="form-input"
-                placeholder="e.g. 123 Riverside Blvd, Phnom Penh"
+                :placeholder="$t('settings.address')"
                 @input="markDirty"
               />
             </div>
@@ -123,22 +123,31 @@
         </div>
       </div>
 
-      <!-- ── Regional Settings ──────────────────── -->
+      <!-- Regional Settings -->
       <div class="section-card">
         <div class="section-header">
           <div class="section-header-left">
             <Globe :size="18" class="section-icon" />
             <div>
-              <h2 class="section-title">Regional Settings</h2>
-              <p class="section-desc">How prices, dates and times appear to customers.</p>
+              <h2 class="section-title">{{ $t('settings.regional') }}</h2>
+              <p class="section-desc">{{ $t('settings.regionalDesc') }}</p>
             </div>
           </div>
         </div>
         <div class="section-body">
           <div class="form-grid">
+            <!-- Language -->
+            <div class="form-group">
+              <label class="form-label">{{ $t('language.select') }}</label>
+              <select v-model="selectedLanguage" class="form-select" @change="onLanguageChange">
+                <option value="en">{{ $t('language.english') }}</option>
+                <option value="kh">{{ $t('language.khmer') }}</option>
+              </select>
+            </div>
+
             <!-- Currency -->
             <div class="form-group">
-              <label class="form-label">Currency</label>
+              <label class="form-label">{{ $t('settings.currency') }}</label>
               <select v-model="form.currency" class="form-select" @change="onCurrencyChange">
                 <option v-for="c in KNOWN_CURRENCIES" :key="c.code" :value="c.code">
                   {{ c.symbol }} {{ c.name }} ({{ c.code }})
@@ -177,7 +186,7 @@
 
             <!-- Timezone -->
             <div class="form-group">
-              <label class="form-label">Timezone</label>
+              <label class="form-label">{{ $t('settings.timezone') }}</label>
               <select v-model="form.timezone" class="form-select" @change="onTimezoneChange">
                 <option v-for="tz in timezones" :key="tz.value" :value="tz.value">
                   {{ tz.label }}
@@ -197,28 +206,27 @@
               <!-- Info hint when not changed -->
               <p v-else class="form-hint tz-info-hint">
                 <Clock :size="11" />
-                Promotion time windows use this timezone. Currently:
-                <strong>{{ form.timezone }}</strong>
+                {{ $t('settings.timezoneInfo', { timezone: form.timezone }) }}
               </p>
             </div>
           </div>
 
           <!-- Price Preview -->
           <div class="preview-card">
-            <span class="preview-label">Price Preview</span>
+            <span class="preview-label">{{ $t('settings.pricePreview') }}</span>
             <span class="preview-value">{{ currencyPreview }}</span>
           </div>
         </div>
       </div>
 
-      <!-- ── Subscription & Billing ─────────────── -->
+      <!-- Subscription & Billing -->
       <div class="section-card">
         <div class="section-header">
           <div class="section-header-left">
             <CreditCard :size="18" class="section-icon" />
             <div>
-              <h2 class="section-title">Subscription & Billing</h2>
-              <p class="section-desc">Manage your plan and billing details.</p>
+              <h2 class="section-title">{{ $t('settings.subscription') }}</h2>
+              <p class="section-desc">{{ $t('settings.subscriptionDesc') }}</p>
             </div>
           </div>
         </div>
@@ -242,35 +250,35 @@
           <!-- Trial Countdown -->
           <div v-if="isOnTrial" class="trial-card">
             <div class="trial-header">
-              <span class="trial-title"><Timer :size="14" /> Trial Period</span>
-              <span class="trial-expires">Ends {{ formatDate(restaurant.trial_ends_at) }}</span>
+              <span class="trial-title"><Timer :size="14" /> {{ $t('settings.trialPeriod') }}</span>
+              <span class="trial-expires">{{ $t('settings.ends') }} {{ formatDate(restaurant.trial_ends_at) }}</span>
             </div>
             <div class="trial-timer">
               <div class="timer-block">
-                <span class="timer-num">{{ trialTimeLeft.days }}</span
-                ><span class="timer-unit">days</span>
+                <span class="timer-num">{{ trialTimeLeft.days }}</span>
+                <span class="timer-unit">{{ $t('settings.days') }}</span>
               </div>
               <span class="timer-colon">:</span>
               <div class="timer-block">
-                <span class="timer-num">{{ trialTimeLeft.hours }}</span
-                ><span class="timer-unit">hrs</span>
+                <span class="timer-num">{{ trialTimeLeft.hours }}</span>
+                <span class="timer-unit">{{ $t('settings.hrs') }}</span>
               </div>
               <span class="timer-colon">:</span>
               <div class="timer-block">
-                <span class="timer-num">{{ trialTimeLeft.minutes }}</span
-                ><span class="timer-unit">min</span>
+                <span class="timer-num">{{ trialTimeLeft.minutes }}</span>
+                <span class="timer-unit">{{ $t('settings.min') }}</span>
               </div>
             </div>
             <div class="trial-progress">
               <div class="progress-fill" :style="{ width: `${trialPercent}%` }" />
             </div>
             <div class="trial-labels">
-              <span>Started</span>
-              <span>{{ trialTotalDays }} / 14 days used</span>
-              <span>Ends</span>
+              <span>{{ $t('settings.started') }}</span>
+              <span>{{ $t('settings.trialUsed', { used: trialTotalDays }) }}</span>
+              <span>{{ $t('settings.ends') }}</span>
             </div>
             <button class="btn-upgrade" @click="showPlanPicker = true">
-              <Zap :size="14" /> Upgrade Now
+              <Zap :size="14" /> {{ $t('settings.upgrade') }}
             </button>
           </div>
 
@@ -278,14 +286,14 @@
           <div v-else-if="planStatus === 'expired'" class="expired-card">
             <div class="expired-icon-wrap"><AlertCircle :size="28" /></div>
             <div>
-              <h3 class="expired-title">Trial Expired</h3>
+              <h3 class="expired-title">{{ $t('settings.planStatus.expired') }}</h3>
               <p class="expired-text">
-                Your trial ended on {{ formatDate(restaurant.trial_ends_at) }}.<br />Choose a plan
+                {{ $t('settings.planMeta.expired') }}<br />{{ $t('settings.choosePlan') }}
                 to continue using Qrder.
               </p>
             </div>
             <button class="btn-upgrade" @click="showPlanPicker = true">
-              <Zap :size="14" /> Choose a Plan
+              <Zap :size="14" /> {{ $t('settings.choosePlan') }}
             </button>
           </div>
 
@@ -294,39 +302,39 @@
             <div class="starter-left">
               <div class="starter-icon-wrap"><Crown :size="18" /></div>
               <div>
-                <div class="starter-title">Unlock Pro Features</div>
-                <div class="starter-desc">Get Analytics, Promotions, unlimited tables & more.</div>
+                <div class="starter-title">{{ $t('settings.unlockPro') }}</div>
+                <div class="starter-desc">{{ $t('settings.unlockProDesc') }}</div>
               </div>
             </div>
             <button class="btn-upgrade" @click="showPlanPicker = true">
-              <Zap :size="14" /> Upgrade to Pro
+              <Zap :size="14" /> {{ $t('settings.upgradeToPro') }}
             </button>
           </div>
 
           <!-- Billing Details -->
           <div class="billing-details">
             <div class="billing-row">
-              <span class="billing-key">Current Plan</span
-              ><span class="billing-value">{{ planDisplayName }}</span>
+              <span class="billing-key">{{ $t('settings.currentPlan') }}</span>
+              <span class="billing-value">{{ planDisplayName }}</span>
             </div>
             <div class="billing-row" v-if="restaurant.trial_ends_at">
-              <span class="billing-key">Trial Ends</span
-              ><span class="billing-value">{{ formatDate(restaurant.trial_ends_at) }}</span>
+              <span class="billing-key">{{ $t('settings.trialEnds') }}</span>
+              <span class="billing-value">{{ formatDate(restaurant.trial_ends_at) }}</span>
             </div>
             <div class="billing-row" v-if="restaurant.lemonsqueezy_customer_id">
-              <span class="billing-key">Customer ID</span
-              ><span class="billing-value mono">{{ restaurant.lemonsqueezy_customer_id }}</span>
+              <span class="billing-key">{{ $t('settings.customerId') }}</span>
+              <span class="billing-value mono">{{ restaurant.lemonsqueezy_customer_id }}</span>
             </div>
             <div class="billing-row" v-if="restaurant.lemonsqueezy_subscription_id">
-              <span class="billing-key">Subscription ID</span
-              ><span class="billing-value mono">{{ restaurant.lemonsqueezy_subscription_id }}</span>
+              <span class="billing-key">{{ $t('settings.subscriptionId') }}</span>
+              <span class="billing-value mono">{{ restaurant.lemonsqueezy_subscription_id }}</span>
             </div>
           </div>
 
           <!-- Actions -->
           <div class="billing-actions">
             <button v-if="!isProPlan" class="btn-upgrade" @click="showPlanPicker = true">
-              <Zap :size="14" />{{ isStarterPlan ? 'Upgrade to Pro' : 'Choose a Plan' }}
+              <Zap :size="14" />{{ isStarterPlan ? $t('settings.upgradeToPro') : $t('settings.choosePlan') }}
             </button>
             <a
               v-if="isProPlan && restaurant.customer_portal_url"
@@ -334,69 +342,64 @@
               target="_blank"
               class="btn-portal"
             >
-              <ExternalLink :size="14" /> Manage Billing
+              <ExternalLink :size="14" /> {{ $t('settings.manageBilling') }}
             </a>
           </div>
         </div>
       </div>
 
-      <!-- ── Alerts ─────────────────────────────── -->
+      <!-- Alerts -->
       <div v-if="saveError" class="alert error"><AlertCircle :size="14" /> {{ saveError }}</div>
       <div v-if="saveSuccess" class="alert success">
         <CheckCircle2 :size="14" /> {{ saveSuccess }}
       </div>
 
-      <!-- ── Sticky Bottom Bar ───────────────────── -->
+      <!-- Sticky Bottom Bar -->
       <div class="bottom-bar" v-if="isDirty">
         <button class="btn-save" @click="handleSave" :disabled="saving">
           <Loader2 v-if="saving" :size="15" class="spin" />
           <Save v-else :size="15" />
-          {{ saving ? 'Saving…' : 'Save Changes' }}
+          {{ saving ? $t('settings.saving') : $t('settings.save') }}
         </button>
         <button class="btn-discard" @click="discardChanges">
-          <RotateCcw :size="14" /> Discard
+          <RotateCcw :size="14" /> {{ $t('settings.discard') }}
         </button>
       </div>
-    </template>
+    </div>
 
-    <!-- ── Plan Picker Modal ───────────────────── -->
+    <!-- Plan Picker Modal -->
     <PlanPickerModal v-model="showPlanPicker" @checkout-error="(msg) => (saveError = msg)" />
 
-    <!-- ── Slug Change Confirmation Modal ─────── -->
+    <!-- Slug Change Confirmation Modal -->
     <Teleport to="body">
       <div v-if="slugConfirmModal" class="modal-backdrop" @click.self="slugConfirmModal = false">
         <div class="modal modal-sm">
           <div class="modal-header">
             <div class="modal-header-icon"><AlertTriangle :size="20" /></div>
-            <h2 class="modal-title">Change URL Slug?</h2>
+            <h2 class="modal-title">{{ $t('settings.slugConfirmTitle') }}</h2>
           </div>
           <div class="modal-body">
             <p class="modal-text">
-              You're changing the slug from <code class="code-inline">{{ savedSlug }}</code> to
-              <code class="code-inline code-new">{{ form.slug }}</code
-              >.
+              {{ $t('settings.slugConfirmText', { old: savedSlug, new: form.slug }) }}
             </p>
             <div class="impact-list">
               <div class="impact-item">
-                <span class="impact-icon impact-danger">✕</span>All existing QR codes will stop
-                working immediately
+                <span class="impact-icon impact-danger">✕</span>{{ $t('settings.slugImpact.qrStop') }}
               </div>
               <div class="impact-item">
-                <span class="impact-icon impact-danger">✕</span>Any printed QR codes will need to be
-                reprinted
+                <span class="impact-icon impact-danger">✕</span>{{ $t('settings.slugImpact.qrReprint') }}
               </div>
               <div class="impact-item">
-                <span class="impact-icon impact-ok">✓</span>New QR codes will be generated with the
-                new URL
+                <span class="impact-icon impact-ok">✓</span>{{ $t('settings.slugImpact.newQr') }}
               </div>
               <div class="impact-item">
-                <span class="impact-icon impact-ok">✓</span>Order history remains intact
+                <span class="impact-icon impact-ok">✓</span>{{ $t('settings.slugImpact.history') }}
               </div>
             </div>
           </div>
           <div class="modal-footer">
-            <button class="btn-ghost" @click="slugConfirmModal = false">Cancel</button>
-            <button class="btn-danger" @click="confirmAndSave">Yes, change slug & save</button>
+            <button class="btn-ghost" @click="slugConfirmModal = false">{{ $t('settings.cancel') }}</button>
+            <button class="btn-danger" @click="confirmAndSave">{{ $t('settings.yesChangeSlug') }}</button>
           </div>
         </div>
       </div>
@@ -409,7 +412,11 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
+import { setLocale } from '@/i18n'
+import { useI18n } from 'vue-i18n'
 import PlanPickerModal from '@/components/PlanPickerModal.vue'
+
+const { t } = useI18n()
 
 import {
   Save,
@@ -468,6 +475,7 @@ const form = ref({ name: '', slug: '', address: '', logoUrl: '', currency: 'USD'
 const savedSlug = ref('')
 const savedTimezone = ref('') // tracks the originally saved timezone
 const appOrigin = window.location.origin
+const selectedLanguage = ref('en')
 
 // ── Custom currency ──────────────────────────────────
 const customCurrency = ref('')
@@ -482,6 +490,10 @@ function onCurrencyChange() {
   } else {
     tooltipVisible.value = true
   }
+}
+
+function onLanguageChange() {
+  markDirty()
 }
 
 function validateCustomCurrency(val) {
@@ -526,13 +538,21 @@ function onTimezoneChange() {
 // ── Snapshot / dirty ───────────────────────────────
 let snapshot = ''
 function takeSnapshot() {
-  snapshot = JSON.stringify({ form: form.value, customCurrency: customCurrency.value })
+  snapshot = JSON.stringify({
+    form: form.value,
+    customCurrency: customCurrency.value,
+    language: selectedLanguage.value,
+  })
   savedSlug.value = form.value.slug
   savedTimezone.value = form.value.timezone
 }
 function markDirty() {
   isDirty.value =
-    JSON.stringify({ form: form.value, customCurrency: customCurrency.value }) !== snapshot
+    JSON.stringify({
+      form: form.value,
+      customCurrency: customCurrency.value,
+      language: selectedLanguage.value,
+    }) !== snapshot
 }
 
 const slugChanged = computed(() => form.value.slug.trim() !== savedSlug.value.trim())
@@ -577,20 +597,24 @@ const planStatus = computed(() => {
   return 'expired'
 })
 const planDisplayName = computed(
-  () => ({ trial: 'Trial', starter: 'Starter', pro: 'Pro' })[restaurant.value.plan] || 'Free',
+  () =>
+    t(`settings.planStatus.${restaurant.value.plan}`) || t('settings.planStatus.expired'),
 )
 const planMeta = computed(() => {
-  if (isProPlan.value) return 'Full access — all features unlocked'
-  if (isStarterPlan.value) return 'Limited access — upgrade to unlock all Pro features'
+  if (isProPlan.value) return t('settings.planMeta.pro')
+  if (isStarterPlan.value) return t('settings.planMeta.starter')
   if (isOnTrial.value)
-    return `${trialTimeLeft.value.days}d ${trialTimeLeft.value.hours}h left in your trial`
-  return 'Your trial has ended — choose a plan to continue'
+    return t('settings.planMeta.trial', {
+      days: trialTimeLeft.value.days,
+      hours: trialTimeLeft.value.hours,
+    })
+  return t('settings.planMeta.expired')
 })
 const planBadgeLabel = computed(() => {
-  if (isProPlan.value) return 'Pro'
-  if (isStarterPlan.value) return 'Starter'
-  if (isOnTrial.value) return 'Trial'
-  return 'Expired'
+  if (isProPlan.value) return t('settings.planStatus.pro')
+  if (isStarterPlan.value) return t('settings.planStatus.starter')
+  if (isOnTrial.value) return t('settings.planStatus.trial')
+  return t('settings.planStatus.expired')
 })
 
 // ── Timezones ──────────────────────────────────────
@@ -668,6 +692,12 @@ async function fetchSettings() {
       customCurrency.value = stored
     }
   }
+
+  // Initialize language from user profile
+  if (authStore.profile?.language) {
+    selectedLanguage.value = authStore.profile.language
+  }
+
   takeSnapshot()
   loading.value = false
 }
@@ -755,6 +785,19 @@ async function saveSettings() {
   if (error) {
     saveError.value = 'Failed to save: ' + error.message
   } else {
+    // Save language preference to users table
+    const { error: langError } = await supabase
+      .from('users')
+      .update({ language: selectedLanguage.value })
+      .eq('id', authStore.profile?.id)
+
+    if (langError) {
+      console.error('Failed to save language:', langError)
+    } else {
+      setLocale(selectedLanguage.value)
+      authStore.profile.language = selectedLanguage.value
+    }
+
     const messages = []
     if (slugChanged.value) messages.push('Remember to reprint your QR codes!')
     if (timezoneChanged.value) messages.push('Check your promotion time windows are still correct.')

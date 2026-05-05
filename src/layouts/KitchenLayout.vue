@@ -10,7 +10,7 @@
       </div>
       <div class="header-right">
         <span class="clock">{{ currentTime }}</span>
-        <button class="btn-signout" @click="signOut">Sign out</button>
+        <button class="btn-signout" @click="signOut">{{ $t('layouts.signOut') }}</button>
       </div>
     </header>
     <main class="kitchen-main">

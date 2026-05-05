@@ -18,33 +18,9 @@
             <rect x="23" y="5" width="4" height="4" rx="0.5" fill="white" />
             <rect x="2" y="20" width="10" height="10" rx="2" stroke="white" stroke-width="2" />
             <rect x="5" y="23" width="4" height="4" rx="0.5" fill="white" />
-            <line
-              x1="22"
-              y1="21"
-              x2="22"
-              y2="30"
-              stroke="white"
-              stroke-width="2"
-              stroke-linecap="round"
-            />
-            <line
-              x1="26"
-              y1="21"
-              x2="26"
-              y2="30"
-              stroke="white"
-              stroke-width="2"
-              stroke-linecap="round"
-            />
-            <line
-              x1="30"
-              y1="21"
-              x2="30"
-              y2="30"
-              stroke="white"
-              stroke-width="2"
-              stroke-linecap="round"
-            />
+            <line x1="22" y1="21" x2="22" y2="30" stroke="white" stroke-width="2" stroke-linecap="round" />
+            <line x1="26" y1="21" x2="26" y2="30" stroke="white" stroke-width="2" stroke-linecap="round" />
+            <line x1="30" y1="21" x2="30" y2="30" stroke="white" stroke-width="2" stroke-linecap="round" />
             <path
               d="M22 21 Q22 25 26 27 Q30 25 30 21"
               stroke="white"
@@ -70,12 +46,12 @@
 
       <!-- Nav -->
       <nav class="sidebar-nav">
-        <div class="nav-section-label" v-show="!sidebarCollapsed">Overview</div>
+        <div class="nav-section-label" v-show="!sidebarCollapsed">{{ $t('nav.overview') }}</div>
 
         <RouterLink to="/app/dashboard" class="nav-item" active-class="nav-active">
           <span class="nav-icon"><LayoutDashboard :size="16" /></span>
-          <span class="nav-label" v-show="!sidebarCollapsed">Dashboard</span>
-          <span class="nav-tooltip" v-show="sidebarCollapsed">Dashboard</span>
+          <span class="nav-label" v-show="!sidebarCollapsed">{{ $t('nav.dashboard') }}</span>
+          <span class="nav-tooltip" v-show="sidebarCollapsed">{{ $t('nav.dashboard') }}</span>
         </RouterLink>
 
         <div
@@ -84,46 +60,38 @@
           @click="canAccessAnalytics ? $router.push('/app/analytics') : openProPicker('Analytics')"
         >
           <span class="nav-icon"><Activity :size="16" /></span>
-          <span class="nav-label" v-show="!sidebarCollapsed">Analytics</span>
-          <Crown
-            v-if="!canAccessAnalytics"
-            :size="12"
-            class="pro-icon"
-            v-show="!sidebarCollapsed"
-          />
+          <span class="nav-label" v-show="!sidebarCollapsed">{{ $t('nav.analytics') }}</span>
+          <Crown v-if="!canAccessAnalytics" :size="12" class="pro-icon" v-show="!sidebarCollapsed" />
           <span class="nav-tooltip" v-show="sidebarCollapsed">
-            {{ canAccessAnalytics ? 'Analytics' : 'Pro Feature' }}
+            {{ canAccessAnalytics ? $t('nav.analytics') : $t('nav.proFeature') }}
           </span>
         </div>
 
-        <div class="nav-section-label" v-show="!sidebarCollapsed">Operations</div>
+        <div class="nav-section-label" v-show="!sidebarCollapsed">{{ $t('nav.operations') }}</div>
 
         <RouterLink to="/app/orders" class="nav-item" active-class="nav-active">
           <span class="nav-icon"><ClipboardList :size="16" /></span>
-          <span class="nav-label" v-show="!sidebarCollapsed">Orders</span>
-          <span class="nav-tooltip" v-show="sidebarCollapsed">Orders</span>
-          <span class="nav-badge" v-if="pendingCount > 0" v-show="!sidebarCollapsed">{{
-            pendingCount
-          }}</span>
+          <span class="nav-label" v-show="!sidebarCollapsed">{{ $t('nav.orders') }}</span>
+          <span class="nav-tooltip" v-show="sidebarCollapsed">{{ $t('nav.orders') }}</span>
+          <span class="nav-badge" v-if="pendingCount > 0" v-show="!sidebarCollapsed">{{ pendingCount }}</span>
           <span class="nav-badge-dot" v-if="pendingCount > 0" v-show="sidebarCollapsed" />
         </RouterLink>
 
         <RouterLink to="/app/order-history" class="nav-item" active-class="nav-active">
           <span class="nav-icon"><History :size="16" /></span>
-          <span class="nav-label" v-show="!sidebarCollapsed">Order History</span>
-          <span class="nav-tooltip" v-show="sidebarCollapsed">Order History</span>
+          <span class="nav-label" v-show="!sidebarCollapsed">{{ $t('nav.orderHistory') }}</span>
+          <span class="nav-tooltip" v-show="sidebarCollapsed">{{ $t('nav.orderHistory') }}</span>
         </RouterLink>
 
         <RouterLink to="/app/kitchen" class="nav-item" active-class="nav-active">
           <span class="nav-icon"><ChefHat :size="16" /></span>
-          <span class="nav-label" v-show="!sidebarCollapsed">Kitchen</span>
-          <span class="nav-tooltip" v-show="sidebarCollapsed">Kitchen</span>
+          <span class="nav-label" v-show="!sidebarCollapsed">{{ $t('nav.kitchen') }}</span>
+          <span class="nav-tooltip" v-show="sidebarCollapsed">{{ $t('nav.kitchen') }}</span>
           <span
             class="nav-badge nav-badge--cooking"
             v-if="cookingCount > 0"
             v-show="!sidebarCollapsed"
-            >{{ cookingCount }}</span
-          >
+          >{{ cookingCount }}</span>
           <span
             class="nav-badge-dot nav-badge-dot--cooking"
             v-if="cookingCount > 0"
@@ -131,52 +99,45 @@
           />
         </RouterLink>
 
-        <div class="nav-section-label" v-show="!sidebarCollapsed">Setup</div>
+        <div class="nav-section-label" v-show="!sidebarCollapsed">{{ $t('nav.setup') }}</div>
 
         <RouterLink to="/app/menu" class="nav-item" active-class="nav-active">
           <span class="nav-icon"><UtensilsCrossed :size="16" /></span>
-          <span class="nav-label" v-show="!sidebarCollapsed">Menu</span>
-          <span class="nav-tooltip" v-show="sidebarCollapsed">Menu</span>
+          <span class="nav-label" v-show="!sidebarCollapsed">{{ $t('nav.menu') }}</span>
+          <span class="nav-tooltip" v-show="sidebarCollapsed">{{ $t('nav.menu') }}</span>
         </RouterLink>
 
         <RouterLink to="/app/tables" class="nav-item" active-class="nav-active">
           <span class="nav-icon"><Table2 :size="16" /></span>
-          <span class="nav-label" v-show="!sidebarCollapsed">Tables & QR</span>
-          <span class="nav-tooltip" v-show="sidebarCollapsed">Tables</span>
+          <span class="nav-label" v-show="!sidebarCollapsed">{{ $t('nav.tables') }}</span>
+          <span class="nav-tooltip" v-show="sidebarCollapsed">{{ $t('nav.tables') }}</span>
         </RouterLink>
 
         <RouterLink to="/app/staff" class="nav-item" active-class="nav-active">
           <span class="nav-icon"><Users :size="16" /></span>
-          <span class="nav-label" v-show="!sidebarCollapsed">Staff</span>
-          <span class="nav-tooltip" v-show="sidebarCollapsed">Staff</span>
+          <span class="nav-label" v-show="!sidebarCollapsed">{{ $t('nav.staff') }}</span>
+          <span class="nav-tooltip" v-show="sidebarCollapsed">{{ $t('nav.staff') }}</span>
         </RouterLink>
 
         <div
           class="nav-item"
           :class="canAccessPromotions ? 'nav-unlocked' : 'nav-pro'"
-          @click="
-            canAccessPromotions ? $router.push('/app/promotions') : openProPicker('Promotions')
-          "
+          @click="canAccessPromotions ? $router.push('/app/promotions') : openProPicker('Promotions')"
         >
           <span class="nav-icon"><Tag :size="16" /></span>
-          <span class="nav-label" v-show="!sidebarCollapsed">Promotions</span>
-          <Crown
-            v-if="!canAccessPromotions"
-            :size="12"
-            class="pro-icon"
-            v-show="!sidebarCollapsed"
-          />
+          <span class="nav-label" v-show="!sidebarCollapsed">{{ $t('nav.promotions') }}</span>
+          <Crown v-if="!canAccessPromotions" :size="12" class="pro-icon" v-show="!sidebarCollapsed" />
           <span class="nav-tooltip" v-show="sidebarCollapsed">
-            {{ canAccessPromotions ? 'Promotions' : 'Pro Feature' }}
+            {{ canAccessPromotions ? $t('nav.promotions') : $t('nav.proFeature') }}
           </span>
         </div>
 
-        <div class="nav-section-label" v-show="!sidebarCollapsed">Account</div>
+        <div class="nav-section-label" v-show="!sidebarCollapsed">{{ $t('nav.account') }}</div>
 
         <RouterLink to="/app/settings" class="nav-item" active-class="nav-active">
           <span class="nav-icon"><Settings :size="16" /></span>
-          <span class="nav-label" v-show="!sidebarCollapsed">Settings</span>
-          <span class="nav-tooltip" v-show="sidebarCollapsed">Settings</span>
+          <span class="nav-label" v-show="!sidebarCollapsed">{{ $t('nav.settings') }}</span>
+          <span class="nav-tooltip" v-show="sidebarCollapsed">{{ $t('nav.settings') }}</span>
         </RouterLink>
       </nav>
 
@@ -193,7 +154,7 @@
       <!-- Sign out -->
       <button class="signout-btn" @click="signOut">
         <LogOut :size="15" />
-        <span v-show="!sidebarCollapsed">Sign out</span>
+        <span v-show="!sidebarCollapsed">{{ $t('nav.signOut') }}</span>
       </button>
     </aside>
 
@@ -214,9 +175,13 @@
           <span class="page-title">{{ currentPageTitle }}</span>
         </div>
         <div class="topbar-right">
+          <select class="lang-switcher" @change="switchLang" :value="currentLocale">
+            <option value="en">{{ $t('language.english') }}</option>
+            <option value="kh">{{ $t('language.khmer') }}</option>
+          </select>
           <button class="pending-pill" v-if="pendingCount > 0" @click="$router.push('/app/orders')">
             <span class="pill-dot" />
-            {{ pendingCount }} pending
+            {{ pendingCount }} {{ $t('common.pending') || 'pending' }}
           </button>
           <div class="user-avatar" :title="userName">{{ userInitial }}</div>
         </div>
@@ -235,7 +200,11 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute, RouterLink } from 'vue-router'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
+import { setLocale } from '@/i18n'
+import { useI18n } from 'vue-i18n'
 import ProPlanPicker from '@/components/Proplanpicker.vue'
+
+const { t } = useI18n()
 
 import {
   LayoutDashboard,
@@ -270,6 +239,12 @@ const restaurantLogoUrl = ref('')
 const showProPicker = ref(false)
 const lockedFeatureName = ref('')
 
+const currentLocale = computed(() => localStorage.getItem('locale') || 'en')
+
+function switchLang(e) {
+  setLocale(e.target.value)
+}
+
 function openProPicker(featureName) {
   lockedFeatureName.value = featureName
   showProPicker.value = true
@@ -283,25 +258,32 @@ const canAccessPromotions = computed(() =>
 )
 
 const pageTitles = {
-  '/app/dashboard': 'Dashboard',
-  '/app/orders': 'Orders',
-  '/app/kitchen': 'Kitchen View',
-  '/app/menu': 'Menu Management',
-  '/app/tables': 'Tables & QR Codes',
-  '/app/order-history': 'Order History',
-  '/app/analytics': 'Analytics',
-  '/app/staff': 'Staff',
-  '/app/settings': 'Settings',
-  '/app/promotions': 'Promotions',
+  '/app/dashboard': 'dashboard',
+  '/app/orders': 'orders',
+  '/app/kitchen': 'kitchen',
+  '/app/menu': 'menu',
+  '/app/tables': 'tables',
+  '/app/order-history': 'orderHistory',
+  '/app/analytics': 'analytics',
+  '/app/staff': 'staff',
+  '/app/settings': 'settings',
+  '/app/promotions': 'promotions',
 }
-
-const currentPageTitle = computed(() => pageTitles[route.path] || 'Qrserve')
+const currentPageTitle = computed(() => {
+  const key = pageTitles[route.path]
+  return key ? t(`nav.${key}`) : 'Qrserve'
+})
 const userName = computed(() => authStore.profile?.full_name || 'User')
 const userInitial = computed(() => userName.value.charAt(0).toUpperCase())
 const restaurantInitial = computed(() => restaurantName.value.charAt(0).toUpperCase() || 'R')
 const planLabel = computed(() => {
-  const map = { trial: '14-day Trial', starter: 'Starter', pro: 'Pro', enterprise: 'Enterprise' }
-  return map[restaurantPlan.value] || 'Trial'
+  const map = {
+    trial: t('layouts.trial'),
+    starter: t('layouts.starter'),
+    pro: t('layouts.pro'),
+    enterprise: t('layouts.enterprise'),
+  }
+  return map[restaurantPlan.value] || t('layouts.trial')
 })
 
 async function loadRestaurant() {
@@ -818,6 +800,28 @@ onUnmounted(() => {
 }
 .user-avatar:hover {
   border-color: var(--color-accent-border);
+}
+
+.lang-switcher {
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-medium);
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--font-body);
+  padding: 5px 8px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: all 0.12s;
+  outline: none;
+}
+.lang-switcher:hover {
+  border-color: var(--color-accent-border);
+  color: var(--color-accent);
+}
+.lang-switcher option {
+  background: var(--color-bg-surface);
+  color: var(--color-text-primary);
 }
 
 .page-content {

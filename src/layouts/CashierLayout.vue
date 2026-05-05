@@ -17,7 +17,7 @@
           :class="{ 'nav-item--active': $route.path === '/cashier/orders' }"
         >
           <ClipboardList class="nav-icon" />
-          <span class="nav-label">Orders</span>
+          <span class="nav-label">{{ $t('layouts.orders') }}</span>
           <span v-if="pendingOrdersCount > 0" class="nav-badge">{{ pendingOrdersCount }}</span>
         </RouterLink>
         <RouterLink
@@ -26,7 +26,7 @@
           :class="{ 'nav-item--active': $route.path === '/cashier/history' }"
         >
           <History class="nav-icon" />
-          <span class="nav-label">History</span>
+          <span class="nav-label">{{ $t('layouts.history') }}</span>
         </RouterLink>
       </nav>
 
@@ -36,13 +36,13 @@
             <User class="avatar-icon" />
           </div>
           <div class="user-info">
-            <span class="user-name">{{ authStore.profile?.full_name || 'Staff' }}</span>
-            <span class="user-role">Cashier</span>
+            <span class="user-name">{{ authStore.profile?.full_name || $t('layouts.staff') }}</span>
+            <span class="user-role">{{ $t('layouts.cashier') }}</span>
           </div>
         </div>
         <button class="btn-signout" @click="signOut">
           <LogOut class="signout-icon" />
-          <span>Sign out</span>
+          <span>{{ $t('layouts.signOut') }}</span>
         </button>
       </div>
     </aside>

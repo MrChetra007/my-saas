@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { supabase } from '@/lib/supabase'
+import { setLocale } from '@/i18n'
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
@@ -81,6 +82,11 @@ export const useAuthStore = defineStore('auth', {
       }
 
       this.profile = data
+
+      // Apply user's language preference
+      if (data?.language) {
+        setLocale(data.language)
+      }
 
       // Super admins have no restaurant — skip restaurant fetch
       if (data?.restaurant_id && !data?.is_super_admin) {

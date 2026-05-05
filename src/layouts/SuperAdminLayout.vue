@@ -13,34 +13,34 @@
             <path d="M10 6L14 8.5V13.5L10 16L6 13.5V8.5L10 6Z" fill="white" opacity="0.4" />
           </svg>
         </div>
-        <span class="sa-logo-text">SuperPanel</span>
+        <span class="sa-logo-text">{{ $t('layouts.superAdmin') }}</span>
       </div>
 
       <!-- Nav -->
-      <nav class="sa-nav">
-        <div class="sa-nav-section">
-          <span class="sa-nav-label">Management</span>
-          <router-link
-            v-for="item in navItems"
-            :key="item.path"
-            :to="item.path"
-            class="sa-nav-item"
-            @click="mobileOpen = false"
-          >
-            <span class="sa-nav-icon" v-html="item.icon" />
-            <span class="sa-nav-text">{{ item.label }}</span>
-            <span v-if="item.badge" class="sa-nav-badge">{{ item.badge }}</span>
-          </router-link>
-        </div>
+        <nav class="sa-nav">
+          <div class="sa-nav-section">
+            <span class="sa-nav-label">{{ $t('layouts.management') }}</span>
+            <router-link
+              v-for="item in navItems"
+              :key="item.path"
+              :to="item.path"
+              class="sa-nav-item"
+              @click="mobileOpen = false"
+            >
+              <span class="sa-nav-icon" v-html="item.icon" />
+              <span class="sa-nav-text">{{ $t('layouts.' + item.labelKey) }}</span>
+              <span v-if="item.badge" class="sa-nav-badge">{{ item.badge }}</span>
+            </router-link>
+          </div>
 
-        <div class="sa-nav-section sa-nav-bottom">
-          <span class="sa-nav-label">System</span>
-          <router-link to="/super-admin/settings" class="sa-nav-item" @click="mobileOpen = false">
-            <span class="sa-nav-icon" v-html="icons.settings" />
-            <span class="sa-nav-text">Settings</span>
-          </router-link>
-        </div>
-      </nav>
+          <div class="sa-nav-section sa-nav-bottom">
+            <span class="sa-nav-label">{{ $t('layouts.system') }}</span>
+            <router-link to="/super-admin/settings" class="sa-nav-item" @click="mobileOpen = false">
+              <span class="sa-nav-icon" v-html="icons.settings" />
+              <span class="sa-nav-text">{{ $t('layouts.settings') }}</span>
+            </router-link>
+          </div>
+        </nav>
 
       <!-- Collapse toggle (desktop only) -->
       <button class="sa-collapse-btn" @click="collapsed = !collapsed" title="Toggle sidebar">
@@ -70,15 +70,15 @@
               {{ initials }}
             </div>
             <div class="sa-user-info">
-              <span class="sa-user-name">{{ authStore.profile?.full_name || 'Super Admin' }}</span>
-              <span class="sa-user-role">Administrator</span>
+              <span class="sa-user-name">{{ authStore.profile?.full_name || t('layouts.superAdmin') }}</span>
+              <span class="sa-user-role">{{ t('layouts.administrator') }}</span>
             </div>
           </div>
 
           <!-- Logout -->
-          <button class="sa-logout-btn" @click="handleLogout" title="Sign out">
+          <button class="sa-logout-btn" @click="handleLogout" title="$t('layouts.signOut')">
             <span v-html="icons.logout" />
-            <span class="sa-logout-text">Sign out</span>
+            <span class="sa-logout-text">{{ $t('layouts.signOut') }}</span>
           </button>
         </div>
       </header>
@@ -95,6 +95,7 @@
 import { ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useI18n } from 'vue-i18n'
 
 const router = useRouter()
 const route = useRoute()
@@ -116,21 +117,22 @@ const icons = {
 }
 
 const navItems = [
-  { path: '/super-admin/dashboard', label: 'Overview', icon: icons.dashboard },
-  { path: '/super-admin/restaurants', label: 'Restaurants', icon: icons.restaurants },
-  { path: '/super-admin/users', label: 'Users', icon: icons.users },
-  { path: '/super-admin/subscriptions', label: 'Subscriptions', icon: icons.subscriptions },
+  { path: '/super-admin/dashboard', labelKey: 'overview', icon: icons.dashboard },
+  { path: '/super-admin/restaurants', labelKey: 'restaurants', icon: icons.restaurants },
+  { path: '/super-admin/users', labelKey: 'users', icon: icons.users },
+  { path: '/super-admin/subscriptions', labelKey: 'subscriptions', icon: icons.subscriptions },
 ]
 
+const titleMap = {
+  '/super-admin/dashboard': 'overview',
+  '/super-admin/restaurants': 'restaurants',
+  '/super-admin/users': 'users',
+  '/super-admin/subscriptions': 'subscriptions',
+  '/super-admin/settings': 'settings',
+}
 const currentTitle = computed(() => {
-  const map = {
-    '/super-admin/dashboard': 'Overview',
-    '/super-admin/restaurants': 'Restaurants',
-    '/super-admin/users': 'Users',
-    '/super-admin/subscriptions': 'Subscriptions',
-    '/super-admin/settings': 'Settings',
-  }
-  return map[route.path] ?? 'Super Admin'
+  const key = titleMap[route.path]
+  return key ? t(`layouts.${key}`) : t('layouts.superAdmin')
 })
 
 const initials = computed(() => {

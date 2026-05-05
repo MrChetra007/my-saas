@@ -17,7 +17,7 @@
           :class="{ 'nav-item--active': $route.path === '/waiter/new-order' }"
         >
           <PlusCircle class="nav-icon" />
-          <span class="nav-label">New Order</span>
+          <span class="nav-label">{{ $t('layouts.newOrder') }}</span>
         </RouterLink>
         <RouterLink
           to="/waiter/tables"
@@ -25,7 +25,7 @@
           :class="{ 'nav-item--active': $route.path === '/waiter/tables' }"
         >
           <LayoutGrid class="nav-icon" />
-          <span class="nav-label">Tables</span>
+          <span class="nav-label">{{ $t('layouts.tables') }}</span>
         </RouterLink>
         <RouterLink
           to="/waiter/orders"
@@ -33,7 +33,7 @@
           :class="{ 'nav-item--active': $route.path === '/waiter/orders' }"
         >
           <ClipboardList class="nav-icon" />
-          <span class="nav-label">My Orders</span>
+          <span class="nav-label">{{ $t('layouts.myOrders') }}</span>
           <span v-if="activeOrdersCount > 0" class="nav-badge">{{ activeOrdersCount }}</span>
         </RouterLink>
       </nav>
@@ -44,13 +44,13 @@
             <User class="avatar-icon" />
           </div>
           <div class="user-info">
-            <span class="user-name">{{ authStore.profile?.full_name || 'Staff' }}</span>
-            <span class="user-role">Waiter</span>
+            <span class="user-name">{{ authStore.profile?.full_name || $t('layouts.staff') }}</span>
+            <span class="user-role">{{ $t('layouts.waiter') }}</span>
           </div>
         </div>
         <button class="btn-signout" @click="signOut">
           <LogOut class="signout-icon" />
-          <span>Sign out</span>
+          <span>{{ $t('layouts.signOut') }}</span>
         </button>
       </div>
     </aside>
@@ -83,7 +83,7 @@
           :class="{ 'bottom-nav-item--active': $route.path === '/waiter/new-order' }"
         >
           <PlusCircle class="bottom-nav-icon" />
-          <span class="bottom-nav-label">New</span>
+            <span class="bottom-nav-label">{{ $t('layouts.new') }}</span>
         </RouterLink>
         <RouterLink
           to="/waiter/tables"
@@ -91,7 +91,7 @@
           :class="{ 'bottom-nav-item--active': $route.path === '/waiter/tables' }"
         >
           <LayoutGrid class="bottom-nav-icon" />
-          <span class="bottom-nav-label">Tables</span>
+          <span class="bottom-nav-label">{{ $t('layouts.tables') }}</span>
         </RouterLink>
         <RouterLink
           to="/waiter/orders"
@@ -102,7 +102,7 @@
             <ClipboardList class="bottom-nav-icon" />
             <span v-if="activeOrdersCount > 0" class="bottom-badge">{{ activeOrdersCount }}</span>
           </div>
-          <span class="bottom-nav-label">Orders</span>
+          <span class="bottom-nav-label">{{ $t('layouts.myOrders') }}</span>
         </RouterLink>
       </nav>
     </div>

@@ -11,7 +11,7 @@
 
     <div class="auth-wrapper">
       <!-- Back button -->
-      <button class="auth-back-btn" @click="goBack" aria-label="Go back to home">← Back</button>
+      <button class="auth-back-btn" @click="goBack" aria-label="Go back to home">← {{ $t('common.back') || 'Back' }}</button>
 
       <!-- Card -->
       <div class="auth-card">
