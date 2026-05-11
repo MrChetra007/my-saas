@@ -1,23 +1,36 @@
-# .
+# Restaurant SaaS
 
-This template should help get you started developing with Vue 3 in Vite.
+A multi-tenant restaurant management platform built with **Vue 3**, **Pinia**, **Vue Router**, **Tailwind CSS v4**, and **Supabase**.
 
-## Recommended IDE Setup
+## Features
 
-[VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+- **Menu Management** — Categories, items with prices, images, and availability toggles
+- **Order Management** — Create, track, and fulfill orders with real-time status updates
+- **Table Management** — Manage tables with QR code generation for customer self-ordering
+- **Promotions Engine** — Percentage and fixed discounts, auto-apply or code-based
+- **Staff Management** — Role-based access control (admin, waiter, cashier, kitchen)
+- **Multi-Language** — English and Khmer (vue-i18n)
+- **Analytics** — Dashboard with Chart.js insights
+- **Billing & Subscriptions** — LemonSqueezy integration with trial, starter, and pro plans
 
-## Recommended Browser Setup
+## User Roles
 
-- Chromium-based browsers (Chrome, Edge, Brave, etc.):
-  - [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd)
-  - [Turn on Custom Object Formatter in Chrome DevTools](http://bit.ly/object-formatters)
-- Firefox:
-  - [Vue.js devtools](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/)
-  - [Turn on Custom Object Formatter in Firefox DevTools](https://fxdx.dev/firefox-devtools-custom-object-formatters/)
+| Role        | Area                | Capabilities                              |
+|-------------|---------------------|-------------------------------------------|
+| Admin       | `/app/*`            | Full restaurant management                |
+| Waiter      | `/waiter/*`         | Create orders, manage tables              |
+| Cashier     | `/cashier/*`        | Process payments, view order history      |
+| Kitchen     | `/kitchen/*`        | View incoming orders and update status    |
+| Super Admin | `/super-admin/*`    | Manage all restaurants, users, plans      |
 
-## Customize configuration
+## Tech Stack
 
-See [Vite Configuration Reference](https://vite.dev/config/).
+- **Frontend**: Vue 3 (Composition API), Pinia, Vue Router 5, Tailwind CSS v4
+- **Backend**: Supabase (Auth, Postgres, Edge Functions)
+- **Payments**: LemonSqueezy (checkout, webhooks, subscription management)
+- **Testing**: Vitest + Vue Test Utils
+- **Linting**: ESLint + Oxlint
+- **Formatting**: Prettier
 
 ## Project Setup
 
@@ -37,14 +50,15 @@ npm run dev
 npm run build
 ```
 
-### Run Unit Tests with [Vitest](https://vitest.dev/)
+### Run Unit Tests
 
 ```sh
 npm run test:unit
 ```
 
-### Lint with [ESLint](https://eslint.org/)
+### Lint & Format
 
 ```sh
 npm run lint
+npm run format
 ```
