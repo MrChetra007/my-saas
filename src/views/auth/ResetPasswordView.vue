@@ -2,9 +2,11 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { supabase } from '@/lib/supabase'
+import { useI18n } from 'vue-i18n'
 import AuthLayout from '@/layouts/AuthLayout.vue'
 
 const router = useRouter()
+const { t } = useI18n()
 
 // ── State ──
 const password = ref('')
@@ -88,9 +90,9 @@ const strengthWidth = computed(() => {
 
 const strengthLabel = computed(() => {
   if (!password.value) return ''
-  if (strength.value <= 1) return 'Weak'
-  if (strength.value <= 3) return 'Fair'
-  return 'Strong'
+  if (strength.value <= 1) return t('auth.resetPassword.strengthWeak')
+  if (strength.value <= 3) return t('auth.resetPassword.strengthFair')
+  return t('auth.resetPassword.strengthStrong')
 })
 
 // ── Handle reset submit ──
@@ -98,11 +100,11 @@ async function handleReset() {
   error.value = ''
 
   if (password.value.length < 8) {
-    error.value = 'Password must be at least 8 characters.'
+    error.value = t('auth.resetPassword.errorPasswordLength')
     return
   }
   if (password.value !== confirm.value) {
-    error.value = 'Passwords do not match.'
+    error.value = t('auth.resetPassword.errorMismatch')
     return
   }
 
@@ -140,7 +142,7 @@ async function handleReset() {
           <path d="M8 12c0-2.21 1.79-4 4-4s4 1.79 4 4-1.79 4-4 4-4-1.79-4-4z" />
         </svg>
       </div>
-      <span class="brand-name">RestoOS</span>
+      <span class="brand-name">{{ $t('auth.resetPassword.brandName') }}</span>
     </div>
 
     <!-- ── Waiting: parsing token ── -->
@@ -160,8 +162,8 @@ async function handleReset() {
           />
         </svg>
       </div>
-      <h1>Verifying link…</h1>
-      <p>Please wait while we verify your reset link.</p>
+      <h1>{{ $t('auth.resetPassword.verifyingTitle') }}</h1>
+      <p>{{ $t('auth.resetPassword.verifyingSubtitle') }}</p>
     </div>
 
     <!-- ── Invalid / expired link ── -->
@@ -180,10 +182,10 @@ async function handleReset() {
           <line x1="12" y1="16" x2="12.01" y2="16" />
         </svg>
       </div>
-      <h1>Link expired</h1>
-      <p>This password reset link is invalid or has expired. Please request a new one.</p>
+      <h1>{{ $t('auth.resetPassword.expiredTitle') }}</h1>
+      <p>{{ $t('auth.resetPassword.expiredSubtitle') }}</p>
       <RouterLink to="/login" class="submit-btn" style="text-decoration: none; text-align: center">
-        Back to sign in
+        {{ $t('auth.resetPassword.expiredBackLink') }}
       </RouterLink>
     </div>
 
@@ -203,8 +205,8 @@ async function handleReset() {
             <path d="M7 11V7a5 5 0 0 1 10 0v4" />
           </svg>
         </div>
-        <h1>Set new password</h1>
-        <p>Choose a strong password for your account.</p>
+        <h1>{{ $t('auth.resetPassword.title') }}</h1>
+        <p>{{ $t('auth.resetPassword.subtitle') }}</p>
       </div>
 
       <div v-if="error" class="error-banner" role="alert">
@@ -226,7 +228,7 @@ async function handleReset() {
       <form @submit.prevent="handleReset" class="form">
         <!-- New password -->
         <div class="field">
-          <label for="password">New password</label>
+          <label for="password">{{ $t('auth.resetPassword.newPasswordLabel') }}</label>
           <div class="input-wrapper">
             <input
               id="password"
@@ -234,14 +236,14 @@ async function handleReset() {
               :type="showPassword ? 'text' : 'password'"
               required
               minlength="8"
-              placeholder="Min. 8 characters"
+              :placeholder="$t('auth.resetPassword.newPasswordPlaceholder')"
               autocomplete="new-password"
             />
             <button
               type="button"
               class="toggle-password"
               @click="showPassword = !showPassword"
-              :aria-label="showPassword ? 'Hide password' : 'Show password'"
+              :aria-label="showPassword ? $t('auth.resetPassword.hidePassword') : $t('auth.resetPassword.showPassword')"
             >
               <svg
                 v-if="!showPassword"
@@ -283,14 +285,14 @@ async function handleReset() {
 
         <!-- Confirm password -->
         <div class="field">
-          <label for="confirm">Confirm password</label>
+          <label for="confirm">{{ $t('auth.resetPassword.confirmLabel') }}</label>
           <div class="input-wrapper">
             <input
               id="confirm"
               v-model="confirm"
               :type="showConfirm ? 'text' : 'password'"
               required
-              placeholder="••••••••"
+              :placeholder="$t('auth.resetPassword.confirmPlaceholder')"
               autocomplete="new-password"
               :class="{ 'input-mismatch': confirm && confirm !== password }"
             />
@@ -298,7 +300,7 @@ async function handleReset() {
               type="button"
               class="toggle-password"
               @click="showConfirm = !showConfirm"
-              :aria-label="showConfirm ? 'Hide password' : 'Show password'"
+              :aria-label="showConfirm ? $t('auth.resetPassword.hidePassword') : $t('auth.resetPassword.showPassword')"
             >
               <svg
                 v-if="!showConfirm"
@@ -330,12 +332,12 @@ async function handleReset() {
             </button>
           </div>
           <span v-if="confirm && confirm !== password" class="mismatch-hint">
-            Passwords don't match yet
+            {{ $t('auth.resetPassword.mismatchHint') }}
           </span>
         </div>
 
         <button type="submit" class="submit-btn" :disabled="loading">
-          <span v-if="!loading">Update password</span>
+          <span v-if="!loading">{{ $t('auth.resetPassword.submit') }}</span>
           <span v-else class="loading-state">
             <svg
               class="spinner"
@@ -350,13 +352,13 @@ async function handleReset() {
                 d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"
               />
             </svg>
-            Updating…
+            {{ $t('auth.resetPassword.submitting') }}
           </span>
         </button>
       </form>
 
       <p class="back-cta">
-        <RouterLink to="/login">← Back to sign in</RouterLink>
+        <RouterLink to="/login">{{ $t('auth.resetPassword.backLink') }}</RouterLink>
       </p>
     </template>
   </AuthLayout>

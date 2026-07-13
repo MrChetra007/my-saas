@@ -11,7 +11,7 @@
 
     <div class="auth-wrapper">
       <!-- Back button -->
-      <button class="auth-back-btn" @click="goBack" aria-label="Go back to home">← {{ $t('common.back') || 'Back' }}</button>
+      <button class="auth-back-btn" @click="goBack" :aria-label="$t('common.back')">← {{ $t('common.back') }}</button>
 
       <!-- Card -->
       <div class="auth-card">
@@ -19,7 +19,7 @@
       </div>
 
       <!-- Footer -->
-      <p class="auth-footer">© {{ new Date().getFullYear() }} QRserve. All rights reserved.</p>
+      <p class="auth-footer">{{ $t('auth.footer', { year: new Date().getFullYear() }) }}</p>
     </div>
   </div>
 </template>

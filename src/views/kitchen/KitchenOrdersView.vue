@@ -11,10 +11,10 @@
     <!-- ── Header ─────────────────────────── -->
     <div class="kitchen-header">
       <div class="header-left">
-        <h1 class="kitchen-title">Kitchen</h1>
+        <h1 class="kitchen-title">{{ $t('kitchenOrders.title') }}</h1>
         <div class="live-dot-wrap">
           <span class="live-dot connected" />
-          <span class="live-label">Live</span>
+          <span class="live-label">{{ $t('kitchenOrders.live') }}</span>
         </div>
       </div>
       <div class="header-right">
@@ -25,7 +25,7 @@
         <button
           class="audio-btn"
           @click="muted = !muted"
-          :title="muted ? 'Unmute pings' : 'Mute pings'"
+          :title="muted ? $t('kitchenOrders.unmutePings') : $t('kitchenOrders.mutePings')"
         >
           <VolumeX v-if="muted" :size="18" />
           <Volume2 v-else :size="18" />
@@ -75,7 +75,7 @@
           <!-- Card header -->
           <div class="card-header">
             <div class="card-header-left">
-              <span class="table-name">{{ order.tables?.name ?? 'Table' }}</span>
+              <span class="table-name">{{ order.tables?.name ?? $t('kitchenOrders.tableFallback') }}</span>
               <span class="order-num">#{{ order.id.slice(-4).toUpperCase() }}</span>
             </div>
             <div class="card-header-right">
@@ -101,11 +101,11 @@
             <template v-if="order.status === 'pending'">
               <button class="btn-reject" @click="reject(order.id)">
                 <X :size="13" />
-                Reject
+                {{ $t('kitchenOrders.reject') }}
               </button>
               <button class="btn-accept" @click="accept(order.id)">
                 <ChefHat :size="13" />
-                Accept
+                {{ $t('kitchenOrders.accept') }}
               </button>
             </template>
 
@@ -113,11 +113,11 @@
             <template v-else-if="order.status === 'cooking'">
               <div class="cooking-indicator">
                 <span class="cooking-dot" />
-                Cooking…
+                {{ $t('kitchenOrders.cooking') }}
               </div>
               <button class="btn-ready" @click="markReady(order.id)">
                 <CheckCheck :size="13" />
-                Mark Ready
+                {{ $t('kitchenOrders.markReady') }}
               </button>
             </template>
 
@@ -125,7 +125,7 @@
             <template v-else-if="order.status === 'ready'">
               <div class="ready-badge">
                 <CheckCircle :size="14" />
-                Ready for pickup
+                {{ $t('kitchenOrders.readyForPickup') }}
               </div>
             </template>
 
@@ -133,7 +133,7 @@
             <template v-else-if="order.status === 'rejected'">
               <div class="rejected-badge">
                 <XCircle :size="14" />
-                Rejected
+                {{ $t('kitchenOrders.rejected') }}
               </div>
             </template>
           </div>
@@ -161,8 +161,10 @@ import {
   UtensilsCrossed,
   BadgeCheck,
 } from 'lucide-vue-next'
+import { useI18n } from 'vue-i18n'
 
 const authStore = useAuthStore()
+const { t } = useI18n()
 const orders = ref([])
 const activeTab = ref('pending')
 const muted = ref(false)
@@ -230,11 +232,11 @@ function playPing() {
 }
 
 // ── Tabs ──────────────────────────────────────────────────────────────────────
-const tabs = [
-  { key: 'pending', label: 'Pending', icon: ClipboardList },
-  { key: 'cooking', label: 'Cooking', icon: UtensilsCrossed },
-  { key: 'done', label: 'Done', icon: BadgeCheck },
-]
+const tabs = computed(() => [
+  { key: 'pending', label: t('kitchenOrders.tabPending'), icon: ClipboardList },
+  { key: 'cooking', label: t('kitchenOrders.tabCooking'), icon: UtensilsCrossed },
+  { key: 'done', label: t('kitchenOrders.tabDone'), icon: BadgeCheck },
+])
 
 function tabCount(key) {
   if (key === 'done')
@@ -255,9 +257,9 @@ const emptyIcon = computed(() => {
 })
 
 const emptyText = computed(() => {
-  if (activeTab.value === 'pending') return 'No pending orders — all clear!'
-  if (activeTab.value === 'cooking') return 'Nothing cooking right now.'
-  return 'No completed orders yet today.'
+  if (activeTab.value === 'pending') return t('kitchenOrders.emptyPending')
+  if (activeTab.value === 'cooking') return t('kitchenOrders.emptyCooking')
+  return t('kitchenOrders.emptyDone')
 })
 
 // ── Elapsed ───────────────────────────────────────────────────────────────────
@@ -267,9 +269,9 @@ function elapsedMinutes(order) {
 
 function elapsed(createdAt) {
   const m = Math.floor((Date.now() - new Date(createdAt)) / 60000)
-  if (m < 1) return 'Just now'
-  if (m === 1) return '1 min ago'
-  return `${m} min ago`
+  if (m < 1) return t('kitchenOrders.justNow')
+  if (m === 1) return t('kitchenOrders.oneMinAgo')
+  return t('kitchenOrders.minAgo', { n: m })
 }
 
 // ── Data ──────────────────────────────────────────────────────────────────────
@@ -301,27 +303,27 @@ function handleRealtimeChange(payload) {
   if (payload.eventType === 'INSERT' && payload.new?.status === 'pending') {
     playPing()
     activeTab.value = 'pending'
-    showToast('New order received!', 'info')
+    showToast(t('kitchenOrders.toastNewOrder'), 'info')
   }
   fetchOrders()
 }
 
 async function accept(id) {
   const { error } = await supabase.from('orders').update({ status: 'cooking' }).eq('id', id)
-  if (!error) showToast('Order accepted — now cooking!', 'info')
-  else showToast('Failed to accept order.', 'error')
+  if (!error) showToast(t('kitchenOrders.toastAccepted'), 'info')
+  else showToast(t('kitchenOrders.toastAcceptFailed'), 'error')
 }
 
 async function reject(id) {
   const { error } = await supabase.from('orders').update({ status: 'rejected' }).eq('id', id)
-  if (!error) showToast('Order rejected.', 'error')
-  else showToast('Failed to reject order.', 'error')
+  if (!error) showToast(t('kitchenOrders.toastRejected'), 'error')
+  else showToast(t('kitchenOrders.toastRejectFailed'), 'error')
 }
 
 async function markReady(id) {
   const { error } = await supabase.from('orders').update({ status: 'ready' }).eq('id', id)
-  if (!error) showToast('Order marked as ready!', 'success')
-  else showToast('Failed to update order.', 'error')
+  if (!error) showToast(t('kitchenOrders.toastMarkedReady'), 'success')
+  else showToast(t('kitchenOrders.toastUpdateFailed'), 'error')
 }
 
 onMounted(async () => {

@@ -3,7 +3,7 @@
     <header class="kitchen-header">
       <div class="header-left">
         <div class="logo-wrap">
-          <img v-if="restaurantLogo" :src="restaurantLogo" alt="logo" class="logo-img" />
+          <img v-if="restaurantLogo" :src="restaurantLogo" :alt="$t('layouts.logo')" class="logo-img" />
           <span v-else class="logo">🍽️</span>
         </div>
         <span class="restaurant-name">{{ restaurantName }}</span>

@@ -2,10 +2,12 @@
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { supabase } from '@/lib/supabase'
+import { useI18n } from 'vue-i18n'
 import AuthLayout from '@/layouts/AuthLayout.vue'
 
 const router = useRouter()
 const route = useRoute()
+const { t } = useI18n()
 
 // ── Login state ──
 const email = ref('')
@@ -24,7 +26,7 @@ const resetError = ref('')
 
 onMounted(() => {
   if (route.query.reset === 'success') {
-    successMessage.value = 'Password updated successfully. Please sign in.'
+    successMessage.value = t('auth.login.successMessage')
   }
 })
 
@@ -52,7 +54,7 @@ async function handleLogin() {
     .single()
 
   if (!profile) {
-    error.value = 'Profile not found. Please contact support.'
+    error.value = t('auth.login.errorProfileNotFound')
     loading.value = false
     return
   }
@@ -81,7 +83,7 @@ function closeResetModal() {
 
 async function handleForgotPassword() {
   if (!resetEmail.value) {
-    resetError.value = 'Please enter your email address.'
+    resetError.value = t('auth.forgotPassword.errorMissingEmail')
     return
   }
   resetLoading.value = true
@@ -105,8 +107,8 @@ async function handleForgotPassword() {
   <AuthLayout>
     <!-- Heading -->
     <div class="heading">
-      <h1>Welcome back</h1>
-      <p>Sign in to continue to your dashboard</p>
+      <h1>{{ $t('auth.login.title') }}</h1>
+      <p>{{ $t('auth.login.subtitle') }}</p>
     </div>
 
     <!-- Success message (after password reset) -->
@@ -144,13 +146,13 @@ async function handleForgotPassword() {
     <form @submit.prevent="handleLogin" class="form">
       <!-- Email -->
       <div class="field">
-        <label for="email">Email address</label>
+        <label for="email">{{ $t('auth.login.emailLabel') }}</label>
         <input
           id="email"
           v-model="email"
           type="email"
           required
-          placeholder="you@restaurant.com"
+          :placeholder="$t('auth.login.emailPlaceholder')"
           autocomplete="email"
         />
       </div>
@@ -158,9 +160,9 @@ async function handleForgotPassword() {
       <!-- Password -->
       <div class="field">
         <div class="label-row">
-          <label for="password">Password</label>
+          <label for="password">{{ $t('auth.login.passwordLabel') }}</label>
           <button type="button" class="forgot-link" @click="openResetModal">
-            Forgot password?
+            {{ $t('auth.login.forgotPasswordLink') }}
           </button>
         </div>
         <div class="input-wrapper">
@@ -169,14 +171,14 @@ async function handleForgotPassword() {
             v-model="password"
             :type="showPassword ? 'text' : 'password'"
             required
-            placeholder="••••••••"
+            :placeholder="$t('auth.login.passwordPlaceholder')"
             autocomplete="current-password"
           />
           <button
             type="button"
             class="toggle-password"
             @click="showPassword = !showPassword"
-            :aria-label="showPassword ? 'Hide password' : 'Show password'"
+            :aria-label="showPassword ? $t('auth.login.hidePassword') : $t('auth.login.showPassword')"
           >
             <svg
               v-if="!showPassword"
@@ -211,7 +213,7 @@ async function handleForgotPassword() {
 
       <!-- Submit -->
       <button type="submit" class="submit-btn" :disabled="loading">
-        <span v-if="!loading">Sign in</span>
+        <span v-if="!loading">{{ $t('auth.login.submit') }}</span>
         <span v-else class="loading-state">
           <svg
             class="spinner"
@@ -226,18 +228,18 @@ async function handleForgotPassword() {
               d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"
             />
           </svg>
-          Signing in…
+          {{ $t('auth.login.submitting') }}
         </span>
       </button>
     </form>
 
     <!-- Divider -->
-    <div class="divider"><span>or</span></div>
+    <div class="divider"><span>{{ $t('auth.login.divider') }}</span></div>
 
     <!-- Sign up CTA -->
     <p class="signup-cta">
-      Don't have an account?
-      <RouterLink to="/signup">Start free trial</RouterLink>
+      {{ $t('auth.login.signupCta') }}
+      <RouterLink to="/signup">{{ $t('auth.login.signupLink') }}</RouterLink>
     </p>
 
     <!-- ── Forgot Password Modal ── -->
@@ -246,7 +248,7 @@ async function handleForgotPassword() {
         <div v-if="showResetModal" class="modal-overlay" @click.self="closeResetModal">
           <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
             <!-- Close button -->
-            <button class="modal-close" @click="closeResetModal" aria-label="Close">
+            <button class="modal-close" @click="closeResetModal" :aria-label="$t('auth.forgotPassword.close')">
               <svg
                 width="14"
                 height="14"
@@ -276,8 +278,8 @@ async function handleForgotPassword() {
             </div>
 
             <div class="modal-heading">
-              <h2 id="modal-title">Reset your password</h2>
-              <p>Enter your account email and we'll send you a secure reset link.</p>
+              <h2 id="modal-title">{{ $t('auth.forgotPassword.title') }}</h2>
+              <p>{{ $t('auth.forgotPassword.subtitle') }}</p>
             </div>
 
             <!-- Success state -->
@@ -292,7 +294,7 @@ async function handleForgotPassword() {
               >
                 <polyline points="20 6 9 17 4 12" />
               </svg>
-              Check your inbox — a reset link is on its way.
+              {{ $t('auth.forgotPassword.success') }}
             </div>
 
             <!-- Form state -->
@@ -314,19 +316,19 @@ async function handleForgotPassword() {
               </div>
 
               <div class="field">
-                <label for="reset-email">Email address</label>
+                <label for="reset-email">{{ $t('auth.forgotPassword.emailLabel') }}</label>
                 <input
                   id="reset-email"
                   v-model="resetEmail"
                   type="email"
-                  placeholder="you@restaurant.com"
+                  :placeholder="$t('auth.forgotPassword.emailPlaceholder')"
                   autocomplete="email"
                   @keyup.enter="handleForgotPassword"
                 />
               </div>
 
               <button class="submit-btn" :disabled="resetLoading" @click="handleForgotPassword">
-                <span v-if="!resetLoading">Send reset link</span>
+                <span v-if="!resetLoading">{{ $t('auth.forgotPassword.submit') }}</span>
                 <span v-else class="loading-state">
                   <svg
                     class="spinner"
@@ -341,7 +343,7 @@ async function handleForgotPassword() {
                       d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"
                     />
                   </svg>
-                  Sending…
+                  {{ $t('auth.forgotPassword.submitting') }}
                 </span>
               </button>
             </template>
@@ -359,7 +361,7 @@ async function handleForgotPassword() {
                 <line x1="19" y1="12" x2="5" y2="12" />
                 <polyline points="12 19 5 12 12 5" />
               </svg>
-              Back to sign in
+              {{ $t('auth.forgotPassword.backLink') }}
             </button>
           </div>
         </div>

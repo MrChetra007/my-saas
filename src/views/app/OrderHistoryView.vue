@@ -3,13 +3,13 @@
     <!-- Header -->
     <div class="page-header">
       <div class="header-content">
-        <h1 class="page-title">Order History</h1>
-        <p class="page-subtitle">Browse and search all past orders</p>
+        <h1 class="page-title">{{ $t('orderHistory.title') }}</h1>
+        <p class="page-subtitle">{{ $t('orderHistory.subtitle') }}</p>
       </div>
       <div class="header-stats">
         <div class="stat-pill">
           <span class="stat-value">{{ filteredOrders.length }}</span>
-          <span class="stat-label">orders</span>
+          <span class="stat-label">{{ $t('orderHistory.orders') }}</span>
         </div>
       </div>
     </div>
@@ -19,7 +19,7 @@
       <div class="filters-grid">
         <!-- Search by table name -->
         <div class="filter-group">
-          <label class="filter-label">Table Name</label>
+          <label class="filter-label">{{ $t('orderHistory.tableName') }}</label>
           <div class="filter-input-wrap">
             <svg class="filter-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
@@ -32,7 +32,7 @@
             <input
               v-model="filters.tableName"
               type="text"
-              placeholder="e.g. Table 3"
+              :placeholder="$t('orderHistory.tableNamePlaceholder')"
               class="filter-input"
             />
           </div>
@@ -40,7 +40,7 @@
 
         <!-- Search by item name -->
         <div class="filter-group">
-          <label class="filter-label">Item Name</label>
+          <label class="filter-label">{{ $t('orderHistory.itemName') }}</label>
           <div class="filter-input-wrap">
             <svg class="filter-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
@@ -53,7 +53,7 @@
             <input
               v-model="filters.itemName"
               type="text"
-              placeholder="e.g. Burger"
+              :placeholder="$t('orderHistory.itemNamePlaceholder')"
               class="filter-input"
             />
           </div>
@@ -61,11 +61,11 @@
 
         <!-- Date range -->
         <div class="filter-group">
-          <label class="filter-label">From</label>
+          <label class="filter-label">{{ $t('orderHistory.from') }}</label>
           <input v-model="filters.dateFrom" type="date" class="filter-input date" />
         </div>
         <div class="filter-group">
-          <label class="filter-label">To</label>
+          <label class="filter-label">{{ $t('orderHistory.to') }}</label>
           <input v-model="filters.dateTo" type="date" class="filter-input date" />
         </div>
       </div>
@@ -73,7 +73,7 @@
       <!-- Status filter + actions row -->
       <div class="filters-footer">
         <div class="status-filters">
-          <span class="filter-section-label">Status:</span>
+          <span class="filter-section-label">{{ $t('orderHistory.status') }}</span>
           <div class="status-pills">
             <button
               v-for="opt in statusOptions"
@@ -95,7 +95,7 @@
               d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
             />
           </svg>
-          Reset filters
+          {{ $t('orderHistory.resetFilters') }}
         </button>
       </div>
     </div>
@@ -103,14 +103,14 @@
     <!-- Loading -->
     <div v-if="loading" class="loading-state">
       <div class="spinner"></div>
-      <p>Loading orders…</p>
+      <p>{{ $t('orderHistory.loading') }}</p>
     </div>
 
     <!-- Empty state -->
     <div v-else-if="filteredOrders.length === 0" class="empty-state">
       <div class="empty-icon">🗂️</div>
-      <h3 class="empty-title">No orders found</h3>
-      <p class="empty-subtitle">Try adjusting your filters or date range</p>
+      <h3 class="empty-title">{{ $t('orderHistory.noOrders') }}</h3>
+      <p class="empty-subtitle">{{ $t('orderHistory.noOrdersHint') }}</p>
     </div>
 
     <!-- Orders list -->
@@ -139,7 +139,7 @@
                   d="M3 10h18M3 14h18M5 6h14M7 18h10"
                 />
               </svg>
-              <span class="table-name">{{ order.tables?.name || 'Unknown Table' }}</span>
+              <span class="table-name">{{ order.tables?.name || $t('orderHistory.unknownTable') }}</span>
             </div>
 
             <!-- Items count -->
@@ -181,12 +181,12 @@
         <div v-if="expandedOrders.has(order.id)" class="order-details">
           <!-- Items list -->
           <div class="details-section">
-            <h4 class="section-title">Order Items</h4>
+            <h4 class="section-title">{{ $t('orderHistory.orderItems') }}</h4>
             <div class="items-list">
               <div v-for="item in order.order_items" :key="item.id" class="item-row">
                 <div class="item-main">
                   <span class="item-qty">{{ item.quantity }}×</span>
-                  <span class="item-name">{{ item.menu_items?.name || 'Unknown Item' }}</span>
+                  <span class="item-name">{{ item.menu_items?.name || $t('orderHistory.unknownItem') }}</span>
                 </div>
                 <span class="item-price">{{
                   formatCurrency(item.unit_price * item.quantity)
@@ -208,7 +208,7 @@
                     d="M7 8h10M7 12h6m-6 4h4M5 4h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"
                   />
                 </svg>
-                <span class="meta-label">Notes</span>
+                <span class="meta-label">{{ $t('orderHistory.notes') }}</span>
               </div>
               <p class="meta-content notes">{{ order.notes }}</p>
             </div>
@@ -227,7 +227,7 @@
                     d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                   />
                 </svg>
-                <span class="meta-label">Rejection Reason</span>
+                <span class="meta-label">{{ $t('orderHistory.rejectionReason') }}</span>
               </div>
               <p class="meta-content">{{ order.rejection_reason }}</p>
             </div>
@@ -243,7 +243,7 @@
                     d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
                   />
                 </svg>
-                <span class="meta-label">Order Time</span>
+                <span class="meta-label">{{ $t('orderHistory.orderTime') }}</span>
               </div>
               <p class="meta-content">{{ formatDateTime(order.created_at) }}</p>
             </div>
@@ -252,15 +252,15 @@
           <!-- Total footer -->
           <div class="details-footer">
             <div class="total-breakdown">
-              <span class="breakdown-label">Subtotal</span>
+              <span class="breakdown-label">{{ $t('orderHistory.subtotal') }}</span>
               <span class="breakdown-value">{{ formatCurrency(orderTotal(order) * 0.9) }}</span>
             </div>
             <div class="total-breakdown">
-              <span class="breakdown-label">Tax & Service</span>
+              <span class="breakdown-label">{{ $t('orderHistory.taxService') }}</span>
               <span class="breakdown-value">{{ formatCurrency(orderTotal(order) * 0.1) }}</span>
             </div>
             <div class="total-final">
-              <span class="final-label">Total</span>
+              <span class="final-label">{{ $t('orderHistory.total') }}</span>
               <span class="final-value">{{ formatCurrency(orderTotal(order)) }}</span>
             </div>
           </div>
@@ -270,7 +270,7 @@
 
     <!-- Pagination hint -->
     <div v-if="filteredOrders.length > 0" class="pagination-hint">
-      <p>Showing {{ filteredOrders.length }} orders</p>
+      <p>{{ $t('orderHistory.showing') }} {{ filteredOrders.length }} {{ $t('orderHistory.showingOrders') }}</p>
     </div>
   </div>
 </template>
@@ -279,8 +279,10 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
+import { useI18n } from 'vue-i18n'
 
 const authStore = useAuthStore()
+const { t } = useI18n()
 
 // ── State ──────────────────────────────────────────────────────────────────
 const orders = ref([])
@@ -298,19 +300,19 @@ const filters = ref({
 const statusOptions = [
   {
     value: 'all',
-    label: 'All',
+    label: t('orderHistory.statusAll'),
     colorClass: '',
     dotClass: '',
   },
   {
     value: 'paid',
-    label: 'Paid',
+    label: t('orderHistory.statusPaid'),
     colorClass: 'success',
     dotClass: 'bg-green-400',
   },
   {
     value: 'rejected',
-    label: 'Rejected',
+    label: t('orderHistory.statusRejected'),
     colorClass: 'error',
     dotClass: 'bg-red-400',
   },

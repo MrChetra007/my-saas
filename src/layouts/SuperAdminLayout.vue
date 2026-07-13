@@ -60,7 +60,7 @@
         <!-- Page title -->
         <div class="sa-topbar-title">
           <h1>{{ currentTitle }}</h1>
-          <span class="sa-topbar-breadcrumb">Super Admin</span>
+          <span class="sa-topbar-breadcrumb">{{ $t('layouts.superAdmin') }}</span>
         </div>
 
         <div class="sa-topbar-right">
@@ -76,7 +76,7 @@
           </div>
 
           <!-- Logout -->
-          <button class="sa-logout-btn" @click="handleLogout" title="$t('layouts.signOut')">
+          <button class="sa-logout-btn" @click="handleLogout" :title="$t('layouts.signOut')">
             <span v-html="icons.logout" />
             <span class="sa-logout-text">{{ $t('layouts.signOut') }}</span>
           </button>
@@ -143,7 +143,7 @@ const initials = computed(() => {
       .map((n) => n[0])
       .join('')
       .toUpperCase()
-      .slice(0, 2) || 'SA'
+      .slice(0, 2) || t('superAdmin.dashboard.fallbackName').slice(0, 2).toUpperCase()
   )
 })
 

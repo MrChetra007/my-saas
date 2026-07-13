@@ -3,8 +3,8 @@
     <!-- Header -->
     <div class="page-header">
       <div>
-        <h1 class="page-title">Tables</h1>
-        <p class="page-subtitle">Manage tables and generate QR codes for ordering</p>
+        <h1 class="page-title">{{ $t('tables.title') }}</h1>
+        <p class="page-subtitle">{{ $t('tables.subtitle') }}</p>
       </div>
       <div class="header-right">
         <!-- Limit badge -->
@@ -14,7 +14,7 @@
           >
           <span class="limit-plan">{{ planLabel }}</span>
         </div>
-        <button class="btn-add" @click="openAddTable" :disabled="isAtLimit">+ Add Table</button>
+        <button class="btn-add" @click="openAddTable" :disabled="isAtLimit">{{ $t('tables.addTable') }}</button>
       </div>
     </div>
 
@@ -25,27 +25,25 @@
     >
       <span class="limit-banner-icon">⚠</span>
       <div>
-        <strong>Table limit reached</strong> — your {{ planLabel }} plan allows up to
-        {{ tableLimit }} tables.
-        <RouterLink to="/app/settings" class="upgrade-link">Upgrade to Pro</RouterLink> for
-        unlimited tables.
+        <strong>{{ $t('tables.tableLimitReached') }}</strong> — {{ $t('tables.limitReachedYour') }} {{ planLabel }} {{ $t('tables.limitReachedAllows') }} {{ tableLimit }} {{ $t('tables.limitReachedTables') }}
+        <RouterLink to="/app/settings" class="upgrade-link">{{ $t('tables.upgradeToPro') }}</RouterLink> {{ $t('tables.forUnlimitedTables') }}
       </div>
     </div>
 
     <!-- Loading -->
     <div v-if="loading" class="loading-state">
       <div class="spinner" />
-      <span>Loading tables…</span>
+      <span>{{ $t('tables.loading') }}</span>
     </div>
 
     <!-- Empty state -->
     <div v-else-if="tables.length === 0 && !loading" class="empty-state">
       <div class="empty-icon">◫</div>
-      <h3>No tables added yet</h3>
+      <h3>{{ $t('tables.noTables') }}</h3>
       <p class="empty-text">
-        Create your first table to generate a QR code customers can scan to order
+        {{ $t('tables.emptyDescription') }}
       </p>
-      <button class="btn-add" @click="openAddTable">+ Add Table</button>
+      <button class="btn-add" @click="openAddTable">{{ $t('tables.addTable') }}</button>
     </div>
 
     <!-- Tables grid -->
@@ -67,7 +65,7 @@
             <div class="spinner-sm" />
           </div>
           <div class="qr-overlay">
-            <span class="qr-hint">Click to view full size</span>
+            <span class="qr-hint">{{ $t('tables.clickToViewFullSize') }}</span>
           </div>
         </div>
 
@@ -75,10 +73,10 @@
           <div class="table-name-row">
             <span class="table-name">{{ table.name }}</span>
             <div class="table-actions">
-              <button class="action-btn edit" @click="openEditTable(table)" title="Rename table">
+              <button class="action-btn edit" @click="openEditTable(table)" :title="$t('tables.renameTable')">
                 ✎
               </button>
-              <button class="action-btn delete" @click="confirmDelete(table)" title="Delete table">
+              <button class="action-btn delete" @click="confirmDelete(table)" :title="$t('tables.deleteTable')">
                 ✕
               </button>
             </div>
@@ -92,9 +90,9 @@
               :class="{ active: table.is_active }"
               @click="toggleTable(table)"
             >
-              {{ table.is_active ? 'Active' : 'Inactive' }}
+              {{ table.is_active ? $t('tables.active') : $t('tables.inactive') }}
             </button>
-            <button class="btn-download" @click="downloadQr(table)">↓ Download QR</button>
+            <button class="btn-download" @click="downloadQr(table)">{{ $t('tables.downloadQr') }}</button>
           </div>
         </div>
       </div>
@@ -105,11 +103,11 @@
       <div class="print-content">
         <span class="print-icon">🖨</span>
         <div>
-          <div class="print-title">Print all QR codes at once</div>
-          <div class="print-subtitle">Download a single page containing every table's QR code</div>
+          <div class="print-title">{{ $t('tables.printAllQr') }}</div>
+          <div class="print-subtitle">{{ $t('tables.printAllDescription') }}</div>
         </div>
       </div>
-      <button class="btn-outline" @click="downloadAllQrs">Download Sheet</button>
+      <button class="btn-outline" @click="downloadAllQrs">{{ $t('tables.downloadSheet') }}</button>
     </div>
 
     <!-- Add/Edit Table Modal -->
@@ -118,7 +116,7 @@
         <div class="modal modal-add">
           <div class="modal-header">
             <h2 class="modal-title">
-              {{ tableModal.editing ? 'Rename Table' : 'Add New Table' }}
+              {{ tableModal.editing ? $t('tables.renameTableTitle') : $t('tables.addNewTable') }}
             </h2>
             <button class="modal-close-btn" @click="tableModal.open = false">×</button>
           </div>
@@ -129,7 +127,7 @@
 
           <div class="modal-body">
             <div class="form-group">
-              <label class="form-label">Table / Area Name</label>
+              <label class="form-label">{{ $t('tables.tableName') }}</label>
               <div class="suggestion-chips">
                 <button
                   v-for="s in nameSuggestions"
@@ -146,27 +144,27 @@
                 v-model="tableModal.name"
                 class="form-input"
                 type="text"
-                placeholder="Table 5, Bar Seat 3, VIP Booth, Patio…"
+                :placeholder="$t('tables.tableNamePlaceholder')"
                 @keyup.enter="saveTable"
                 autofocus
               />
             </div>
 
             <div v-if="!tableModal.editing && previewQr" class="qr-preview-section">
-              <div class="qr-preview-label">QR Code Preview</div>
+              <div class="qr-preview-label">{{ $t('tables.qrPreview') }}</div>
               <img :src="previewQr" class="qr-preview" alt="Preview QR" />
               <div class="preview-url">{{ previewOrderUrl }}</div>
             </div>
           </div>
 
           <div class="modal-footer">
-            <button class="btn-ghost" @click="tableModal.open = false">Cancel</button>
+            <button class="btn-ghost" @click="tableModal.open = false">{{ $t('common.cancel') }}</button>
             <button
               class="btn-primary"
               :disabled="tableModal.saving || !tableModal.name.trim()"
               @click="saveTable"
             >
-              {{ tableModal.saving ? 'Saving…' : tableModal.editing ? 'Update' : 'Create Table' }}
+              {{ tableModal.saving ? $t('common.saving') : tableModal.editing ? $t('tables.update') : $t('tables.createTable') }}
             </button>
           </div>
         </div>
@@ -185,12 +183,12 @@
             <img :src="qrModal.table?._qr" class="qr-large" alt="Table QR code" />
             <div class="qr-url">{{ fullOrderUrl(qrModal.table?.id) }}</div>
             <p class="qr-hint-text">
-              Print and place on table. Customers scan to view menu & order — no app needed.
+              {{ $t('tables.qrHint') }}
             </p>
           </div>
           <div class="modal-footer">
-            <button class="btn-ghost" @click="qrModal.open = false">Close</button>
-            <button class="btn-primary" @click="downloadQr(qrModal.table)">↓ Download PNG</button>
+            <button class="btn-ghost" @click="qrModal.open = false">{{ $t('common.close') }}</button>
+            <button class="btn-primary" @click="downloadQr(qrModal.table)">{{ $t('tables.downloadPng') }}</button>
           </div>
         </div>
       </div>
@@ -201,20 +199,19 @@
       <div v-if="deleteModal.open" class="modal-backdrop" @click.self="deleteModal.open = false">
         <div class="modal modal-sm">
           <div class="modal-header">
-            <h2 class="modal-title">Delete Table?</h2>
+            <h2 class="modal-title">{{ $t('tables.deleteTableTitle') }}</h2>
             <button class="modal-close-btn" @click="deleteModal.open = false">×</button>
           </div>
           <div class="modal-body">
             <p class="delete-warning">
-              This will permanently remove <strong>{{ deleteModal.table?.name }}</strong
-              >.<br />
-              The QR code will stop working. Orders history remains intact.
+              {{ $t('tables.deleteWarning') }} <strong>{{ deleteModal.table?.name }}</strong>.<br />
+              {{ $t('tables.deleteWarningDetail') }}
             </p>
           </div>
           <div class="modal-footer">
-            <button class="btn-ghost" @click="deleteModal.open = false">Cancel</button>
+            <button class="btn-ghost" @click="deleteModal.open = false">{{ $t('common.cancel') }}</button>
             <button class="btn-danger" :disabled="deleteModal.saving" @click="doDelete">
-              {{ deleteModal.saving ? 'Deleting…' : 'Delete Table' }}
+              {{ deleteModal.saving ? $t('menu.deleting') : $t('tables.deleteTable') }}
             </button>
           </div>
         </div>
@@ -227,9 +224,11 @@
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
+import { useI18n } from 'vue-i18n'
 import QRCode from 'qrcode'
 
 const authStore = useAuthStore()
+const { t } = useI18n()
 
 const loading = ref(true)
 const tables = ref([])
@@ -284,13 +283,13 @@ const tableLimit = computed(() => LIMITS[resolvedPlan.value] ?? 15)
 const isAtLimit = computed(() => tables.value.length >= tableLimit.value)
 const planLabel = computed(() => {
   const map = {
-    trial: '14-day Trial',
-    starter: 'Starter',
-    pro: 'Pro',
-    enterprise: 'Enterprise',
-    expired: 'Expired',
+    trial: t('plans.trial'),
+    starter: t('plans.starter'),
+    pro: t('plans.pro'),
+    enterprise: t('plans.enterprise'),
+    expired: t('plans.expired'),
   }
-  return map[resolvedPlan.value] || 'Trial'
+  return map[resolvedPlan.value] || t('plans.trial')
 })
 
 async function fetchPlan() {
@@ -324,15 +323,15 @@ const previewQr = ref('')
 const nameSuggestions = computed(() => {
   const taken = new Set(tables.value.map((t) => t.name))
   const presets = [
-    'Table 1',
-    'Table 2',
-    'Table 3',
-    'Table 4',
-    'Bar Seat',
-    'VIP Booth',
-    'Patio',
-    'Terrace',
-    'Counter 1',
+    t('tables.suggestionTable1'),
+    t('tables.suggestionTable2'),
+    t('tables.suggestionTable3'),
+    t('tables.suggestionTable4'),
+    t('tables.suggestionBarSeat'),
+    t('tables.suggestionVipBooth'),
+    t('tables.suggestionPatio'),
+    t('tables.suggestionTerrace'),
+    t('tables.suggestionCounter1'),
   ]
   return presets.filter((n) => !taken.has(n)).slice(0, 6)
 })
@@ -428,13 +427,13 @@ function openEditTable(table) {
 async function saveTable() {
   const m = tableModal.value
   if (!m.name.trim()) {
-    m.error = 'Table name is required'
+    m.error = t('tables.tableNameRequired')
     return
   }
 
   // Hard limit check in submit — never skip this (per auth reference doc)
   if (!m.editing && isAtLimit.value) {
-    m.error = `You've reached the ${tableLimit.value}-table limit on your ${planLabel.value} plan. Upgrade to Pro for unlimited tables.`
+    m.error = `${t('tables.limitErrorPrefix')} ${tableLimit.value}${t('tables.limitErrorMid')} ${planLabel.value} ${t('tables.limitErrorSuffix')}`
     return
   }
 
@@ -461,7 +460,7 @@ async function saveTable() {
     }
     m.open = false
   } catch (err) {
-    m.error = err.message || 'Something went wrong'
+    m.error = err.message || t('common.somethingWentWrong')
   } finally {
     m.saving = false
   }

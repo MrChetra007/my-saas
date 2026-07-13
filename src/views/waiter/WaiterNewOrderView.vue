@@ -3,8 +3,8 @@
     <!-- Header -->
     <div class="page-header">
       <div class="header-content">
-        <h1 class="page-title">New Order</h1>
-        <p class="page-subtitle">Select a table, browse the menu and place the order</p>
+        <h1 class="page-title">{{ $t('waiter.newOrder.title') }}</h1>
+        <p class="page-subtitle">{{ $t('waiter.newOrder.subtitle') }}</p>
       </div>
       <div v-if="selectedTable" class="table-indicator">
         <MapPin class="indicator-icon" />
@@ -15,8 +15,8 @@
     <!-- Table Selector -->
     <div class="table-section">
       <div class="section-header">
-        <h2 class="section-title">Select Table</h2>
-        <span class="section-count">{{ tables.filter((t) => t.is_active).length }} available</span>
+        <h2 class="section-title">{{ $t('waiter.newOrder.selectTable') }}</h2>
+        <span class="section-count">{{ tables.filter((t) => t.is_active).length }} {{ $t('waiter.newOrder.available') }}</span>
       </div>
       <div class="table-grid">
         <button
@@ -35,7 +35,7 @@
             <Ban v-else class="table-icon inactive" />
           </div>
           <span class="table-name">{{ table.name }}</span>
-          <span class="table-status" v-if="!table.is_active">Inactive</span>
+          <span class="table-status" v-if="!table.is_active">{{ $t('waiter.newOrder.inactive') }}</span>
           <CheckCircle2 v-if="selectedTableId === table.id" class="table-check" />
         </button>
       </div>
@@ -50,10 +50,10 @@
           <strong>{{ autoPromo.name }}</strong> is active —
           {{
             autoPromo.type === 'percentage'
-              ? `${autoPromo.value}% off`
-              : `${formatCurrency(autoPromo.value)} off`
+              ? `${autoPromo.value}% ${$t('waiter.newOrder.off')}`
+              : `${formatCurrency(autoPromo.value)} ${$t('waiter.newOrder.off')}`
           }}
-          will be applied automatically
+          {{ $t('waiter.newOrder.promoBannerApplied') }}
         </div>
       </div>
 
@@ -115,7 +115,7 @@
                 </div>
                 <div v-else class="sold-out-badge">
                   <Ban class="sold-out-icon" />
-                  <span>Sold Out</span>
+                  <span>{{ $t('waiter.newOrder.soldOut') }}</span>
                 </div>
               </div>
 
@@ -127,7 +127,7 @@
                     v-model="cart[item.id].notes"
                     type="text"
                     class="notes-input"
-                    placeholder="Add note (e.g. no onions, extra spicy...)"
+                    :placeholder="$t('waiter.newOrder.notesPlaceholder')"
                     maxlength="120"
                   />
                 </div>
@@ -143,8 +143,8 @@
       <div class="empty-icon-wrap">
         <MousePointerClick class="empty-icon" />
       </div>
-      <h3 class="empty-title">Select a Table</h3>
-      <p class="empty-subtitle">Choose a table above to start building the order</p>
+      <h3 class="empty-title">{{ $t('waiter.newOrder.emptyTitle') }}</h3>
+      <p class="empty-subtitle">{{ $t('waiter.newOrder.emptySubtitle') }}</p>
     </div>
 
     <!-- ── Floating Action Button ── -->
@@ -153,8 +153,8 @@
         <div class="fab-content">
           <ShoppingCart class="fab-icon" />
           <div class="fab-info">
-            <span class="fab-label">View Order</span>
-            <span class="fab-meta">{{ totalQty }} items • {{ formatCurrency(orderTotal) }}</span>
+            <span class="fab-label">{{ $t('waiter.newOrder.viewOrder') }}</span>
+            <span class="fab-meta">{{ totalQty }} {{ $t('waiter.newOrder.items') }} • {{ formatCurrency(orderTotal) }}</span>
           </div>
         </div>
         <div class="fab-badge" v-if="totalQty > 0">{{ totalQty }}</div>
@@ -175,7 +175,7 @@
             <!-- Header -->
             <div class="sheet-header">
               <div class="sheet-header-content">
-                <h2 class="sheet-title">Order Summary</h2>
+                <h2 class="sheet-title">{{ $t('waiter.newOrder.orderSummary') }}</h2>
                 <div v-if="selectedTable" class="sheet-table">
                   <MapPin class="table-icon-sm" />
                   <span>{{ selectedTable.name }}</span>
@@ -190,7 +190,7 @@
             <div class="sheet-body">
               <div v-if="cartItems.length === 0" class="sheet-empty">
                 <ShoppingCart class="empty-cart-icon" />
-                <p>Your cart is empty</p>
+                <p>{{ $t('waiter.newOrder.cartEmpty') }}</p>
               </div>
               <div v-else class="cart-list">
                 <div v-for="item in cartItems" :key="item.id" class="cart-item">
@@ -202,7 +202,7 @@
                           formatCurrency(item.price * item.qty)
                         }}</span>
                       </div>
-                      <div class="cart-item-unit">{{ formatCurrency(item.price) }} each</div>
+                      <div class="cart-item-unit">{{ formatCurrency(item.price) }} {{ $t('waiter.newOrder.each') }}</div>
                     </div>
                     <div class="qty-control qty-control--compact">
                       <button
@@ -238,7 +238,7 @@
                     v-model="promoInput"
                     type="text"
                     class="promo-input"
-                    placeholder="Customer discount code"
+                    :placeholder="$t('waiter.newOrder.promoPlaceholder')"
                     @keyup.enter="applyPromoCode"
                     @input="promoInput = promoInput.toUpperCase()"
                     :disabled="promoLoading"
@@ -249,7 +249,7 @@
                     @click="applyPromoCode"
                     :disabled="promoLoading || !promoInput.trim()"
                   >
-                    {{ promoLoading ? '…' : 'Apply' }}
+                    {{ promoLoading ? $t('waiter.newOrder.promoLoading') : $t('waiter.newOrder.promoApply') }}
                   </button>
                 </div>
                 <p v-if="promoError" class="promo-error">{{ promoError }}</p>
@@ -263,8 +263,8 @@
                   <span class="applied-desc">
                     {{
                       appliedPromo.type === 'percentage'
-                        ? `${appliedPromo.value}% off`
-                        : `${formatCurrency(appliedPromo.value)} off`
+                        ? `${appliedPromo.value}% ${$t('waiter.newOrder.off')}`
+                        : `${formatCurrency(appliedPromo.value)} ${$t('waiter.newOrder.off')}`
                     }}
                     — saving {{ formatCurrency(discountAmount) }}
                   </span>
@@ -276,7 +276,7 @@
 
               <div class="total-section">
                 <div class="total-row">
-                  <span class="total-label">Subtotal</span>
+                  <span class="total-label">{{ $t('waiter.newOrder.subtotal') }}</span>
                   <span class="total-value">{{ formatCurrency(cartTotal) }}</span>
                 </div>
 
@@ -289,7 +289,7 @@
                     <Tag class="discount-tag-icon" />
                     {{ autoPromo.name }}
                     <span class="discount-badge">
-                      {{ autoPromo.type === 'percentage' ? `${autoPromo.value}%` : 'Fixed' }}
+                      {{ autoPromo.type === 'percentage' ? `${autoPromo.value}${$t('waiter.newOrder.discountBadgePercentage')}` : $t('waiter.newOrder.discountBadgeFixed') }}
                     </span>
                   </span>
                   <span class="total-value-discount">−{{ formatCurrency(discountAmount) }}</span>
@@ -304,14 +304,14 @@
                     <Tag class="discount-tag-icon" />
                     {{ appliedPromoCode }}
                     <span class="discount-badge">
-                      {{ appliedPromo.type === 'percentage' ? `${appliedPromo.value}%` : 'Fixed' }}
+                      {{ appliedPromo.type === 'percentage' ? `${appliedPromo.value}${$t('waiter.newOrder.discountBadgePercentage')}` : $t('waiter.newOrder.discountBadgeFixed') }}
                     </span>
                   </span>
                   <span class="total-value-discount">−{{ formatCurrency(discountAmount) }}</span>
                 </div>
 
                 <div class="total-row total-row--final">
-                  <span class="total-label-final">Total</span>
+                  <span class="total-label-final">{{ $t('waiter.newOrder.total') }}</span>
                   <span class="total-value-final">{{ formatCurrency(orderTotal) }}</span>
                 </div>
               </div>
@@ -320,12 +320,12 @@
                   <span v-if="submitting" class="btn-spinner"></span>
                   <span v-else>
                     <Send class="btn-icon" />
-                    Place Order
+                    {{ $t('waiter.newOrder.placeOrder') }}
                   </span>
                 </button>
                 <button class="btn-clear" @click="clearCart">
                   <Trash2 class="btn-icon-sm" />
-                  Clear
+                  {{ $t('waiter.newOrder.clear') }}
                 </button>
               </div>
             </div>
@@ -368,8 +368,10 @@ import {
   XCircle,
 } from 'lucide-vue-next'
 import { v4 as uuidv4 } from 'uuid'
+import { useI18n } from 'vue-i18n'
 
 const authStore = useAuthStore()
+const { t } = useI18n()
 
 const tables = ref([])
 const menu = ref([])
@@ -441,7 +443,7 @@ async function applyPromoCode() {
   })
   promoLoading.value = false
   if (error || !data || data.length === 0) {
-    promoError.value = 'Invalid or expired code.'
+    promoError.value = t('waiter.newOrder.invalidPromoCode')
     return
   }
   appliedPromo.value = data[0]
@@ -591,10 +593,10 @@ async function submitOrder() {
 
     const discountMsg =
       usedPromo && finalDiscount > 0 ? ` (${usedPromo.name} −${formatCurrency(finalDiscount)})` : ''
-    showToast(`Order placed successfully!${discountMsg}`)
+    showToast(`${t('waiter.newOrder.orderPlaced')}${discountMsg}`)
   } catch (err) {
     console.error('Order error:', err)
-    showToast('Failed to place order. Please try again.', true)
+    showToast(t('waiter.newOrder.orderFailed'), true)
   } finally {
     submitting.value = false
   }

@@ -2,8 +2,8 @@
   <AuthLayout>
     <!-- Heading -->
     <div class="heading">
-      <h1>Create your account</h1>
-      <p>14-day free trial &mdash; no credit card required</p>
+      <h1>{{ $t('auth.signup.title') }}</h1>
+      <p>{{ $t('auth.signup.subtitle') }}</p>
     </div>
 
     <!-- Error banner -->
@@ -42,25 +42,25 @@
       <!-- Full Name + Restaurant Name: side by side on wider layouts -->
       <div class="field-row">
         <div class="field">
-          <label for="fullName">Your name</label>
+          <label for="fullName">{{ $t('auth.signup.fullNameLabel') }}</label>
           <input
             id="fullName"
             v-model="fullName"
             type="text"
             required
-            placeholder="John Doe"
+            :placeholder="$t('auth.signup.fullNamePlaceholder')"
             autocomplete="name"
           />
         </div>
 
         <div class="field">
-          <label for="restaurantName">Restaurant name</label>
+          <label for="restaurantName">{{ $t('auth.signup.restaurantNameLabel') }}</label>
           <input
             id="restaurantName"
             v-model="restaurantName"
             type="text"
             required
-            placeholder="Pizza Palace"
+            :placeholder="$t('auth.signup.restaurantNamePlaceholder')"
             autocomplete="organization"
           />
           <p v-if="restaurantName" class="field-hint">
@@ -75,34 +75,34 @@
               <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
               <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
             </svg>
-            /order/{{ slugPreview }}/…
+            {{ $t('auth.signup.slugPreviewPrefix') }}{{ slugPreview }}{{ $t('auth.signup.slugPreviewSuffix') }}
           </p>
         </div>
       </div>
 
       <!-- Email -->
       <div class="field">
-        <label for="email">Email address</label>
+        <label for="email">{{ $t('auth.signup.emailLabel') }}</label>
         <input
           id="email"
           v-model="email"
           type="email"
           required
-          placeholder="you@restaurant.com"
+          :placeholder="$t('auth.signup.emailPlaceholder')"
           autocomplete="email"
         />
       </div>
 
       <!-- Password -->
       <div class="field">
-        <label for="password">Password</label>
+        <label for="password">{{ $t('auth.signup.passwordLabel') }}</label>
         <div class="input-wrapper">
           <input
             id="password"
             v-model="password"
             :type="showPassword ? 'text' : 'password'"
             required
-            placeholder="Min. 6 characters"
+            :placeholder="$t('auth.signup.passwordPlaceholder')"
             autocomplete="new-password"
             :class="{ 'input--error': password && password.length < 6 }"
           />
@@ -110,7 +110,7 @@
             type="button"
             class="toggle-password"
             @click="showPassword = !showPassword"
-            :aria-label="showPassword ? 'Hide password' : 'Show password'"
+            :aria-label="showPassword ? $t('auth.signup.hidePassword') : $t('auth.signup.showPassword')"
           >
             <svg
               v-if="!showPassword"
@@ -157,7 +157,7 @@
 
       <!-- Submit -->
       <button type="submit" class="submit-btn" :disabled="loading">
-        <span v-if="!loading">Start free trial</span>
+        <span v-if="!loading">{{ $t('auth.signup.submit') }}</span>
         <span v-else class="loading-state">
           <svg
             class="spinner"
@@ -172,17 +172,17 @@
               d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"
             />
           </svg>
-          Creating account…
+          {{ $t('auth.signup.submitting') }}
         </span>
       </button>
     </form>
 
     <!-- Divider -->
-    <div class="divider"><span>or</span></div>
+    <div class="divider"><span>{{ $t('auth.signup.divider') }}</span></div>
 
     <p class="signin-cta">
-      Already have an account?
-      <RouterLink to="/login">Sign in</RouterLink>
+      {{ $t('auth.signup.loginCta') }}
+      <RouterLink to="/login">{{ $t('auth.signup.loginLink') }}</RouterLink>
     </p>
   </AuthLayout>
 </template>
@@ -191,9 +191,11 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { supabase } from '@/lib/supabase'
+import { useI18n } from 'vue-i18n'
 import AuthLayout from '@/layouts/AuthLayout.vue'
 
 const router = useRouter()
+const { t } = useI18n()
 
 const fullName = ref('')
 const restaurantName = ref('')
@@ -236,10 +238,10 @@ const strengthPercent = computed(() => {
 
 const strengthLabel = computed(() => {
   const s = strengthPercent.value
-  if (s < 30) return 'Too short'
-  if (s < 55) return 'Weak'
-  if (s < 80) return 'Good'
-  return 'Strong'
+  if (s < 30) return t('auth.signup.strengthTooShort')
+  if (s < 55) return t('auth.signup.strengthWeak')
+  if (s < 80) return t('auth.signup.strengthGood')
+  return t('auth.signup.strengthStrong')
 })
 
 const strengthClass = computed(() => {
@@ -254,7 +256,7 @@ const strengthClass = computed(() => {
 const withTimeout = (promise, ms = 15000) =>
   Promise.race([
     promise,
-    new Promise((_, reject) => setTimeout(() => reject(new Error('Request timed out')), ms)),
+    new Promise((_, reject) => setTimeout(() => reject(new Error(t('auth.signup.timeoutErrorMessage'))), ms)),
   ])
 
 // ── Submit ───────────────────────────────────────────────────────────────────
@@ -263,11 +265,11 @@ async function handleSignup() {
   successMessage.value = ''
 
   if (!fullName.value || !restaurantName.value || !email.value || !password.value) {
-    error.value = 'Please fill in all fields.'
+    error.value = t('auth.signup.errorEmptyFields')
     return
   }
   if (password.value.length < 6) {
-    error.value = 'Password must be at least 6 characters.'
+    error.value = t('auth.signup.errorPasswordLength')
     return
   }
 
@@ -282,11 +284,10 @@ async function handleSignup() {
       error.value = authError.message
       return
     }
-    if (!authData.user) throw new Error('No user returned from Supabase.')
+    if (!authData.user) throw new Error(t('auth.signup.errorNoUser'))
 
     if (!authData.session) {
-      successMessage.value =
-        'Account created! Please check your email to confirm your address, then sign in.'
+      successMessage.value = t('auth.signup.successMessage')
       return
     }
 
@@ -303,8 +304,8 @@ async function handleSignup() {
     if (rpcError) {
       error.value =
         rpcError.message?.includes('duplicate') || rpcError.code === '23505'
-          ? 'That restaurant name is already taken. Please try a slightly different one.'
-          : `Setup error: ${rpcError.message}`
+          ? t('auth.signup.errorDuplicateRestaurant')
+          : t('auth.signup.errorSetupPrefix') + rpcError.message
       return
     }
 
@@ -312,9 +313,9 @@ async function handleSignup() {
     router.push('/onboarding')
   } catch (err) {
     error.value =
-      err.message === 'Request timed out'
-        ? 'The request timed out. Please check your connection and try again.'
-        : err.message || 'An unexpected error occurred.'
+      err.message === t('auth.signup.timeoutErrorMessage')
+        ? t('auth.signup.errorTimeout')
+        : err.message || t('auth.signup.errorUnexpected')
   } finally {
     loading.value = false
   }

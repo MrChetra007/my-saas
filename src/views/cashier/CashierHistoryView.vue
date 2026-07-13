@@ -3,15 +3,15 @@
     <!-- Header -->
     <div class="page-header">
       <div class="header-content">
-        <h1 class="page-title">Order History</h1>
-        <p class="page-subtitle">Today's completed and paid orders</p>
+        <h1 class="page-title">{{ $t('cashier.history.title') }}</h1>
+        <p class="page-subtitle">{{ $t('cashier.history.subtitle') }}</p>
       </div>
       <div class="revenue-card">
         <div class="revenue-icon-wrap">
           <TrendingUp class="revenue-icon" />
         </div>
         <div class="revenue-info">
-          <span class="revenue-label">Today's Revenue</span>
+          <span class="revenue-label">{{ $t('cashier.history.todayRevenue') }}</span>
           <span class="revenue-value">{{ formatCurrency(todayRevenue) }}</span>
         </div>
       </div>
@@ -22,8 +22,8 @@
       <div class="empty-icon-wrap">
         <Receipt class="empty-icon" />
       </div>
-      <h3 class="empty-title">No completed orders</h3>
-      <p class="empty-subtitle">Paid orders will appear here throughout the day</p>
+      <h3 class="empty-title">{{ $t('cashier.history.emptyTitle') }}</h3>
+      <p class="empty-subtitle">{{ $t('cashier.history.emptySubtitle') }}</p>
     </div>
 
     <!-- Orders List -->
@@ -36,7 +36,7 @@
               <Armchair class="table-icon" />
             </div>
             <div class="table-details">
-              <span class="table-name">{{ order.tables?.name ?? 'Unknown Table' }}</span>
+              <span class="table-name">{{ order.tables?.name ?? $t('cashier.history.unknownTable') }}</span>
               <span class="order-id">#{{ order.id.slice(-6).toUpperCase() }}</span>
             </div>
           </div>
@@ -47,7 +47,7 @@
             </span>
             <span class="status-badge paid">
               <CheckCircle2 class="status-icon" />
-              Paid
+              {{ $t('cashier.history.paid') }}
             </span>
           </div>
         </div>
@@ -58,7 +58,7 @@
             <div class="item-main">
               <span class="item-qty">{{ item.quantity }}×</span>
               <div class="item-details">
-                <span class="item-name">{{ item.menu_items?.name ?? 'Unknown Item' }}</span>
+                <span class="item-name">{{ item.menu_items?.name ?? $t('cashier.history.unknownItem') }}</span>
                 <span v-if="item.notes" class="item-note">
                   <MessageSquare class="note-icon" />
                   {{ item.notes }}
@@ -74,15 +74,15 @@
           <div class="order-stats">
             <span class="stat-item">
               <Hash class="stat-icon" />
-              {{ order.order_items.length }} items
+              {{ order.order_items.length }} {{ $t('cashier.history.items') }}
             </span>
             <span class="stat-item">
               <User class="stat-icon" />
-              Cashier
+              {{ $t('cashier.history.cashier') }}
             </span>
           </div>
           <div class="order-total">
-            <span class="total-label">Total</span>
+            <span class="total-label">{{ $t('cashier.history.total') }}</span>
             <span class="total-value">{{ formatCurrency(orderTotal(order)) }}</span>
           </div>
         </div>
@@ -93,17 +93,17 @@
     <div v-if="orders.length > 0" class="summary-section">
       <div class="summary-card">
         <div class="summary-item">
-          <span class="summary-label">Orders</span>
+          <span class="summary-label">{{ $t('cashier.history.summaryOrders') }}</span>
           <span class="summary-value">{{ orders.length }}</span>
         </div>
         <div class="summary-divider"></div>
         <div class="summary-item">
-          <span class="summary-label">Items Sold</span>
+          <span class="summary-label">{{ $t('cashier.history.summaryItemsSold') }}</span>
           <span class="summary-value">{{ totalItems }}</span>
         </div>
         <div class="summary-divider"></div>
         <div class="summary-item highlight">
-          <span class="summary-label">Total Revenue</span>
+          <span class="summary-label">{{ $t('cashier.history.summaryTotalRevenue') }}</span>
           <span class="summary-value">{{ formatCurrency(todayRevenue) }}</span>
         </div>
       </div>
@@ -113,6 +113,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
 import {
@@ -127,6 +128,7 @@ import {
 } from 'lucide-vue-next'
 
 const authStore = useAuthStore()
+const { t } = useI18n()
 const orders = ref([])
 
 // Computed

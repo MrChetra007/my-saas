@@ -10,8 +10,8 @@
                 <Zap :size="18" />
               </div>
               <div>
-                <h2 class="picker-title">Choose Your Plan</h2>
-                <p class="picker-subtitle">Secure checkout · Cancel anytime</p>
+                <h2 class="picker-title">{{ $t('settings.choosePlan') }}</h2>
+                <p class="picker-subtitle">{{ $t('plans.secureCheckout') }}</p>
               </div>
             </div>
             <button class="picker-close" @click="close">
@@ -29,28 +29,28 @@
                 @click="selectedPlan = 'starter'"
               >
                 <div class="option-top">
-                  <div class="option-name">Starter</div>
+                  <div class="option-name">{{ $t('plans.starter') }}</div>
                   <div class="option-price">
                     <span class="price-dollar">$</span>49<span class="price-mo">/mo</span>
                   </div>
                 </div>
 
-                <p class="option-tagline">Perfect for small restaurants getting started.</p>
+                <p class="option-tagline">{{ $t('trialWall.starterTagline') }}</p>
 
                 <ul class="option-features">
-                  <li><Check :size="14" /> Up to 15 tables</li>
-                  <li><Check :size="14" /> Up to 3 staff accounts</li>
-                  <li><Check :size="14" /> Unlimited orders</li>
-                  <li><Check :size="14" /> QR code ordering</li>
-                  <li><Check :size="14" /> Kitchen, cashier & waiter views</li>
-                  <li><Check :size="14" /> Menu management</li>
+                  <li><Check :size="14" /> {{ $t('trialWall.feature.upTo15Tables') }}</li>
+                  <li><Check :size="14" /> {{ $t('trialWall.feature.upTo3Staff') }}</li>
+                  <li><Check :size="14" /> {{ $t('trialWall.feature.unlimitedOrders') }}</li>
+                  <li><Check :size="14" /> {{ $t('trialWall.feature.qrOrdering') }}</li>
+                  <li><Check :size="14" /> {{ $t('trialWall.feature.allStaffViews') }}</li>
+                  <li><Check :size="14" /> {{ $t('trialWall.feature.menuManagement') }}</li>
                 </ul>
 
                 <div class="option-select-indicator">
                   <div class="radio-ring" :class="{ checked: selectedPlan === 'starter' }">
                     <div v-if="selectedPlan === 'starter'" class="radio-dot" />
                   </div>
-                  <span>{{ selectedPlan === 'starter' ? 'Selected' : 'Select Starter' }}</span>
+                  <span>{{ selectedPlan === 'starter' ? $t('plans.selected') : $t('plans.selectStarter') }}</span>
                 </div>
               </div>
 
@@ -60,35 +60,35 @@
                 :class="{ selected: selectedPlan === 'pro' }"
                 @click="selectedPlan = 'pro'"
               >
-                <div class="pro-badge"><Star :size="12" /> Recommended</div>
+                <div class="pro-badge"><Star :size="12" /> {{ $t('trialWall.proBadge') }}</div>
 
                 <div class="option-top">
-                  <div class="option-name option-name-pro">Pro</div>
+                  <div class="option-name option-name-pro">{{ $t('plans.pro') }}</div>
                   <div class="option-price option-price-pro">
                     <span class="price-dollar">$</span>99<span class="price-mo">/mo</span>
                   </div>
                 </div>
 
                 <p class="option-tagline">
-                  For restaurants running their full operation digitally.
+                  {{ $t('trialWall.proTagline') }}
                 </p>
 
                 <ul class="option-features">
-                  <li><Check :size="14" /> Unlimited tables</li>
-                  <li><Check :size="14" /> Up to 10 staff accounts</li>
-                  <li><Check :size="14" /> Unlimited orders</li>
-                  <li><Check :size="14" /> QR code ordering</li>
-                  <li><Check :size="14" /> All staff role views</li>
-                  <li><Check :size="14" /> Menu management</li>
-                  <li><Check :size="14" /> Analytics & charts</li>
-                  <li><Check :size="14" /> Promotions & discounts</li>
+                  <li><Check :size="14" /> {{ $t('trialWall.feature.unlimitedTables') }}</li>
+                  <li><Check :size="14" /> {{ $t('trialWall.feature.upTo10Staff') }}</li>
+                  <li><Check :size="14" /> {{ $t('trialWall.feature.unlimitedOrders') }}</li>
+                  <li><Check :size="14" /> {{ $t('trialWall.feature.qrOrdering') }}</li>
+                  <li><Check :size="14" /> {{ $t('trialWall.feature.allStaffViews') }}</li>
+                  <li><Check :size="14" /> {{ $t('trialWall.feature.menuManagement') }}</li>
+                  <li><Check :size="14" /> {{ $t('trialWall.feature.analytics') }}</li>
+                  <li><Check :size="14" /> {{ $t('trialWall.feature.promotions') }}</li>
                 </ul>
 
                 <div class="option-select-indicator">
                   <div class="radio-ring" :class="{ checked: selectedPlan === 'pro' }">
                     <div v-if="selectedPlan === 'pro'" class="radio-dot" />
                   </div>
-                  <span>{{ selectedPlan === 'pro' ? 'Selected' : 'Select Pro' }}</span>
+                  <span>{{ selectedPlan === 'pro' ? $t('plans.selected') : $t('plans.selectPro') }}</span>
                 </div>
               </div>
             </div>
@@ -102,12 +102,12 @@
             <button class="btn-checkout" @click="goToCheckout" :disabled="!selectedPlan || loading">
               <Loader2 v-if="loading" :size="18" class="spin" />
               <template v-else>
-                Continue to Checkout
+                {{ $t('plans.continueToCheckout') }}
                 <ArrowRight :size="18" />
               </template>
             </button>
 
-            <p class="secure-note"><Lock :size="14" /> Secured by Lemon Squeezy</p>
+            <p class="secure-note"><Lock :size="14" /> {{ $t('trialWall.secureNote') }}</p>
           </div>
         </div>
       </div>
@@ -117,6 +117,8 @@
 
 <script setup>
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
+const { t } = useI18n()
 import { supabase } from '@/lib/supabase'
 import { Zap, X, Star, Check, ArrowRight, Lock, Loader2, AlertCircle } from 'lucide-vue-next'
 
@@ -158,7 +160,7 @@ async function goToCheckout() {
     }
   } catch (err) {
     console.error('[PlanPicker] Checkout error:', err)
-    billingError.value = 'Could not start checkout. Please try again.'
+    billingError.value = t('trialWall.checkoutError')
     emit('checkout-error', billingError.value)
     loading.value = false
   }

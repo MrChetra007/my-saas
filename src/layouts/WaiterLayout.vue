@@ -4,7 +4,7 @@
     <aside class="sidebar">
       <div class="sidebar-brand">
         <div class="brand-icon-wrap">
-          <img v-if="restaurantLogo" :src="restaurantLogo" alt="logo" class="brand-logo-img" />
+          <img v-if="restaurantLogo" :src="restaurantLogo" :alt="$t('layouts.logo')" class="brand-logo-img" />
           <Utensils v-else class="brand-icon" />
         </div>
         <span class="brand-name">{{ restaurantName }}</span>
@@ -61,12 +61,12 @@
       <header class="mobile-header">
         <div class="mobile-brand">
           <div class="brand-icon-wrap sm">
-            <img v-if="restaurantLogo" :src="restaurantLogo" alt="logo" class="brand-logo-img" />
+            <img v-if="restaurantLogo" :src="restaurantLogo" :alt="$t('layouts.logo')" class="brand-logo-img" />
             <Utensils v-else class="brand-icon" />
           </div>
           <span class="brand-text">{{ restaurantName }}</span>
         </div>
-        <button class="btn-icon" @click="signOut" title="Sign out">
+        <button class="btn-icon" @click="signOut" :title="$t('layouts.signOut')">
           <LogOut class="icon" />
         </button>
       </header>

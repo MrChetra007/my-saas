@@ -3,7 +3,7 @@
     <!-- Header + Range Selector -->
     <div class="analytics-header">
       <div class="header-title-group">
-        <h1 class="page-title">Analytics</h1>
+        <h1 class="page-title">{{ $t('analytics.title') }}</h1>
         <p class="page-subtitle">{{ rangeLabel }}</p>
       </div>
       <div class="range-selector">
@@ -21,7 +21,7 @@
     <!-- Loading -->
     <div v-if="loading" class="loading-state">
       <div class="spinner"></div>
-      <p>Loading analytics…</p>
+      <p>{{ $t('analytics.loading') }}</p>
     </div>
 
     <template v-else>
@@ -47,10 +47,10 @@
         <!-- Revenue over time -->
         <div class="chart-card chart-large">
           <div class="chart-header">
-            <h2 class="chart-title">Revenue Over Time</h2>
+            <h2 class="chart-title">{{ $t('analytics.revenueOverTime') }}</h2>
             <div class="chart-legend">
               <span class="legend-dot" style="background: #c8733a"></span>
-              <span class="legend-label">Revenue</span>
+              <span class="legend-label">{{ $t('analytics.revenue') }}</span>
             </div>
           </div>
           <div class="chart-body">
@@ -60,7 +60,7 @@
 
         <!-- Orders by status -->
         <div class="chart-card chart-small">
-          <h2 class="chart-title">Orders by Status</h2>
+          <h2 class="chart-title">{{ $t('analytics.ordersByStatus') }}</h2>
           <div class="chart-body compact">
             <canvas ref="statusChartRef"></canvas>
           </div>
@@ -88,10 +88,10 @@
       <!-- Row 2: Daily order count -->
       <div class="chart-card">
         <div class="chart-header">
-          <h2 class="chart-title">Daily Order Volume</h2>
+          <h2 class="chart-title">{{ $t('analytics.dailyOrderVolume') }}</h2>
           <div class="chart-legend">
             <span class="legend-dot" style="background: #c8733a"></span>
-            <span class="legend-label">Orders</span>
+            <span class="legend-label">{{ $t('analytics.orders') }}</span>
           </div>
         </div>
         <div class="chart-body tall">
@@ -103,10 +103,10 @@
       <div class="charts-row">
         <!-- Top selling items -->
         <div class="chart-card">
-          <h2 class="chart-title">Top Selling Items</h2>
+          <h2 class="chart-title">{{ $t('analytics.topSellingItems') }}</h2>
           <div v-if="topItems.length === 0" class="empty-state">
             <BarChart3 :size="40" class="empty-icon" />
-            <p>No sales data yet</p>
+            <p>{{ $t('analytics.noSalesData') }}</p>
           </div>
           <div v-else class="top-items-list">
             <div v-for="(item, i) in topItems" :key="item.name" class="top-item">
@@ -114,7 +114,7 @@
               <div class="item-info">
                 <div class="item-header">
                   <span class="item-name">{{ item.name }}</span>
-                  <span class="item-qty">{{ item.qty }} sold</span>
+                  <span class="item-qty">{{ item.qty }} {{ $t('analytics.itemSold') }}</span>
                 </div>
                 <div class="item-progress">
                   <div
@@ -131,19 +131,19 @@
         <!-- Peak hours -->
         <div class="chart-card">
           <div class="chart-header">
-            <h2 class="chart-title">Peak Hours</h2>
-            <span class="peak-badge">Live</span>
+            <h2 class="chart-title">{{ $t('analytics.peakHours') }}</h2>
+            <span class="peak-badge">{{ $t('analytics.live') }}</span>
           </div>
           <div class="chart-body">
             <canvas ref="peakHoursChartRef"></canvas>
           </div>
           <div class="peak-summary">
             <div class="peak-stat">
-              <span class="peak-label">Busiest Time</span>
+              <span class="peak-label">{{ $t('analytics.busiestTime') }}</span>
               <span class="peak-value">{{ busiestHour }}</span>
             </div>
             <div class="peak-stat">
-              <span class="peak-label">Avg Orders/Hour</span>
+              <span class="peak-label">{{ $t('analytics.avgOrdersPerHour') }}</span>
               <span class="peak-value">{{ avgOrdersPerHour }}</span>
             </div>
           </div>
@@ -157,6 +157,7 @@
 import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
+import { useI18n } from 'vue-i18n'
 import { DollarSign, ClipboardList, CheckCircle, TrendingUp, BarChart3 } from 'lucide-vue-next'
 import {
   Chart,
@@ -190,12 +191,13 @@ Chart.register(
 )
 
 const authStore = useAuthStore()
+const { t } = useI18n()
 
 // ── Range ────────────────────────────────────────────────────────────────────
 const rangeOptions = [
-  { label: '7 days', value: 7 },
-  { label: '30 days', value: 30 },
-  { label: '90 days', value: 90 },
+  { label: t('analytics.range.7days'), value: 7 },
+  { label: t('analytics.range.30days'), value: 30 },
+  { label: t('analytics.range.90days'), value: 90 },
 ]
 const range = ref(7)
 
@@ -274,7 +276,7 @@ const kpiCards = computed(() => {
 
   return [
     {
-      label: 'Total Revenue',
+      label: t('analytics.kpi.totalRevenue'),
       value: formatCurrency(totalRevenue.value),
       icon: DollarSign,
       iconBg: 'rgba(200, 115, 58, 0.15)',
@@ -283,23 +285,23 @@ const kpiCards = computed(() => {
       trendDir: trend >= 0 ? 'up' : 'down',
     },
     {
-      label: 'Total Orders',
+      label: t('analytics.kpi.totalOrders'),
       value: orders.value.length.toLocaleString(),
       icon: ClipboardList,
       iconBg: 'rgba(59, 130, 246, 0.15)',
       iconColor: '#3b82f6',
-      sub: `${paidOrders.value.length} completed`,
+      sub: `${paidOrders.value.length} ${t('analytics.kpi.completed')}`,
     },
     {
-      label: 'Paid Orders',
+      label: t('analytics.kpi.paidOrders'),
       value: paidOrders.value.length.toLocaleString(),
       icon: CheckCircle,
       iconBg: 'rgba(74, 222, 128, 0.15)',
       iconColor: '#4ade80',
-      sub: `${((paidOrders.value.length / (orders.value.length || 1)) * 100).toFixed(0)}% completion rate`,
+      sub: `${((paidOrders.value.length / (orders.value.length || 1)) * 100).toFixed(0)}% ${t('analytics.kpi.completionRate')}`,
     },
     {
-      label: 'Avg Order Value',
+      label: t('analytics.kpi.avgOrderValue'),
       value: formatCurrency(avgOrder),
       icon: TrendingUp,
       iconBg: 'rgba(139, 92, 246, 0.15)',
@@ -336,7 +338,7 @@ const topItems = computed(() => {
   const counts = {}
   const revenue = {}
   orderItems.value.forEach((i) => {
-    const name = i.menu_items?.name || 'Unknown'
+    const name = i.menu_items?.name || t('analytics.unknownItem')
     counts[name] = (counts[name] || 0) + i.quantity
     revenue[name] = (revenue[name] || 0) + i.unit_price * i.quantity
   })
@@ -351,7 +353,7 @@ const busiestHour = computed(() => {
   const maxIdx = hours.indexOf(Math.max(...hours))
   if (maxIdx === -1) return '--'
   const h = maxIdx % 12 || 12
-  return `${h}:00 ${maxIdx < 12 ? 'AM' : 'PM'}`
+  return `${h}:00 ${maxIdx < 12 ? t('analytics.time.am') : t('analytics.time.pm')}`
 })
 
 const avgOrdersPerHour = computed(() => {
@@ -481,7 +483,7 @@ function renderCharts() {
         labels,
         datasets: [
           {
-            label: 'Revenue',
+            label: t('analytics.revenue'),
             data: revenueByDay(),
             borderColor: '#c8733a',
             backgroundColor: (ctx) => {
@@ -539,7 +541,7 @@ function renderCharts() {
             padding: 12,
             cornerRadius: 8,
             callbacks: {
-              label: (ctx) => ` ${ctx.label}: ${ctx.parsed} orders`,
+              label: (ctx) => ` ${ctx.label}: ${ctx.parsed} ${t('analytics.tooltipOrders')}`,
             },
           },
         },
@@ -556,7 +558,7 @@ function renderCharts() {
         labels,
         datasets: [
           {
-            label: 'Orders',
+            label: t('analytics.orders'),
             data: orderCountByDay(),
             backgroundColor: '#c8733a',
             borderRadius: 6,
@@ -596,7 +598,7 @@ function renderCharts() {
         labels: hourLabels,
         datasets: [
           {
-            label: 'Orders',
+            label: t('analytics.orders'),
             data,
             backgroundColor: data.map((v) =>
               v === max && max > 0 ? '#c8733a' : 'rgba(200, 115, 58, 0.3)',
@@ -623,9 +625,9 @@ function renderCharts() {
               title: (ctx) => {
                 const h = ctx[0].dataIndex
                 const displayH = h % 12 || 12
-                return `${displayH}:00 ${h < 12 ? 'AM' : 'PM'}`
+                return `${displayH}:00 ${h < 12 ? t('analytics.time.am') : t('analytics.time.pm')}`
               },
-              label: (ctx) => ` ${ctx.parsed.y} orders`,
+              label: (ctx) => ` ${ctx.parsed.y} ${t('analytics.tooltipOrders')}`,
             },
           },
         },

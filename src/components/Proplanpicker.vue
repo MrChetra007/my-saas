@@ -12,10 +12,11 @@
             <div class="header-icon">
               <Crown :size="24" />
             </div>
-            <h2 class="picker-title">Upgrade to Pro</h2>
+            <h2 class="picker-title">{{ $t('settings.upgradeToPro') }}</h2>
             <p class="picker-subtitle">
-              <strong>{{ featureName }}</strong> is a Pro feature. Unlock it and everything else
-              below.
+              <i18n-t keypath="plans.proFeatureDesc" tag="span">
+                <template #feature><strong>{{ featureName }}</strong></template>
+              </i18n-t>
             </p>
           </div>
 
@@ -38,7 +39,7 @@
               <div class="price-amount">
                 <span class="price-dollar">$</span>99<span class="price-mo">/mo</span>
               </div>
-              <div class="price-note">Cancel anytime</div>
+              <div class="price-note">{{ $t('plans.cancelAnytime') }}</div>
             </div>
 
             <!-- Error -->
@@ -47,11 +48,11 @@
             <!-- Actions -->
             <button class="btn-upgrade" @click="goToCheckout" :disabled="loading">
               <Loader2 v-if="loading" :size="16" class="spin" />
-              <template v-else> <Zap :size="16" /> Upgrade to Pro </template>
+              <template v-else> <Zap :size="16" /> {{ $t('settings.upgradeToPro') }} </template>
             </button>
-            <button class="btn-cancel" @click="close">Maybe later</button>
+            <button class="btn-cancel" @click="close">{{ $t('plans.maybeLater') }}</button>
 
-            <p class="secure-note"><Lock :size="12" /> Secured by Lemon Squeezy</p>
+            <p class="secure-note"><Lock :size="12" /> {{ $t('trialWall.secureNote') }}</p>
           </div>
         </div>
       </div>
@@ -61,6 +62,8 @@
 
 <script setup>
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
+const { t } = useI18n()
 import { supabase } from '@/lib/supabase'
 import {
   X,
@@ -80,7 +83,7 @@ import {
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
-  featureName: { type: String, default: 'This feature' },
+  featureName: { type: String, default: '' },
 })
 
 const emit = defineEmits(['update:modelValue', 'checkout-error'])
@@ -91,28 +94,28 @@ const error = ref('')
 const proFeatures = [
   {
     icon: Infinity,
-    label: 'Unlimited Tables',
-    desc: 'No cap on tables or QR codes.',
+    label: t('trialWall.feature.unlimitedTables'),
+    desc: t('plans.featureUnlimitedTablesDesc'),
   },
   {
     icon: Users,
-    label: 'Up to 10 Staff Accounts',
-    desc: 'Give your whole team access.',
+    label: t('trialWall.feature.upTo10Staff'),
+    desc: t('plans.featureUpTo10StaffDesc'),
   },
   {
     icon: BarChart2,
-    label: 'All Staff Role Views',
-    desc: 'Kitchen, cashier, and manager views.',
+    label: t('trialWall.feature.allStaffViews'),
+    desc: t('plans.featureAllStaffViewsDesc'),
   },
   {
     icon: Activity,
-    label: 'Analytics & Charts',
-    desc: 'Revenue trends, top items, peak hours.',
+    label: t('trialWall.feature.analytics'),
+    desc: t('plans.featureAnalyticsDesc'),
   },
   {
     icon: Tag,
-    label: 'Promotions & Discounts',
-    desc: 'Create deals and coupon codes.',
+    label: t('trialWall.feature.promotions'),
+    desc: t('plans.featurePromotionsDesc'),
   },
 ]
 
@@ -135,7 +138,7 @@ async function goToCheckout() {
     }
   } catch (e) {
     console.error('[ProPlanPicker] Checkout error:', e)
-    error.value = 'Could not start checkout. Please try again.'
+    error.value = t('trialWall.checkoutError')
     emit('checkout-error', error.value)
     loading.value = false
   }

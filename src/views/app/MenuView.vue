@@ -2,7 +2,7 @@
   <div class="menu-page">
     <!-- ── Header ──────────────────────────────────────── -->
     <div class="page-header">
-      <h1 class="page-title">Menu</h1>
+      <h1 class="page-title">{{ $t('menu.title') }}</h1>
       <button class="btn-add-item" @click="openAddItem(activeCategory)">
         <svg
           width="14"
@@ -15,7 +15,7 @@
           <line x1="12" y1="5" x2="12" y2="19" />
           <line x1="5" y1="12" x2="19" y2="12" />
         </svg>
-        Add Item
+        {{ $t('menu.addItem') }}
       </button>
     </div>
 
@@ -28,7 +28,7 @@
     <div v-else class="menu-layout">
       <!-- ── Sidebar ───────────────────────────────────── -->
       <aside class="sidebar">
-        <p class="sidebar-label">CATEGORIES</p>
+        <p class="sidebar-label">{{ $t('menu.categories') }}</p>
 
         <div class="category-list">
           <div
@@ -41,7 +41,7 @@
             <span class="cat-name">{{ cat.name }}</span>
             <span class="cat-count">({{ cat.items?.length || 0 }})</span>
             <div class="cat-actions" @click.stop>
-              <button class="cat-action-btn" @click="openEditCategory(cat)" title="Edit">
+              <button class="cat-action-btn" @click="openEditCategory(cat)" :title="$t('menu.edit')">
                 <svg
                   width="11"
                   height="11"
@@ -57,7 +57,7 @@
               <button
                 class="cat-action-btn cat-action-btn--danger"
                 @click="confirmDeleteCategory(cat)"
-                title="Delete"
+                :title="$t('menu.delete')"
               >
                 <svg
                   width="11"
@@ -77,7 +77,7 @@
           </div>
         </div>
 
-        <button class="btn-add-category" @click="openAddCategory">+ Add Category</button>
+        <button class="btn-add-category" @click="openAddCategory">{{ $t('menu.addCategory') }}</button>
       </aside>
 
       <!-- ── Items area ─────────────────────────────────── -->
@@ -100,7 +100,7 @@
             v-model="searchQuery"
             type="text"
             class="search-input"
-            :placeholder="`Search ${activeCategory ? activeCategory.name.toLowerCase() : 'items'}…`"
+            :placeholder="$t('menu.searchPlaceholder')"
           />
           <button v-if="searchQuery" class="search-clear" @click="searchQuery = ''">
             <svg
@@ -119,15 +119,15 @@
 
         <!-- Empty category -->
         <div v-if="!activeCategory" class="empty-state">
-          <p>Select or create a category to get started</p>
+          <p>{{ $t('menu.selectCategory') }}</p>
         </div>
 
         <!-- Items grid -->
         <div v-else-if="filteredItems.length === 0" class="empty-state">
-          <p v-if="searchQuery">No items matching "{{ searchQuery }}"</p>
+          <p v-if="searchQuery">{{ $t('menu.noMatchingItems') }} "{{ searchQuery }}"</p>
           <p v-else>
-            No items yet —
-            <button class="link-btn" @click="openAddItem(activeCategory)">add the first one</button>
+            {{ $t('menu.noItems') }}
+            <button class="link-btn" @click="openAddItem(activeCategory)">{{ $t('menu.addFirstItem') }}</button>
           </p>
         </div>
 
@@ -161,7 +161,7 @@
                 </svg>
               </div>
               <div v-if="!item.is_available" class="item-image-overlay">
-                <span>Sold Out</span>
+                <span>{{ $t('menu.soldOut') }}</span>
               </div>
             </div>
 
@@ -170,7 +170,7 @@
               <div class="item-main">
                 <div class="item-name-row">
                   <span class="item-name">{{ item.name }}</span>
-                  <span v-if="!item.is_available" class="sold-out-badge">Sold Out</span>
+                  <span v-if="!item.is_available" class="sold-out-badge">{{ $t('menu.soldOut') }}</span>
                 </div>
                 <p class="item-desc" v-if="item.description">{{ item.description }}</p>
                 <span class="item-price"
@@ -186,7 +186,7 @@
                     'ctrl-btn--off': !item.is_available,
                   }"
                   @click="toggleItem(item)"
-                  :title="item.is_available ? 'Mark unavailable' : 'Mark available'"
+                  :title="item.is_available ? $t('menu.markUnavailable') : $t('menu.markAvailable')"
                 >
                   <svg
                     v-if="item.is_available"
@@ -215,7 +215,7 @@
                 <button
                   class="ctrl-btn ctrl-btn--edit"
                   @click="openEditItem(item, activeCategory)"
-                  title="Edit"
+                  :title="$t('menu.edit')"
                 >
                   <svg
                     width="13"
@@ -232,7 +232,7 @@
                 <button
                   class="ctrl-btn ctrl-btn--delete"
                   @click="confirmDeleteItem(item, activeCategory)"
-                  title="Delete"
+                  :title="$t('menu.delete')"
                 >
                   <svg
                     width="13"
@@ -263,7 +263,7 @@
         <div class="modal">
           <div class="modal-header">
             <h2 class="modal-title">
-              {{ categoryModal.editing ? 'Edit Category' : 'New Category' }}
+              {{ categoryModal.editing ? $t('menu.editCategory') : $t('menu.newCategory') }}
             </h2>
             <button class="modal-close" @click="categoryModal.open = false">
               <svg
@@ -282,22 +282,22 @@
           <div class="modal-error" v-if="categoryModal.error">{{ categoryModal.error }}</div>
           <div class="modal-body">
             <div class="field-group">
-              <label class="field-label">Category Name</label>
+              <label class="field-label">{{ $t('menu.categoryNameLabel') }}</label>
               <input
                 v-model="categoryModal.name"
                 type="text"
                 class="field-input"
-                placeholder="e.g. Starters, Mains, Drinks"
+                :placeholder="$t('menu.categoryNamePlaceholder')"
                 @keyup.enter="saveCategory"
                 autofocus
               />
             </div>
           </div>
           <div class="modal-footer">
-            <button class="btn-ghost" @click="categoryModal.open = false">Cancel</button>
+            <button class="btn-ghost" @click="categoryModal.open = false">{{ $t('common.cancel') }}</button>
             <button class="btn-primary" :disabled="categoryModal.saving" @click="saveCategory">
               {{
-                categoryModal.saving ? 'Saving…' : categoryModal.editing ? 'Save Changes' : 'Create'
+                categoryModal.saving ? $t('common.saving') : categoryModal.editing ? $t('common.saveChanges') : $t('menu.createCategory')
               }}
             </button>
           </div>
@@ -310,7 +310,7 @@
       <div v-if="itemModal.open" class="modal-backdrop" @click.self="itemModal.open = false">
         <div class="modal modal-lg">
           <div class="modal-header">
-            <h2 class="modal-title">{{ itemModal.editing ? 'Edit Item' : 'New Item' }}</h2>
+            <h2 class="modal-title">{{ itemModal.editing ? $t('menu.editItem') : $t('menu.newItem') }}</h2>
             <button class="modal-close" @click="itemModal.open = false">
               <svg
                 width="15"
@@ -329,7 +329,7 @@
           <div class="modal-body">
             <!-- Image upload -->
             <div class="field-group">
-              <label class="field-label">Photo <span class="optional">(optional)</span></label>
+              <label class="field-label">{{ $t('menu.photo') }} <span class="optional">{{ $t('common.optional') }}</span></label>
               <div
                 class="image-upload-area"
                 @click="triggerImageUpload"
@@ -353,8 +353,8 @@
                     <circle cx="8.5" cy="8.5" r="1.5" />
                     <polyline points="21 15 16 10 5 21" />
                   </svg>
-                  <span>Click to upload</span>
-                  <span class="upload-hint">PNG or JPG · max 2MB</span>
+                  <span>{{ $t('menu.clickToUpload') }}</span>
+                  <span class="upload-hint">{{ $t('menu.uploadHint') }}</span>
                 </div>
                 <button
                   v-if="itemModal.imagePreview"
@@ -384,30 +384,30 @@
             </div>
 
             <div class="field-group">
-              <label class="field-label">Item Name</label>
+              <label class="field-label">{{ $t('menu.itemNameLabel') }}</label>
               <input
                 v-model="itemModal.name"
                 type="text"
                 class="field-input"
-                placeholder="e.g. Margherita Pizza"
+                :placeholder="$t('menu.itemNamePlaceholder')"
               />
             </div>
 
             <div class="field-group">
               <label class="field-label"
-                >Description <span class="optional">(optional)</span></label
+                >{{ $t('menu.description') }} <span class="optional">{{ $t('common.optional') }}</span></label
               >
               <textarea
                 v-model="itemModal.description"
                 class="field-input field-textarea"
-                placeholder="Brief description of the dish…"
+                :placeholder="$t('menu.descriptionPlaceholder')"
                 rows="2"
               />
             </div>
 
             <div class="field-row">
               <div class="field-group">
-                <label class="field-label">Price</label>
+                <label class="field-label">{{ $t('menu.priceLabel') }}</label>
                 <div class="price-wrap">
                   <span class="currency-sym">{{ currencySymbol }}</span>
                   <input
@@ -416,12 +416,12 @@
                     step="0.01"
                     min="0"
                     class="field-input price-input"
-                    placeholder="0.00"
+                    :placeholder="$t('menu.pricePlaceholder')"
                   />
                 </div>
               </div>
               <div class="field-group">
-                <label class="field-label">Category</label>
+                <label class="field-label">{{ $t('menu.categoryLabel') }}</label>
                 <select v-model="itemModal.categoryId" class="field-input">
                   <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.name }}</option>
                 </select>
@@ -429,7 +429,7 @@
             </div>
 
             <div class="field-group">
-              <label class="field-label">Availability</label>
+              <label class="field-label">{{ $t('menu.availability') }}</label>
               <div class="availability-row">
                 <button
                   class="avail-big"
@@ -446,7 +446,7 @@
                   >
                     <polyline points="20 6 9 17 4 12" />
                   </svg>
-                  Available
+                  {{ $t('menu.available') }}
                 </button>
                 <button
                   class="avail-big"
@@ -464,15 +464,15 @@
                     <line x1="18" y1="6" x2="6" y2="18" />
                     <line x1="6" y1="6" x2="18" y2="18" />
                   </svg>
-                  Sold Out
+                  {{ $t('menu.soldOutToggle') }}
                 </button>
               </div>
             </div>
           </div>
           <div class="modal-footer">
-            <button class="btn-ghost" @click="itemModal.open = false">Cancel</button>
+            <button class="btn-ghost" @click="itemModal.open = false">{{ $t('common.cancel') }}</button>
             <button class="btn-primary" :disabled="itemModal.saving" @click="saveItem">
-              {{ itemModal.saving ? 'Saving…' : itemModal.editing ? 'Save Changes' : 'Add Item' }}
+              {{ itemModal.saving ? $t('common.saving') : itemModal.editing ? $t('common.saveChanges') : $t('menu.addItem') }}
             </button>
           </div>
         </div>
@@ -485,7 +485,7 @@
         <div class="modal modal-sm">
           <div class="modal-header">
             <h2 class="modal-title">
-              Delete {{ deleteModal.type === 'category' ? 'Category' : 'Item' }}?
+              {{ deleteModal.type === 'category' ? $t('menu.deleteCategoryTitle') : $t('menu.deleteItemTitle') }}
             </h2>
             <button class="modal-close" @click="deleteModal.open = false">
               <svg
@@ -504,19 +504,17 @@
           <div class="modal-body">
             <p class="delete-warning">
               <span v-if="deleteModal.type === 'category'">
-                This will permanently delete <strong>{{ deleteModal.target?.name }}</strong> and all
-                its items.
+                {{ $t('menu.deleteWarning') }} <strong>{{ deleteModal.target?.name }}</strong> {{ $t('menu.deleteCategoryWarning') }}
               </span>
               <span v-else>
-                This will permanently delete <strong>{{ deleteModal.target?.name }}</strong
-                >.
+                {{ $t('menu.deleteWarning') }} <strong>{{ deleteModal.target?.name }}</strong>.
               </span>
             </p>
           </div>
           <div class="modal-footer">
-            <button class="btn-ghost" @click="deleteModal.open = false">Cancel</button>
+            <button class="btn-ghost" @click="deleteModal.open = false">{{ $t('common.cancel') }}</button>
             <button class="btn-danger" :disabled="deleteModal.saving" @click="confirmDelete">
-              {{ deleteModal.saving ? 'Deleting…' : 'Yes, Delete' }}
+              {{ deleteModal.saving ? $t('menu.deleting') : $t('menu.confirmDelete') }}
             </button>
           </div>
         </div>
@@ -529,8 +527,10 @@
 import { ref, computed, onMounted } from 'vue'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
+import { useI18n } from 'vue-i18n'
 
 const authStore = useAuthStore()
+const { t } = useI18n()
 const loading = ref(true)
 const categories = ref([])
 const activeCategory = ref(null)
@@ -654,7 +654,7 @@ function openEditCategory(cat) {
 async function saveCategory() {
   const m = categoryModal.value
   if (!m.name.trim()) {
-    m.error = 'Please enter a category name.'
+    m.error = t('menu.categoryNameRequired')
     return
   }
   m.saving = true
@@ -725,7 +725,7 @@ function handleImageChange(e) {
   const file = e.target.files[0]
   if (!file) return
   if (file.size > 2 * 1024 * 1024) {
-    itemModal.value.error = 'Image must be under 2MB.'
+    itemModal.value.error = t('menu.imageTooLarge')
     return
   }
   itemModal.value.imageFile = file
@@ -740,7 +740,7 @@ function removeImage() {
 async function saveItem() {
   const m = itemModal.value
   if (!m.name.trim()) {
-    m.error = 'Please enter an item name.'
+    m.error = t('menu.itemNameRequired')
     return
   }
   m.saving = true

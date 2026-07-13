@@ -3,8 +3,8 @@
     <!-- ── Header ──────────────────────────────────────── -->
     <div class="dash-header">
       <div>
-        <h2 class="dash-title">Good {{ timeOfDay }}, {{ firstName }} 👋</h2>
-        <p class="dash-subtitle">Here's what's happening across all restaurants today.</p>
+        <h2 class="dash-title">{{ $t('superAdmin.dashboard.greeting', { timeOfDay: timeOfDay, firstName: firstName }) }}</h2>
+        <p class="dash-subtitle">{{ $t('superAdmin.dashboard.subtitle') }}</p>
       </div>
       <div class="dash-date">{{ todayFormatted }}</div>
     </div>
@@ -36,7 +36,7 @@
       <!-- Subscription Breakdown -->
       <div class="panel">
         <div class="panel-header">
-          <h3 class="panel-title">Subscription breakdown</h3>
+          <h3 class="panel-title">{{ $t('superAdmin.dashboard.subscriptionBreakdown') }}</h3>
         </div>
         <div v-if="!loading" class="breakdown-list">
           <div class="breakdown-item" v-for="item in breakdown" :key="item.label">
@@ -63,7 +63,7 @@
       <!-- Expiring Soon -->
       <div class="panel">
         <div class="panel-header">
-          <h3 class="panel-title">Expiring soon</h3>
+          <h3 class="panel-title">{{ $t('superAdmin.dashboard.expiringSoon') }}</h3>
           <span class="panel-badge warning" v-if="expiringSoon.length">{{
             expiringSoon.length
           }}</span>
@@ -71,7 +71,7 @@
         <div v-if="!loading">
           <div v-if="expiringSoon.length === 0" class="empty-state">
             <span v-html="icons.check" />
-            No plans expiring in the next 14 days
+            {{ $t('superAdmin.dashboard.noExpiringPlans') }}
           </div>
           <div v-else class="expire-list">
             <div class="expire-item" v-for="r in expiringSoon" :key="r.id">
@@ -81,7 +81,7 @@
                 <span class="expire-plan">{{ r.plan }}</span>
               </div>
               <div class="expire-days" :class="r.daysLeft <= 3 ? 'danger' : 'warning'">
-                {{ r.daysLeft }}d left
+                {{ $t('superAdmin.dashboard.daysLeft', { days: r.daysLeft }) }}
               </div>
             </div>
           </div>
@@ -94,24 +94,24 @@
       <!-- Recently Upgraded -->
       <div class="panel panel-wide">
         <div class="panel-header">
-          <h3 class="panel-title">Recently upgraded</h3>
+          <h3 class="panel-title">{{ $t('superAdmin.dashboard.recentlyUpgraded') }}</h3>
         </div>
         <div v-if="!loading">
           <div v-if="recentUpgrades.length === 0" class="empty-state">
             <span v-html="icons.inbox" />
-            No recent upgrades
+            {{ $t('superAdmin.dashboard.noRecentUpgrades') }}
           </div>
 
           <!-- Desktop table -->
           <table class="upgrade-table desktop-only" v-else>
             <thead>
               <tr>
-                <th>Restaurant</th>
-                <th>Plan</th>
-                <th>Billing</th>
-                <th>Price/mo</th>
-                <th>Upgraded</th>
-                <th>Expires</th>
+                <th>{{ $t('superAdmin.dashboard.table.restaurant') }}</th>
+                <th>{{ $t('superAdmin.dashboard.table.plan') }}</th>
+                <th>{{ $t('superAdmin.dashboard.table.billing') }}</th>
+                <th>{{ $t('superAdmin.dashboard.table.pricePerMonth') }}</th>
+                <th>{{ $t('superAdmin.dashboard.table.upgraded') }}</th>
+                <th>{{ $t('superAdmin.dashboard.table.expires') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -127,15 +127,15 @@
                 </td>
                 <td>
                   <span class="billing-badge" :class="r.billing_type">
-                    {{ r.billing_type === 'lemonsqueezy' ? 'LemonSqueezy' : 'Manual' }}
+                    {{ r.billing_type === 'lemonsqueezy' ? $t('superAdmin.dashboard.lemonSqueezy') : $t('superAdmin.dashboard.manual') }}
                   </span>
                 </td>
                 <td>
-                  <span class="price-tag">${{ getPlanPrice(r.billing_type, r.plan) }}/mo</span>
+                  <span class="price-tag">{{ $t('superAdmin.dashboard.pricePerMonthValue', { price: getPlanPrice(r.billing_type, r.plan) }) }}</span>
                 </td>
                 <td class="td-muted">{{ formatDate(r.updated_at) }}</td>
                 <td class="td-muted">
-                  {{ r.billing_type === 'lemonsqueezy' ? '— auto' : formatDate(r.plan_expires_at) }}
+                  {{ r.billing_type === 'lemonsqueezy' ? $t('superAdmin.dashboard.autoRenewShort') : formatDate(r.plan_expires_at) }}
                 </td>
               </tr>
             </tbody>
@@ -149,25 +149,25 @@
                   <span class="table-avatar">{{ r.name[0].toUpperCase() }}</span>
                   <span class="upgrade-card-name">{{ r.name }}</span>
                 </div>
-                <span class="price-tag">${{ getPlanPrice(r.billing_type, r.plan) }}/mo</span>
+                <span class="price-tag">{{ $t('superAdmin.dashboard.pricePerMonthValue', { price: getPlanPrice(r.billing_type, r.plan) }) }}</span>
               </div>
               <div class="upgrade-card-badges">
                 <span class="plan-badge" :class="r.plan">{{ r.plan }}</span>
                 <span class="billing-badge" :class="r.billing_type">
-                  {{ r.billing_type === 'lemonsqueezy' ? 'LemonSqueezy' : 'Manual' }}
+                  {{ r.billing_type === 'lemonsqueezy' ? $t('superAdmin.dashboard.lemonSqueezy') : $t('superAdmin.dashboard.manual') }}
                 </span>
               </div>
               <div class="upgrade-card-dates">
                 <span class="upgrade-card-date-item">
-                  <span class="upgrade-card-date-label">Upgraded</span>
+                  <span class="upgrade-card-date-label">{{ $t('superAdmin.dashboard.card.upgradedLabel') }}</span>
                   <span class="upgrade-card-date-value">{{ formatDate(r.updated_at) }}</span>
                 </span>
                 <span class="upgrade-card-date-item">
-                  <span class="upgrade-card-date-label">Expires</span>
+                  <span class="upgrade-card-date-label">{{ $t('superAdmin.dashboard.card.expiresLabel') }}</span>
                   <span class="upgrade-card-date-value">
                     {{
                       r.billing_type === 'lemonsqueezy'
-                        ? 'Auto renew'
+                        ? $t('superAdmin.dashboard.autoRenew')
                         : formatDate(r.plan_expires_at)
                     }}
                   </span>
@@ -188,8 +188,10 @@
 import { ref, computed, onMounted } from 'vue'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
+import { useI18n } from 'vue-i18n'
 
 const authStore = useAuthStore()
+const { t } = useI18n()
 const loading = ref(true)
 
 // ── Pricing — reads from localStorage set in Settings page ────────
@@ -232,7 +234,7 @@ const recentUpgrades = ref([])
 const allRestaurants = ref([])
 
 // ── Computed ───────────────────────────────────────────
-const firstName = computed(() => authStore.profile?.full_name?.split(' ')[0] || 'Admin')
+const firstName = computed(() => authStore.profile?.full_name?.split(' ')[0] || t('superAdmin.dashboard.fallbackName'))
 
 const timeOfDay = computed(() => {
   const h = new Date().getHours()
@@ -270,33 +272,33 @@ const mrrLS = computed(() =>
 
 const statCards = computed(() => [
   {
-    label: 'Total restaurants',
+    label: t('superAdmin.dashboard.stat.totalRestaurants'),
     value: totalRestaurants.value,
-    sub: `${activeSubscriptions.value} active`,
+    sub: t('superAdmin.dashboard.stat.activeSubtext', { count: activeSubscriptions.value }),
     icon: icons.store,
     iconBg: '#fff7ed',
     iconColor: '#f97316',
   },
   {
-    label: 'Total users',
+    label: t('superAdmin.dashboard.stat.totalUsers'),
     value: totalUsers.value,
-    sub: 'across all restaurants',
+    sub: t('superAdmin.dashboard.stat.usersSubtext'),
     icon: icons.users,
     iconBg: '#eff6ff',
     iconColor: '#3b82f6',
   },
   {
-    label: 'Active subscriptions',
+    label: t('superAdmin.dashboard.stat.activeSubscriptions'),
     value: activeSubscriptions.value,
-    sub: `${lsCount.value} LS · ${manualCount.value} manual`,
+    sub: t('superAdmin.dashboard.stat.subscriptionsSubtext', { lsCount: lsCount.value, manualCount: manualCount.value }),
     icon: icons.credit,
     iconBg: '#f0fdf4',
     iconColor: '#22c55e',
   },
   {
-    label: 'Total MRR',
+    label: t('superAdmin.dashboard.stat.totalMrr'),
     value: `$${mrr.value.toLocaleString()}`,
-    sub: `$${mrrManual.value} manual · $${mrrLS.value} LS`,
+    sub: t('superAdmin.dashboard.stat.mrrSubtext', { manual: mrrManual.value, ls: mrrLS.value }),
     icon: icons.dollar,
     iconBg: '#fdf4ff',
     iconColor: '#a855f7',
@@ -307,25 +309,25 @@ const breakdown = computed(() => {
   const total = totalRestaurants.value || 1
   return [
     {
-      label: 'LemonSqueezy',
+      label: t('superAdmin.dashboard.breakdown.lemonSqueezy'),
       count: lsCount.value,
       color: '#f97316',
       pct: Math.round((lsCount.value / total) * 100),
     },
     {
-      label: 'Manual',
+      label: t('superAdmin.dashboard.breakdown.manual'),
       count: manualCount.value,
       color: '#a855f7',
       pct: Math.round((manualCount.value / total) * 100),
     },
     {
-      label: 'Trial',
+      label: t('superAdmin.dashboard.breakdown.trial'),
       count: trialCount.value,
       color: '#3b82f6',
       pct: Math.round((trialCount.value / total) * 100),
     },
     {
-      label: 'Expired',
+      label: t('superAdmin.dashboard.breakdown.expired'),
       count: expiredCount.value,
       color: '#e11d48',
       pct: Math.round((expiredCount.value / total) * 100),

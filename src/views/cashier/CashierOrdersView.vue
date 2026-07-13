@@ -2,15 +2,15 @@
   <div class="view-page">
     <div class="view-header">
       <div class="header-content">
-        <h1 class="view-title">Ready to Pay</h1>
-        <p class="view-subtitle">Mark orders as paid when customer settles the bill</p>
+        <h1 class="view-title">{{ $t('cashier.orders.title') }}</h1>
+        <p class="view-subtitle">{{ $t('cashier.orders.subtitle') }}</p>
       </div>
       <div class="revenue-card">
         <div class="revenue-icon-wrap">
           <TrendingUp class="revenue-icon" />
         </div>
         <div class="revenue-info">
-          <span class="revenue-label">Today's Revenue</span>
+          <span class="revenue-label">{{ $t('cashier.orders.todayRevenue') }}</span>
           <span class="revenue-value">{{ formatCurrency(todayRevenue) }}</span>
         </div>
       </div>
@@ -21,8 +21,8 @@
       <div class="empty-icon-wrap">
         <Banknote class="empty-icon" />
       </div>
-      <h3 class="empty-title">No orders ready</h3>
-      <p class="empty-subtitle">Orders marked "ready" will appear here for payment</p>
+      <h3 class="empty-title">{{ $t('cashier.orders.emptyTitle') }}</h3>
+      <p class="empty-subtitle">{{ $t('cashier.orders.emptySubtitle') }}</p>
     </div>
 
     <!-- Orders List -->
@@ -35,7 +35,7 @@
               <Armchair class="table-icon" />
             </div>
             <div class="table-details">
-              <span class="table-name">{{ order.tables?.name ?? 'Unknown Table' }}</span>
+              <span class="table-name">{{ order.tables?.name ?? $t('cashier.orders.unknownTable') }}</span>
               <span class="order-meta">
                 <Clock class="meta-icon" />
                 {{ formatTime(order.created_at) }}
@@ -44,7 +44,7 @@
             </div>
           </div>
           <div class="order-total-wrap">
-            <span class="total-label">Total</span>
+            <span class="total-label">{{ $t('cashier.orders.total') }}</span>
             <span class="total-value">{{ formatCurrency(orderTotal(order)) }}</span>
           </div>
         </div>
@@ -55,7 +55,7 @@
             <div class="item-main">
               <span class="item-qty">{{ item.quantity }}×</span>
               <div class="item-details">
-                <span class="item-name">{{ item.menu_items?.name ?? 'Unknown Item' }}</span>
+                <span class="item-name">{{ item.menu_items?.name ?? $t('cashier.orders.unknownItem') }}</span>
                 <span v-if="item.notes" class="item-note">
                   <MessageSquare class="note-icon" />
                   {{ item.notes }}
@@ -71,12 +71,12 @@
           <div class="order-stats">
             <span class="stat-item">
               <Hash class="stat-icon" />
-              {{ order.order_items?.length || 0 }} items
+              {{ order.order_items?.length || 0 }} {{ $t('cashier.orders.items') }}
             </span>
           </div>
           <button class="btn-paid" @click="openReceiptModal(order)">
             <CheckCircle2 class="btn-icon" />
-            Mark as Paid
+            {{ $t('cashier.orders.markAsPaid') }}
           </button>
         </div>
       </div>
@@ -91,8 +91,8 @@
             <div class="modal-header-left">
               <Receipt class="modal-header-icon" />
               <div>
-                <h2 class="modal-title">Order Receipt</h2>
-                <p class="modal-subtitle">Preview before downloading</p>
+                <h2 class="modal-title">{{ $t('cashier.orders.receiptTitle') }}</h2>
+                <p class="modal-subtitle">{{ $t('cashier.orders.receiptSubtitle') }}</p>
               </div>
             </div>
             <button class="modal-close-btn" @click="receiptModal.open = false">×</button>
@@ -104,32 +104,32 @@
               <!-- Receipt Header -->
               <div class="receipt-header">
                 <div class="receipt-restaurant">{{ restaurantName }}</div>
-                <div class="receipt-tagline">Thank you for dining with us!</div>
+                <div class="receipt-tagline">{{ $t('cashier.orders.receiptThanks') }}</div>
                 <div class="receipt-divider">· · · · · · · · · · · · · · ·</div>
               </div>
 
               <!-- Receipt Meta -->
               <div class="receipt-meta">
                 <div class="receipt-meta-row">
-                  <span class="receipt-meta-label">Table</span>
+                  <span class="receipt-meta-label">{{ $t('cashier.orders.receiptTable') }}</span>
                   <span class="receipt-meta-value">{{
                     receiptModal.order?.tables?.name ?? '—'
                   }}</span>
                 </div>
                 <div class="receipt-meta-row">
-                  <span class="receipt-meta-label">Order ID</span>
+                  <span class="receipt-meta-label">{{ $t('cashier.orders.receiptOrderId') }}</span>
                   <span class="receipt-meta-value receipt-mono"
                     >#{{ receiptModal.order?.id.slice(-6).toUpperCase() }}</span
                   >
                 </div>
                 <div class="receipt-meta-row">
-                  <span class="receipt-meta-label">Date</span>
+                  <span class="receipt-meta-label">{{ $t('cashier.orders.receiptDate') }}</span>
                   <span class="receipt-meta-value">{{
                     formatDate(receiptModal.order?.created_at)
                   }}</span>
                 </div>
                 <div class="receipt-meta-row">
-                  <span class="receipt-meta-label">Time</span>
+                  <span class="receipt-meta-label">{{ $t('cashier.orders.receiptTime') }}</span>
                   <span class="receipt-meta-value">{{
                     formatTime(receiptModal.order?.created_at)
                   }}</span>
@@ -147,7 +147,7 @@
                 >
                   <div class="receipt-item-left">
                     <span class="receipt-item-qty">{{ item.quantity }}×</span>
-                    <span class="receipt-item-name">{{ item.menu_items?.name ?? 'Item' }}</span>
+                    <span class="receipt-item-name">{{ item.menu_items?.name ?? $t('cashier.orders.receiptItemFallback') }}</span>
                   </div>
                   <span class="receipt-item-price">{{
                     formatCurrency(item.unit_price * item.quantity)
@@ -159,7 +159,7 @@
 
               <!-- Total -->
               <div class="receipt-total-row">
-                <span class="receipt-total-label">TOTAL</span>
+                <span class="receipt-total-label">{{ $t('cashier.orders.receiptTotal') }}</span>
                 <span class="receipt-total-value">{{
                   formatCurrency(orderTotal(receiptModal.order))
                 }}</span>
@@ -168,27 +168,27 @@
               <!-- Footer -->
               <div class="receipt-footer">
                 <div class="receipt-divider">· · · · · · · · · · · · · · ·</div>
-                <div class="receipt-thanks">✦ Have a great day! ✦</div>
+                <div class="receipt-thanks">{{ $t('cashier.orders.receiptFooter') }}</div>
               </div>
             </div>
           </div>
 
           <!-- Modal Footer -->
           <div class="modal-footer">
-            <button class="btn-ghost" @click="receiptModal.open = false">Cancel</button>
+            <button class="btn-ghost" @click="receiptModal.open = false">{{ $t('cashier.orders.cancel') }}</button>
             <div class="download-group">
               <button class="btn-download-png" @click="downloadPng" :disabled="receiptModal.saving">
                 <ImageIcon class="btn-icon-sm" />
-                Download PNG
+                {{ $t('cashier.orders.downloadPng') }}
               </button>
               <button class="btn-download-pdf" @click="downloadPdf" :disabled="receiptModal.saving">
                 <FileText class="btn-icon-sm" />
-                Download PDF
+                {{ $t('cashier.orders.downloadPdf') }}
               </button>
             </div>
             <button class="btn-confirm-paid" @click="confirmPaid" :disabled="receiptModal.saving">
               <CheckCircle2 class="btn-icon-sm" />
-              {{ receiptModal.saving ? 'Processing…' : 'Confirm Paid' }}
+              {{ receiptModal.saving ? $t('cashier.orders.processing') : $t('cashier.orders.confirmPaid') }}
             </button>
           </div>
         </div>
@@ -204,7 +204,7 @@
               <ShoppingBag class="toast-icon" />
             </div>
             <div class="toast-content">
-              <span class="toast-title">New Order Ready!</span>
+              <span class="toast-title">{{ $t('cashier.orders.toastNewOrder') }}</span>
               <span class="toast-body">{{ toast.message }}</span>
             </div>
             <button class="toast-close" @click.stop="removeToast(toast.id)">×</button>
@@ -218,6 +218,7 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
 import {
@@ -235,9 +236,10 @@ import {
 } from 'lucide-vue-next'
 
 const authStore = useAuthStore()
+const { t } = useI18n()
 const orders = ref([])
 const todayRevenue = ref(0)
-const restaurantName = ref('Restaurant')
+const restaurantName = ref(t('cashier.orders.defaultRestaurant'))
 const receiptRef = ref(null)
 const toasts = ref([])
 let channel = null
@@ -384,9 +386,10 @@ async function fetchOrders() {
     if (knownOrderIds.size > 0) {
       const newOrders = data.filter((o) => !knownOrderIds.has(o.id))
       newOrders.forEach((o) => {
-        const tableName = o.tables?.name ?? 'Unknown Table'
+        const tableName = o.tables?.name ?? t('cashier.orders.unknownTable')
         const itemCount = o.order_items?.length ?? 0
-        addToast(`${tableName} · ${itemCount} item${itemCount !== 1 ? 's' : ''}`)
+        const itemLabel = itemCount !== 1 ? t('cashier.orders.items') : 'item'
+        addToast(`${tableName} · ${itemCount} ${itemLabel}`)
         playCashRegisterSound()
       })
     }
@@ -485,7 +488,7 @@ function drawReceiptToCanvas(order) {
 
   ctx.fillStyle = '#6b7280'
   ctx.font = '13px sans-serif'
-  ctx.fillText('Thank you for dining with us!', W / 2, y)
+  ctx.fillText(t('cashier.orders.receiptThanks'), W / 2, y)
   y += 24
 
   ctx.fillStyle = '#d1d5db'
@@ -493,10 +496,10 @@ function drawReceiptToCanvas(order) {
   y += 24
 
   const meta = [
-    ['Table', order.tables?.name ?? '—'],
-    ['Order ID', `#${order.id.slice(-6).toUpperCase()}`],
-    ['Date', formatDate(order.created_at)],
-    ['Time', formatTime(order.created_at)],
+    [t('cashier.orders.receiptTable'), order.tables?.name ?? '—'],
+    [t('cashier.orders.receiptOrderId'), `#${order.id.slice(-6).toUpperCase()}`],
+    [t('cashier.orders.receiptDate'), formatDate(order.created_at)],
+    [t('cashier.orders.receiptTime'), formatTime(order.created_at)],
   ]
   ctx.textAlign = 'left'
   for (const [label, value] of meta) {
@@ -520,7 +523,7 @@ function drawReceiptToCanvas(order) {
     ctx.textAlign = 'left'
     ctx.fillStyle = '#374151'
     ctx.font = '14px sans-serif'
-    const label = `${item.quantity}× ${item.menu_items?.name ?? 'Item'}`
+    const label = `${item.quantity}× ${item.menu_items?.name ?? t('cashier.orders.receiptItemFallback')}`
     ctx.fillText(label, padding, y)
     ctx.textAlign = 'right'
     ctx.fillStyle = '#111827'
@@ -536,7 +539,7 @@ function drawReceiptToCanvas(order) {
   ctx.textAlign = 'left'
   ctx.fillStyle = '#111827'
   ctx.font = 'bold 16px sans-serif'
-  ctx.fillText('TOTAL', padding, y)
+  ctx.fillText(t('cashier.orders.receiptTotal'), padding, y)
   ctx.textAlign = 'right'
   ctx.font = 'bold 18px sans-serif'
   ctx.fillText(formatCurrency(orderTotal(order)), W - padding, y)
@@ -548,7 +551,7 @@ function drawReceiptToCanvas(order) {
   ctx.fillText('· · · · · · · · · · · · · · · · · ·', W / 2, y)
   y += 20
   ctx.fillStyle = '#9ca3af'
-  ctx.fillText('✦ Have a great day! ✦', W / 2, y)
+  ctx.fillText(t('cashier.orders.receiptFooter'), W / 2, y)
 
   return canvas
 }
@@ -565,7 +568,7 @@ function downloadPdf() {
       (item) => `
       <tr>
         <td class="item-qty">${item.quantity}×</td>
-        <td class="item-name">${item.menu_items?.name ?? 'Item'}</td>
+        <td class="item-name">${item.menu_items?.name ?? t('cashier.orders.receiptItemFallback')}</td>
         <td class="item-price">${formatCurrency(item.unit_price * item.quantity)}</td>
       </tr>`,
     )
@@ -653,14 +656,14 @@ function downloadPdf() {
 <body>
   <div class="receipt">
     <div class="restaurant">${restaurantName.value}</div>
-    <div class="tagline">Thank you for dining with us!</div>
+    <div class="tagline">${t('cashier.orders.receiptThanks')}</div>
     <div class="divider">· · · · · · · · · · · · ·</div>
 
     <table class="meta-table">
-      <tr><td class="label">Table</td><td class="value">${order.tables?.name ?? '—'}</td></tr>
-      <tr><td class="label">Order ID</td><td class="value">#${order.id.slice(-6).toUpperCase()}</td></tr>
-      <tr><td class="label">Date</td><td class="value">${formatDate(order.created_at)}</td></tr>
-      <tr><td class="label">Time</td><td class="value">${formatTime(order.created_at)}</td></tr>
+      <tr><td class="label">${t('cashier.orders.receiptTable')}</td><td class="value">${order.tables?.name ?? '—'}</td></tr>
+      <tr><td class="label">${t('cashier.orders.receiptOrderId')}</td><td class="value">#${order.id.slice(-6).toUpperCase()}</td></tr>
+      <tr><td class="label">${t('cashier.orders.receiptDate')}</td><td class="value">${formatDate(order.created_at)}</td></tr>
+      <tr><td class="label">${t('cashier.orders.receiptTime')}</td><td class="value">${formatTime(order.created_at)}</td></tr>
     </table>
 
     <div class="divider">· · · · · · · · · · · · ·</div>
@@ -672,12 +675,12 @@ function downloadPdf() {
     <div class="divider">· · · · · · · · · · · · ·</div>
 
     <div class="total-row">
-      <span class="total-label">TOTAL</span>
+      <span class="total-label">${t('cashier.orders.receiptTotal')}</span>
       <span class="total-value">${formatCurrency(orderTotal(order))}</span>
     </div>
 
     <div class="divider">· · · · · · · · · · · · ·</div>
-    <div class="footer-thanks">✦ Have a great day! ✦</div>
+    <div class="footer-thanks">${t('cashier.orders.receiptFooter')}</div>
   </div>
   <script>window.onload = () => { window.print(); window.onafterprint = () => window.close(); }<\/script>
 </body>

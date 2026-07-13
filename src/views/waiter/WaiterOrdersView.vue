@@ -3,12 +3,12 @@
     <!-- Header -->
     <div class="page-header">
       <div class="header-content">
-        <h1 class="page-title">My Orders</h1>
-        <p class="page-subtitle">Live status of orders you've placed today</p>
+        <h1 class="page-title">{{ $t('waiter.orders.title') }}</h1>
+        <p class="page-subtitle">{{ $t('waiter.orders.subtitle') }}</p>
       </div>
       <div class="live-indicator">
         <span class="live-dot"></span>
-        <span class="live-text">Live</span>
+        <span class="live-text">{{ $t('waiter.orders.live') }}</span>
       </div>
     </div>
 
@@ -17,11 +17,11 @@
       <div class="empty-icon-wrap">
         <ClipboardList class="empty-icon" />
       </div>
-      <h3 class="empty-title">No orders yet</h3>
-      <p class="empty-subtitle">Orders you place today will appear here</p>
+      <h3 class="empty-title">{{ $t('waiter.orders.emptyTitle') }}</h3>
+      <p class="empty-subtitle">{{ $t('waiter.orders.emptySubtitle') }}</p>
       <RouterLink to="/waiter/new-order" class="btn-primary">
         <Plus class="btn-icon" />
-        New Order
+        {{ $t('waiter.orders.newOrder') }}
       </RouterLink>
     </div>
 
@@ -40,7 +40,7 @@
               <Armchair class="table-icon" />
             </div>
             <div class="table-details">
-              <span class="table-name">{{ order.tables?.name ?? 'Unknown Table' }}</span>
+              <span class="table-name">{{ order.tables?.name ?? $t('waiter.orders.unknownTable') }}</span>
               <span class="order-id">#{{ order.id.slice(-6).toUpperCase() }}</span>
             </div>
           </div>
@@ -60,7 +60,7 @@
           >
             <div class="item-main">
               <span class="item-qty">{{ item.quantity }}×</span>
-              <span class="item-name">{{ item.menu_items?.name ?? 'Unknown Item' }}</span>
+              <span class="item-name">{{ item.menu_items?.name ?? $t('waiter.orders.unknownItem') }}</span>
             </div>
             <span class="item-price">{{ formatCurrency(item.unit_price * item.quantity) }}</span>
           </div>
@@ -72,14 +72,12 @@
             <Clock class="time-icon" />
             <span class="order-time">{{ formatTime(order.created_at) }}</span>
             <span class="time-separator">•</span>
-            <span class="item-count"
-              >{{ order.order_items.length }} item{{
-                order.order_items.length !== 1 ? 's' : ''
-              }}</span
-            >
+            <span class="item-count">
+              {{ order.order_items.length }} {{ order.order_items.length !== 1 ? $t('waiter.orders.items') : $t('waiter.orders.item') }}
+            </span>
           </div>
           <div class="order-total">
-            <span class="total-label">Total</span>
+            <span class="total-label">{{ $t('waiter.orders.total') }}</span>
             <span class="total-value">{{ formatCurrency(orderTotal(order)) }}</span>
           </div>
         </div>
@@ -98,7 +96,7 @@
     <!-- Refresh Hint -->
     <div v-if="orders.length > 0" class="refresh-hint">
       <RefreshCw class="refresh-icon" />
-      <span>Updates automatically</span>
+      <span>{{ $t('waiter.orders.updatesAutomatically') }}</span>
     </div>
   </div>
 </template>
@@ -108,8 +106,10 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
 import { ClipboardList, Plus, Armchair, Clock, RefreshCw } from 'lucide-vue-next'
+import { useI18n } from 'vue-i18n'
 
 const authStore = useAuthStore()
+const { t } = useI18n()
 const orders = ref([])
 let channel = null
 
@@ -148,9 +148,9 @@ function formatCurrency(amount) {
 
 function formatStatus(status) {
   const map = {
-    pending: 'Pending',
-    cooking: 'Cooking',
-    ready: 'Ready',
+    pending: t('waiter.orders.statusPending'),
+    cooking: t('waiter.orders.statusCooking'),
+    ready: t('waiter.orders.statusReady'),
   }
   return map[status] || status
 }

@@ -3,8 +3,8 @@
     <!-- ── Header ──────────────────────────────────────── -->
     <div class="dashboard-header">
       <div class="header-left">
-        <p class="header-sub">Welcome back to {{ restaurantName || 'your restaurant' }}</p>
-        <h1 class="header-title">Dashboard</h1>
+        <p class="header-sub">Welcome back to {{ restaurantName || $t('dashboard.welcomeFallback') }}</p>
+        <h1 class="header-title">{{ $t('dashboard.title') }}</h1>
       </div>
       <div class="header-right">
         <p class="header-time">{{ currentTime }}</p>
@@ -22,7 +22,7 @@
       <div class="stats-grid">
         <div class="stat-card">
           <div class="stat-left">
-            <p class="stat-label">Today's Orders</p>
+            <p class="stat-label">{{ $t('dashboard.todaysOrders') }}</p>
             <p class="stat-value">{{ stats.totalOrders }}</p>
           </div>
           <div class="stat-icon stat-icon--blue">
@@ -43,7 +43,7 @@
 
         <div class="stat-card">
           <div class="stat-left">
-            <p class="stat-label">Revenue</p>
+            <p class="stat-label">{{ $t('dashboard.revenue') }}</p>
             <p class="stat-value">{{ formatCurrency(stats.revenue) }}</p>
           </div>
           <div class="stat-icon stat-icon--green">
@@ -63,7 +63,7 @@
 
         <div class="stat-card">
           <div class="stat-left">
-            <p class="stat-label">Active Tables</p>
+            <p class="stat-label">{{ $t('dashboard.activeTables') }}</p>
             <p class="stat-value">{{ stats.activeTables }}</p>
           </div>
           <div class="stat-icon stat-icon--purple">
@@ -85,8 +85,8 @@
 
         <div class="stat-card">
           <div class="stat-left">
-            <p class="stat-label">Avg. Prep Time</p>
-            <p class="stat-value">{{ avgPrepTime }} min</p>
+            <p class="stat-label">{{ $t('dashboard.avgPrepTime') }}</p>
+            <p class="stat-value">{{ avgPrepTime }} {{ $t('dashboard.min') }}</p>
           </div>
           <div class="stat-icon stat-icon--amber">
             <svg
@@ -109,8 +109,8 @@
         <!-- Live Orders -->
         <div class="orders-panel">
           <div class="panel-header">
-            <h2 class="panel-title">Live Orders</h2>
-            <router-link to="/app/orders" class="view-all-link">View all →</router-link>
+            <h2 class="panel-title">{{ $t('dashboard.liveOrders') }}</h2>
+            <router-link to="/app/orders" class="view-all-link">{{ $t('dashboard.viewAll') }}</router-link>
           </div>
 
           <div v-if="pendingOrders.length === 0" class="empty-state">
@@ -126,7 +126,7 @@
               <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
               <polyline points="22 4 12 14.01 9 11.01" />
             </svg>
-            <p>No pending orders right now</p>
+            <p>{{ $t('dashboard.noPendingOrders') }}</p>
           </div>
 
           <div v-else class="orders-list">
@@ -142,7 +142,7 @@
                   {{ (order.tables?.name || 'T').charAt(0).toUpperCase() }}
                 </div>
                 <div class="order-info">
-                  <p class="order-table-name">{{ order.tables?.name || 'Table' }}</p>
+                  <p class="order-table-name">{{ order.tables?.name || $t('dashboard.tableFallback') }}</p>
                   <p class="order-meta">
                     {{ order.order_items?.length || 0 }} item{{
                       (order.order_items?.length || 0) !== 1 ? 's' : ''
@@ -164,7 +164,7 @@
                       <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
                       <circle cx="12" cy="12" r="3" />
                     </svg>
-                    View
+                    {{ $t('dashboard.view') }}
                   </router-link>
                 </div>
               </div>
@@ -172,7 +172,7 @@
                 <p class="order-items-text">
                   {{
                     (order.order_items || [])
-                      .map((oi) => `${oi.quantity}x ${oi.menu_items?.name || 'Item'}`)
+                      .map((oi) => `${oi.quantity}x ${oi.menu_items?.name || $t('dashboard.itemFallback')}`)
                       .join(', ')
                   }}
                 </p>
@@ -182,7 +182,7 @@
                 <p class="order-items-text">
                   {{
                     (order.order_items || [])
-                      .map((oi) => `${oi.quantity}x ${oi.menu_items?.name || 'Item'}`)
+                      .map((oi) => `${oi.quantity}x ${oi.menu_items?.name || $t('dashboard.itemFallback')}`)
                       .join(', ')
                   }}
                 </p>
@@ -209,12 +209,12 @@
                   <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
                   <polyline points="17 6 23 6 23 12" />
                 </svg>
-                Top Items Today
+                {{ $t('dashboard.topItemsToday') }}
               </h2>
             </div>
 
             <div v-if="topItems.length === 0" class="empty-state">
-              <p>No orders yet today</p>
+              <p>{{ $t('dashboard.noOrdersToday') }}</p>
             </div>
 
             <div v-else class="top-items-list">
@@ -232,7 +232,7 @@
           <!-- Quick Actions -->
           <div class="side-panel">
             <div class="panel-header">
-              <h2 class="panel-title">Quick Actions</h2>
+              <h2 class="panel-title">{{ $t('dashboard.quickActions') }}</h2>
             </div>
             <div class="quick-actions-list">
               <router-link to="/app/menu" class="quick-action-row">
@@ -254,8 +254,8 @@
                   </svg>
                 </div>
                 <div class="qa-info">
-                  <p class="qa-title">Manage Menu</p>
-                  <p class="qa-sub">Update items, prices & availability</p>
+                  <p class="qa-title">{{ $t('dashboard.manageMenu') }}</p>
+                  <p class="qa-sub">{{ $t('dashboard.manageMenuDesc') }}</p>
                 </div>
                 <svg
                   class="qa-arrow"
@@ -287,8 +287,8 @@
                   </svg>
                 </div>
                 <div class="qa-info">
-                  <p class="qa-title">View Tables</p>
-                  <p class="qa-sub">Generate & download QR codes</p>
+                  <p class="qa-title">{{ $t('dashboard.viewTables') }}</p>
+                  <p class="qa-sub">{{ $t('dashboard.viewTablesDesc') }}</p>
                 </div>
                 <svg
                   class="qa-arrow"
@@ -319,8 +319,8 @@
                   </svg>
                 </div>
                 <div class="qa-info">
-                  <p class="qa-title">Kitchen View</p>
-                  <p class="qa-sub">Live order display for kitchen</p>
+                  <p class="qa-title">{{ $t('dashboard.kitchenView') }}</p>
+                  <p class="qa-sub">{{ $t('dashboard.kitchenViewDesc') }}</p>
                 </div>
                 <svg
                   class="qa-arrow"
@@ -346,8 +346,10 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
+import { useI18n } from 'vue-i18n'
 
 const authStore = useAuthStore()
+const { t } = useI18n()
 const loading = ref(true)
 const expandedOrder = ref(null)
 const restaurantName = ref('')
@@ -414,9 +416,9 @@ function formatCurrency(amount) {
 
 function timeElapsed(createdAt) {
   const diff = Math.floor((Date.now() - new Date(createdAt)) / 1000)
-  if (diff < 60) return `${diff}s ago`
-  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`
-  return `${Math.floor(diff / 3600)}h ago`
+  if (diff < 60) return `${diff}${t('dashboard.timeElapsedSeconds')}`
+  if (diff < 3600) return `${Math.floor(diff / 60)}${t('dashboard.timeElapsedMinutes')}`
+  return `${Math.floor(diff / 3600)}${t('dashboard.timeElapsedHours')}`
 }
 
 function getTodayRange() {
@@ -593,7 +595,7 @@ async function fetchDashboard() {
   const itemMap = {}
   for (const order of orders) {
     for (const oi of order.order_items || []) {
-      const name = oi.menu_items?.name || 'Unknown'
+      const name = oi.menu_items?.name || t('dashboard.unknownItemFallback')
       const price = oi.menu_items?.price || 0
       if (!itemMap[name]) itemMap[name] = { qty: 0, revenue: 0 }
       itemMap[name].qty += oi.quantity || 1

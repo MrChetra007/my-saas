@@ -20,7 +20,7 @@
             <path d="M8 12c0-2.21 1.79-4 4-4s4 1.79 4 4-1.79 4-4 4-4-1.79-4-4z" />
           </svg>
         </div>
-        <span class="logo-text">QRserve</span>
+        <span class="logo-text">{{ $t('onboarding.brand') }}</span>
       </div>
 
       <!-- Progress bar -->
@@ -55,10 +55,10 @@
       <transition name="slide" mode="out-in">
         <!-- ─── STEP 1: Restaurant Profile ─── -->
         <div v-if="currentStep === 1" key="step1" class="step-card">
-          <div class="step-label">Step 1 of 3</div>
-          <h1 class="step-title">Set up your restaurant</h1>
+          <div class="step-label">{{ $t('onboarding.step1.label') }}</div>
+          <h1 class="step-title">{{ $t('onboarding.step1.title') }}</h1>
           <p class="step-sub">
-            This is what your customers will see when they visit your menu page.
+            {{ $t('onboarding.step1.subtitle') }}
           </p>
 
           <div class="error-box" v-if="error">
@@ -80,7 +80,7 @@
           <div class="fields">
             <!-- Logo upload -->
             <div class="field-group">
-              <label class="field-label">Logo</label>
+              <label class="field-label">{{ $t('onboarding.step1.logoLabel') }}</label>
               <div
                 class="logo-upload"
                 @click="triggerLogoUpload"
@@ -100,8 +100,8 @@
                     <line x1="12" y1="12" x2="12" y2="21" />
                     <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3" />
                   </svg>
-                  <span>Upload logo</span>
-                  <span class="upload-hint">PNG or JPG, max 2MB</span>
+                  <span>{{ $t('onboarding.step1.logoPlaceholder') }}</span>
+                  <span class="upload-hint">{{ $t('onboarding.step1.logoHint') }}</span>
                 </div>
               </div>
               <input
@@ -115,35 +115,35 @@
 
             <!-- Restaurant name -->
             <div class="field-group">
-              <label class="field-label">Restaurant Name</label>
+              <label class="field-label">{{ $t('onboarding.step1.nameLabel') }}</label>
               <input
                 v-model="step1.name"
                 type="text"
                 class="field-input"
-                placeholder="Pizza Palace"
+                :placeholder="$t('onboarding.step1.namePlaceholder')"
               />
             </div>
 
             <!-- Address -->
             <div class="field-group">
-              <label class="field-label">Address <span class="optional">(optional)</span></label>
+              <label class="field-label">{{ $t('onboarding.step1.addressLabel') }} <span class="optional">{{ $t('onboarding.optional') }}</span></label>
               <input
                 v-model="step1.address"
                 type="text"
                 class="field-input"
-                placeholder="123 Main St, New York, NY"
+                :placeholder="$t('onboarding.step1.addressPlaceholder')"
               />
             </div>
 
             <div class="field-row">
               <!-- Currency -->
               <div class="field-group">
-                <label class="field-label">Currency</label>
+                <label class="field-label">{{ $t('onboarding.step1.currencyLabel') }}</label>
                 <select v-model="step1.currency" class="field-input" @change="onCurrencyChange">
                   <option v-for="c in KNOWN_CURRENCIES" :key="c.code" :value="c.code">
                     {{ c.symbol }} {{ c.code }}
                   </option>
-                  <option value="OTHER">✏️ Other (custom)</option>
+                  <option value="OTHER">{{ $t('onboarding.step1.otherCurrency') }}</option>
                 </select>
 
                 <!-- Custom currency input -->
@@ -153,7 +153,7 @@
                       v-model="customCurrency"
                       type="text"
                       class="field-input custom-input"
-                      placeholder="e.g. RM MYR"
+                      :placeholder="$t('onboarding.step1.customCurrencyPlaceholder')"
                       @input="onCustomCurrencyInput"
                       @focus="tooltipVisible = true"
                       @blur="tooltipVisible = false"
@@ -179,17 +179,14 @@
                     </transition>
                   </div>
                   <p class="currency-format-hint">
-                    Format: <strong>symbol · space · code</strong> — e.g.
-                    <span class="hint-example">RM MYR</span>,
-                    <span class="hint-example">R$ BRL</span>,
-                    <span class="hint-example">₱ PHP</span>
+                    {{ $t('onboarding.step1.currencyFormatHint') }}
                   </p>
                 </div>
               </div>
 
               <!-- Timezone — auto-detected, read-only display -->
               <div class="field-group">
-                <label class="field-label">Timezone</label>
+                <label class="field-label">{{ $t('onboarding.step1.timezoneLabel') }}</label>
                 <div class="timezone-display">
                   <svg
                     width="14"
@@ -206,7 +203,7 @@
                   <span class="tz-value">{{ step1.timezone }}</span>
                 </div>
                 <p class="tz-hint">
-                  Auto-detected from your browser. You can change this later in Settings.
+                  {{ $t('onboarding.step1.timezoneHint') }}
                 </p>
               </div>
             </div>
@@ -227,18 +224,18 @@
                   d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"
                 />
               </svg>
-              Saving…
+              {{ $t('onboarding.saving') }}
             </span>
-            <span v-else>Continue →</span>
+            <span v-else>{{ $t('onboarding.continue') }}</span>
           </button>
         </div>
 
         <!-- ─── STEP 2: First Menu Item ─── -->
         <div v-else-if="currentStep === 2" key="step2" class="step-card">
-          <div class="step-label">Step 2 of 3</div>
-          <h1 class="step-title">Add your first menu item</h1>
+          <div class="step-label">{{ $t('onboarding.step2.label') }}</div>
+          <h1 class="step-title">{{ $t('onboarding.step2.title') }}</h1>
           <p class="step-sub">
-            Create a category and your first dish — your menu will feel alive right away.
+            {{ $t('onboarding.step2.subtitle') }}
           </p>
 
           <div class="error-box" v-if="error">
@@ -259,7 +256,7 @@
 
           <div class="fields">
             <div class="field-group">
-              <label class="field-label">Category Name</label>
+              <label class="field-label">{{ $t('onboarding.step2.categoryLabel') }}</label>
               <div class="category-suggestions">
                 <button
                   v-for="s in categorySuggestions"
@@ -276,15 +273,15 @@
                 v-model="step2.categoryName"
                 type="text"
                 class="field-input mt-2"
-                placeholder="e.g. Starters, Mains, Drinks…"
+                :placeholder="$t('onboarding.step2.categoryPlaceholder')"
               />
             </div>
 
-            <div class="section-divider"><span>then add a dish</span></div>
+            <div class="section-divider"><span>{{ $t('onboarding.step2.sectionDivider') }}</span></div>
 
             <!-- ── Dish photo upload ── -->
             <div class="field-group">
-              <label class="field-label">Photo <span class="optional">(optional)</span></label>
+              <label class="field-label">{{ $t('onboarding.step2.photoLabel') }} <span class="optional">{{ $t('onboarding.optional') }}</span></label>
               <div
                 class="image-upload-area"
                 @click="triggerItemImageUpload"
@@ -304,8 +301,8 @@
                     <circle cx="8.5" cy="8.5" r="1.5" />
                     <polyline points="21 15 16 10 5 21" />
                   </svg>
-                  <span>Click to upload</span>
-                  <span class="upload-hint">PNG or JPG · max 2MB</span>
+                  <span>{{ $t('onboarding.step2.photoPlaceholder') }}</span>
+                  <span class="upload-hint">{{ $t('onboarding.step2.photoHint') }}</span>
                 </div>
                 <button
                   v-if="step2.imagePreview"
@@ -335,29 +332,29 @@
             </div>
 
             <div class="field-group">
-              <label class="field-label">Dish Name</label>
+              <label class="field-label">{{ $t('onboarding.step2.dishNameLabel') }}</label>
               <input
                 v-model="step2.itemName"
                 type="text"
                 class="field-input"
-                placeholder="e.g. Margherita Pizza"
+                :placeholder="$t('onboarding.step2.dishNamePlaceholder')"
               />
             </div>
 
             <div class="field-group">
               <label class="field-label"
-                >Description <span class="optional">(optional)</span></label
+                >{{ $t('onboarding.step2.descriptionLabel') }} <span class="optional">{{ $t('onboarding.optional') }}</span></label
               >
               <textarea
                 v-model="step2.itemDescription"
                 class="field-input field-textarea"
-                placeholder="A brief description of the dish…"
+                :placeholder="$t('onboarding.step2.descriptionPlaceholder')"
                 rows="2"
               />
             </div>
 
             <div class="field-group">
-              <label class="field-label">Price</label>
+              <label class="field-label">{{ $t('onboarding.step2.priceLabel') }}</label>
               <div class="price-input-wrap">
                 <span class="currency-symbol">{{ currencySymbol }}</span>
                 <input
@@ -366,14 +363,14 @@
                   step="0.01"
                   min="0"
                   class="field-input price-input"
-                  placeholder="0.00"
+                  :placeholder="$t('onboarding.step2.pricePlaceholder')"
                 />
               </div>
             </div>
           </div>
 
           <div class="btn-row">
-            <button class="btn-back" @click="currentStep = 1">← Back</button>
+            <button class="btn-back" @click="currentStep = 1">{{ $t('onboarding.back') }}</button>
             <button class="btn-next" :disabled="loading" @click="saveStep2">
               <span v-if="loading" class="loading-state">
                 <svg
@@ -389,19 +386,19 @@
                     d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"
                   />
                 </svg>
-                Saving…
+                {{ $t('onboarding.saving') }}
               </span>
-              <span v-else>Continue →</span>
+              <span v-else>{{ $t('onboarding.continue') }}</span>
             </button>
           </div>
         </div>
 
         <!-- ─── STEP 3: First Table + QR ─── -->
         <div v-else-if="currentStep === 3" key="step3" class="step-card">
-          <div class="step-label">Step 3 of 3</div>
-          <h1 class="step-title">Create your first table</h1>
+          <div class="step-label">{{ $t('onboarding.step3.label') }}</div>
+          <h1 class="step-title">{{ $t('onboarding.step3.title') }}</h1>
           <p class="step-sub">
-            Each table gets a unique QR code. Customers scan it to order — no app needed.
+            {{ $t('onboarding.step3.subtitle') }}
           </p>
 
           <div class="error-box" v-if="error">
@@ -422,7 +419,7 @@
 
           <div class="fields">
             <div class="field-group">
-              <label class="field-label">Table Name</label>
+              <label class="field-label">{{ $t('onboarding.step3.tableNameLabel') }}</label>
               <div class="category-suggestions">
                 <button
                   v-for="s in tableSuggestions"
@@ -439,15 +436,15 @@
                 v-model="step3.tableName"
                 type="text"
                 class="field-input mt-2"
-                placeholder="e.g. Table 1, Bar Seat, VIP Room…"
+                :placeholder="$t('onboarding.step3.tableNamePlaceholder')"
               />
             </div>
           </div>
 
           <div v-if="qrDataUrl" class="qr-preview-box">
-            <div class="qr-badge">Your QR Code</div>
+            <div class="qr-badge">{{ $t('onboarding.step3.qrBadge') }}</div>
             <div class="qr-frame">
-              <img :src="qrDataUrl" class="qr-image" alt="QR Code" />
+              <img :src="qrDataUrl" class="qr-image" :alt="$t('onboarding.step3.qrBadge')" />
             </div>
             <p class="qr-url">{{ currentOrderUrl }}</p>
             <button class="btn-download" @click="downloadQr">
@@ -463,12 +460,12 @@
                 <polyline points="7 10 12 15 17 10" />
                 <line x1="12" y1="15" x2="12" y2="3" />
               </svg>
-              Download QR
+              {{ $t('onboarding.step3.downloadQr') }}
             </button>
           </div>
 
           <div class="btn-row">
-            <button class="btn-back" @click="currentStep = 2">← Back</button>
+            <button class="btn-back" @click="currentStep = 2">{{ $t('onboarding.back') }}</button>
             <button class="btn-next btn-finish" :disabled="loading" @click="saveStep3">
               <span v-if="loading" class="loading-state">
                 <svg
@@ -484,9 +481,9 @@
                     d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"
                   />
                 </svg>
-                Finishing up…
+                {{ $t('onboarding.finishing') }}
               </span>
-              <span v-else>Open my dashboard →</span>
+              <span v-else>{{ $t('onboarding.openDashboard') }}</span>
             </button>
           </div>
         </div>
@@ -499,9 +496,11 @@
 import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { supabase } from '@/lib/supabase'
+import { useI18n } from 'vue-i18n'
 import QRCode from 'qrcode'
 
 const router = useRouter()
+const { t } = useI18n()
 
 const currentStep = ref(1)
 const totalSteps = 3
@@ -549,16 +548,16 @@ function onCurrencyChange() {
 
 function validateCustomCurrency(val) {
   const v = val.trim()
-  if (!v) return 'Please enter your custom currency.'
+  if (!v) return t('onboarding.validation.customCurrencyRequired')
   const spaceIndex = v.indexOf(' ')
-  if (spaceIndex === -1) return 'Format: symbol · space · code — e.g. RM MYR'
+  if (spaceIndex === -1) return t('onboarding.validation.customCurrencyFormat')
   const symbol = v.slice(0, spaceIndex)
   const code = v.slice(spaceIndex + 1).trim()
-  if (!symbol) return 'Symbol is missing — e.g. RM MYR'
-  if (!code) return 'Currency code is missing — e.g. RM MYR'
+  if (!symbol) return t('onboarding.validation.customCurrencySymbol')
+  if (!code) return t('onboarding.validation.customCurrencyCode')
   if (code !== code.toUpperCase())
-    return `Code must be uppercase — use "${code.toUpperCase()}" not "${code}"`
-  if (!/^[A-Z]{2,5}$/.test(code)) return 'Currency code must be 2–5 letters — e.g. MYR, BRL, PHP'
+    return t('onboarding.validation.customCurrencyUppercase', { correct: code.toUpperCase(), wrong: code })
+  if (!/^[A-Z]{2,5}$/.test(code)) return t('onboarding.validation.customCurrencyLength')
   return ''
 }
 
@@ -587,7 +586,7 @@ const step2 = ref({
   imagePreview: '',
   imageFile: null,
 })
-const categorySuggestions = ['Starters', 'Mains', 'Desserts', 'Drinks', 'Specials']
+const categorySuggestions = [t('onboarding.step2.categorySuggestion.starters'), t('onboarding.step2.categorySuggestion.mains'), t('onboarding.step2.categorySuggestion.desserts'), t('onboarding.step2.categorySuggestion.drinks'), t('onboarding.step2.categorySuggestion.specials')]
 const itemImageInput = ref(null)
 
 const currencySymbol = computed(() => {
@@ -604,7 +603,7 @@ function handleItemImageChange(e) {
   const file = e.target.files[0]
   if (!file) return
   if (file.size > 2 * 1024 * 1024) {
-    error.value = 'Image must be under 2MB.'
+    error.value = t('onboarding.validation.imageSize')
     return
   }
   step2.value.imageFile = file
@@ -619,7 +618,7 @@ function removeItemImage() {
 
 // ── Step 3 ───────────────────────────────────────────
 const step3 = ref({ tableName: 'Table 1' })
-const tableSuggestions = ['Table 1', 'Table 2', 'Bar Seat', 'VIP Room', 'Terrace']
+const tableSuggestions = [t('onboarding.step3.tableSuggestion.table1'), t('onboarding.step3.tableSuggestion.table2'), t('onboarding.step3.tableSuggestion.barSeat'), t('onboarding.step3.tableSuggestion.vipRoom'), t('onboarding.step3.tableSuggestion.terrace')]
 const qrDataUrl = ref('')
 const restaurantSlug = ref('')
 const newTableId = ref('')
@@ -645,7 +644,7 @@ function handleLogoChange(e) {
   const file = e.target.files[0]
   if (!file) return
   if (file.size > 2 * 1024 * 1024) {
-    error.value = 'Logo must be under 2MB.'
+    error.value = t('onboarding.validation.logoSize')
     return
   }
   logoFile.value = file
@@ -656,7 +655,7 @@ function handleLogoChange(e) {
 async function saveStep1() {
   error.value = ''
   if (!step1.value.name.trim()) {
-    error.value = 'Please enter your restaurant name.'
+    error.value = t('onboarding.validation.restaurantName')
     return
   }
   if (step1.value.currency === 'OTHER') {
@@ -664,7 +663,7 @@ async function saveStep1() {
     if (err) {
       customCurrencyError.value = err
       tooltipVisible.value = true
-      error.value = 'Please fix the currency format before continuing.'
+      error.value = t('onboarding.validation.currencyFormat')
       return
     }
   }
@@ -708,7 +707,7 @@ async function saveStep1() {
     if (updateError) throw updateError
     currentStep.value = 2
   } catch (err) {
-    error.value = err.message || 'Failed to save. Please try again.'
+    error.value = err.message || t('onboarding.validation.saveFailed')
   } finally {
     loading.value = false
   }
@@ -718,11 +717,11 @@ async function saveStep1() {
 async function saveStep2() {
   error.value = ''
   if (!step2.value.categoryName.trim()) {
-    error.value = 'Please enter a category name.'
+    error.value = t('onboarding.validation.categoryName')
     return
   }
   if (!step2.value.itemName.trim()) {
-    error.value = 'Please enter a dish name.'
+    error.value = t('onboarding.validation.dishName')
     return
   }
   loading.value = true
@@ -777,7 +776,7 @@ async function saveStep2() {
     await createTableRow(restaurantId)
     currentStep.value = 3
   } catch (err) {
-    error.value = err.message || 'Failed to save. Please try again.'
+    error.value = err.message || t('onboarding.validation.saveFailed')
   } finally {
     loading.value = false
   }
@@ -800,7 +799,7 @@ async function createTableRow(restaurantId) {
 async function saveStep3() {
   error.value = ''
   if (!step3.value.tableName.trim()) {
-    error.value = 'Please enter a table name.'
+    error.value = t('onboarding.validation.tableName')
     return
   }
   loading.value = true
@@ -827,7 +826,7 @@ async function saveStep3() {
       .eq('id', profile.restaurant_id)
     router.push('/app/dashboard')
   } catch (err) {
-    error.value = err.message || 'Failed to finish setup.'
+    error.value = err.message || t('onboarding.validation.finishFailed')
   } finally {
     loading.value = false
   }

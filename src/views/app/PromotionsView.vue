@@ -3,12 +3,12 @@
     <!-- Header -->
     <div class="page-header">
       <div class="header-content">
-        <h1 class="page-title">Promotions</h1>
-        <p class="page-subtitle">Manage discount codes and automatic offers</p>
+        <h1 class="page-title">{{ $t('promotions.title') }}</h1>
+        <p class="page-subtitle">{{ $t('promotions.subtitle') }}</p>
       </div>
       <button class="btn-primary" @click="openModal()">
         <Plus :size="18" class="btn-icon" />
-        <span class="btn-text">New Promotion</span>
+        <span class="btn-text">{{ $t('promotions.newPromotion') }}</span>
       </button>
     </div>
 
@@ -20,7 +20,7 @@
         </div>
         <div class="stat-info">
           <span class="stat-value">{{ activePromos.length }}</span>
-          <span class="stat-label">Active</span>
+          <span class="stat-label">{{ $t('promotions.statActive') }}</span>
         </div>
       </div>
       <div class="stat-card">
@@ -29,7 +29,7 @@
         </div>
         <div class="stat-info">
           <span class="stat-value">{{ promotions.length }}</span>
-          <span class="stat-label">Total</span>
+          <span class="stat-label">{{ $t('promotions.statTotal') }}</span>
         </div>
       </div>
       <div class="stat-card">
@@ -38,7 +38,7 @@
         </div>
         <div class="stat-info">
           <span class="stat-value">{{ totalUsage }}</span>
-          <span class="stat-label">Times Used</span>
+          <span class="stat-label">{{ $t('promotions.timesUsed') }}</span>
         </div>
       </div>
     </div>
@@ -46,15 +46,15 @@
     <!-- Loading -->
     <div v-if="loading" class="loading-state">
       <div class="spinner"></div>
-      <p>Loading promotions…</p>
+      <p>{{ $t('promotions.loading') }}</p>
     </div>
 
     <!-- Empty State -->
     <div v-else-if="promotions.length === 0" class="empty-state">
       <Tag :size="56" class="empty-icon" />
-      <h3 class="empty-title">No promotions yet</h3>
-      <p class="empty-subtitle">Create your first discount code or happy hour offer</p>
-      <button class="btn-primary" @click="openModal()">Create Promotion</button>
+      <h3 class="empty-title">{{ $t('promotions.empty.title') }}</h3>
+      <p class="empty-subtitle">{{ $t('promotions.empty.subtitle') }}</p>
+      <button class="btn-primary" @click="openModal()">{{ $t('promotions.empty.createButton') }}</button>
     </div>
 
     <!-- Promotions Grid -->
@@ -70,7 +70,7 @@
           <!-- ✅ Fixed: use is_auto from DB instead of inferring from code -->
           <div class="promo-badge" :class="promo.is_auto ? 'badge-auto' : 'badge-code'">
             <component :is="promo.is_auto ? Clock : Ticket" :size="14" class="badge-icon" />
-            <span>{{ promo.is_auto ? 'Auto' : 'Code' }}</span>
+            <span>{{ promo.is_auto ? $t('promotions.badgeAuto') : $t('promotions.badgeCode') }}</span>
           </div>
           <label class="toggle">
             <input type="checkbox" :checked="promo.is_active" @change="toggleActive(promo)" />
@@ -88,7 +88,7 @@
               class="copy-btn"
               @click="copyCode(promo.code)"
               :class="{ copied: copiedCode === promo.code }"
-              :title="copiedCode === promo.code ? 'Copied!' : 'Copy code'"
+              :title="copiedCode === promo.code ? $t('promotions.copied') : $t('promotions.copyCode')"
             >
               <Check v-if="copiedCode === promo.code" :size="14" />
               <Copy v-else :size="14" />
@@ -96,7 +96,7 @@
           </div>
           <div v-else class="promo-auto-label">
             <span class="auto-dot"></span>
-            Applies automatically
+            {{ $t('promotions.appliesAutomatically') }}
           </div>
         </div>
 
@@ -108,8 +108,8 @@
           >
             {{
               promo.type === 'percentage'
-                ? `${promo.value}% OFF`
-                : `${currencySymbol}${promo.value} OFF`
+                ? `${promo.value}% ${$t('promotions.off')}`
+                : `${currencySymbol}${promo.value} ${$t('promotions.off')}`
             }}
           </div>
         </div>
@@ -123,9 +123,9 @@
         <!-- Usage -->
         <div class="promo-usage">
           <div class="usage-header">
-            <span class="usage-count">{{ promo.usage_count }} uses</span>
+            <span class="usage-count">{{ promo.usage_count }} {{ $t('promotions.uses') }}</span>
             <span v-if="promo.usage_limit" class="usage-limit">/ {{ promo.usage_limit }}</span>
-            <span v-else class="usage-limit">/ ∞</span>
+            <span v-else class="usage-limit">{{ $t('promotions.unlimited') }}</span>
           </div>
           <div v-if="promo.usage_limit" class="usage-bar">
             <div
@@ -143,11 +143,11 @@
         <div class="promo-actions">
           <button class="btn-ghost" @click="openModal(promo)">
             <Pencil :size="16" class="btn-icon-svg" />
-            Edit
+            {{ $t('promotions.edit') }}
           </button>
           <button class="btn-danger-ghost" @click="confirmDelete(promo)">
             <Trash2 :size="16" class="btn-icon-svg" />
-            Delete
+            {{ $t('promotions.delete') }}
           </button>
         </div>
       </div>
@@ -159,9 +159,9 @@
         <div class="modal">
           <div class="modal-header">
             <div class="modal-header-content">
-              <h2>{{ editingPromo ? 'Edit Promotion' : 'New Promotion' }}</h2>
+              <h2>{{ editingPromo ? $t('promotions.modal.editTitle') : $t('promotions.modal.newTitle') }}</h2>
               <p class="modal-subtitle">
-                {{ editingPromo ? 'Update your promotion details' : 'Create a new discount offer' }}
+                {{ editingPromo ? $t('promotions.modal.editSubtitle') : $t('promotions.modal.newSubtitle') }}
               </p>
             </div>
             <button class="modal-close" @click="closeModal">
@@ -172,68 +172,68 @@
           <div class="modal-body">
             <!-- Name -->
             <div class="field">
-              <label>Promotion Name <span class="required">*</span></label>
-              <input v-model="form.name" type="text" placeholder="e.g. Happy Hour, Summer Sale" />
+              <label>{{ $t('promotions.form.nameLabel') }} <span class="required">*</span></label>
+              <input v-model="form.name" type="text" :placeholder="$t('promotions.form.namePlaceholder')" />
             </div>
 
             <!-- Type: Code vs Auto -->
             <div class="field">
-              <label>Promotion Type</label>
+              <label>{{ $t('promotions.form.typeLabel') }}</label>
               <div class="type-toggle">
                 <button
                   :class="['type-btn', form.isAuto ? '' : 'active']"
                   @click="form.isAuto = false"
                 >
                   <Ticket :size="24" class="type-icon" />
-                  <span class="type-title">Discount Code</span>
-                  <span class="type-hint">Customer enters at checkout</span>
+                  <span class="type-title">{{ $t('promotions.form.discountCodeTitle') }}</span>
+                  <span class="type-hint">{{ $t('promotions.form.discountCodeHint') }}</span>
                 </button>
                 <button
                   :class="['type-btn', form.isAuto ? 'active' : '']"
                   @click="form.isAuto = true"
                 >
                   <Clock :size="24" class="type-icon" />
-                  <span class="type-title">Auto Discount</span>
-                  <span class="type-hint">Applies by time window</span>
+                  <span class="type-title">{{ $t('promotions.form.autoDiscountTitle') }}</span>
+                  <span class="type-hint">{{ $t('promotions.form.autoDiscountHint') }}</span>
                 </button>
               </div>
             </div>
 
             <!-- Code input (only for code type) -->
             <div v-if="!form.isAuto" class="field">
-              <label>Discount Code <span class="required">*</span></label>
+              <label>{{ $t('promotions.form.codeLabel') }} <span class="required">*</span></label>
               <div class="code-input-wrap">
                 <input
                   v-model="form.code"
                   type="text"
-                  placeholder="e.g. HAPPY10"
+                  :placeholder="$t('promotions.form.codePlaceholder')"
                   class="code-input"
                   @input="form.code = form.code.toUpperCase()"
                   maxlength="20"
                 />
                 <button class="generate-btn" @click="generateCode" type="button">
                   <RefreshCw :size="16" />
-                  Generate
+                  {{ $t('promotions.form.generate') }}
                 </button>
               </div>
             </div>
 
             <!-- Discount Value -->
             <div class="field">
-              <label>Discount Value <span class="required">*</span></label>
+              <label>{{ $t('promotions.form.valueLabel') }} <span class="required">*</span></label>
               <div class="value-row">
                 <div class="discount-type-btns">
                   <button
                     :class="['dtype-btn', form.type === 'percentage' ? 'active' : '']"
                     @click="form.type = 'percentage'"
                   >
-                    % Percentage
+                    {{ $t('promotions.form.percentage') }}
                   </button>
                   <button
                     :class="['dtype-btn', form.type === 'fixed' ? 'active' : '']"
                     @click="form.type = 'fixed'"
                   >
-                    {{ currencySymbol }} Fixed
+                    {{ currencySymbol }} {{ $t('promotions.form.fixed') }}
                   </button>
                 </div>
                 <div class="value-input-wrap">
@@ -256,23 +256,23 @@
             <!-- Time Window -->
             <div class="field">
               <label>
-                Time Window
+                {{ $t('promotions.form.timeWindowLabel') }}
                 <span class="label-hint">{{
                   form.isAuto
-                    ? '(required for auto discount)'
-                    : '(optional — leave blank for always active)'
+                    ? $t('promotions.form.timeWindowRequiredAuto')
+                    : $t('promotions.form.timeWindowOptional')
                 }}</span>
               </label>
               <div class="time-row">
                 <div class="time-field">
-                  <span class="time-label">Start</span>
+                  <span class="time-label">{{ $t('promotions.form.start') }}</span>
                   <input v-model="form.starts_at" type="time" />
                 </div>
                 <div class="time-separator">
                   <ArrowRight :size="16" />
                 </div>
                 <div class="time-field">
-                  <span class="time-label">End</span>
+                  <span class="time-label">{{ $t('promotions.form.end') }}</span>
                   <input v-model="form.ends_at" type="time" />
                 </div>
               </div>
@@ -281,22 +281,22 @@
             <!-- Usage Limit -->
             <div class="field">
               <label>
-                Usage Limit
-                <span class="label-hint">(optional — blank = unlimited)</span>
+                {{ $t('promotions.form.usageLimitLabel') }}
+                <span class="label-hint">{{ $t('promotions.form.usageLimitHint') }}</span>
               </label>
               <input
                 v-model.number="form.usage_limit"
                 type="number"
                 min="1"
-                placeholder="e.g. 100"
+                :placeholder="$t('promotions.form.usageLimitPlaceholder')"
               />
             </div>
 
             <!-- Active Toggle -->
             <div class="field field-inline">
               <div class="field-inline-content">
-                <label>Active Immediately</label>
-                <span class="field-hint">Promotion will be live after saving</span>
+                <label>{{ $t('promotions.form.activeImmediately') }}</label>
+                <span class="field-hint">{{ $t('promotions.form.activeImmediatelyHint') }}</span>
               </div>
               <label class="toggle">
                 <input type="checkbox" v-model="form.is_active" />
@@ -310,10 +310,10 @@
 
           <!-- Footer -->
           <div class="modal-footer">
-            <button class="btn-ghost" @click="closeModal">Cancel</button>
+            <button class="btn-ghost" @click="closeModal">{{ $t('promotions.form.cancel') }}</button>
             <button class="btn-primary" @click="savePromo" :disabled="saving">
               <Loader2 v-if="saving" :size="16" class="spinner-sm" />
-              <span v-else>{{ editingPromo ? 'Save Changes' : 'Create Promotion' }}</span>
+              <span v-else>{{ editingPromo ? $t('promotions.form.saveChanges') : $t('promotions.form.createPromotion') }}</span>
             </button>
           </div>
         </div>
@@ -325,25 +325,22 @@
       <div v-if="deleteTarget" class="modal-backdrop" @click.self="deleteTarget = null">
         <div class="modal modal-sm">
           <div class="modal-header">
-            <h2>Delete Promotion</h2>
+            <h2>{{ $t('promotions.deleteModal.title') }}</h2>
           </div>
           <div class="modal-body">
             <div class="delete-warning">
               <AlertTriangle :size="48" class="warning-icon" />
-              <p>
-                Are you sure you want to delete <strong>{{ deleteTarget.name }}</strong
-                >?
-              </p>
+              <p v-html="$t('promotions.deleteModal.confirm', { name: deleteTarget.name })"></p>
               <p class="warning-sub">
-                This action cannot be undone. All usage history will be lost.
+                {{ $t('promotions.deleteModal.warning') }}
               </p>
             </div>
           </div>
           <div class="modal-footer">
-            <button class="btn-ghost" @click="deleteTarget = null">Cancel</button>
+            <button class="btn-ghost" @click="deleteTarget = null">{{ $t('common.cancel') }}</button>
             <button class="btn-danger" @click="deletePromo" :disabled="saving">
               <Loader2 v-if="saving" :size="16" class="spinner-sm" />
-              <span v-else>Delete Permanently</span>
+              <span v-else>{{ $t('promotions.deleteModal.confirmButton') }}</span>
             </button>
           </div>
         </div>
@@ -356,6 +353,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
+import { useI18n } from 'vue-i18n'
 import {
   Plus,
   Circle,
@@ -375,6 +373,7 @@ import {
 } from 'lucide-vue-next'
 
 const authStore = useAuthStore()
+const { t } = useI18n()
 const restaurantId = computed(() => authStore.profile?.restaurant_id)
 
 const currencySymbol = computed(() => {
@@ -460,18 +459,18 @@ function closeModal() {
 
 // ─── Validate ─────────────────────────────────────────────────
 function validate() {
-  if (!form.value.name.trim()) return 'Promotion name is required.'
-  if (!form.value.isAuto && !form.value.code.trim()) return 'Discount code is required.'
-  if (!form.value.value || form.value.value <= 0) return 'Discount value must be greater than 0.'
+  if (!form.value.name.trim()) return t('promotions.validation.nameRequired')
+  if (!form.value.isAuto && !form.value.code.trim()) return t('promotions.validation.codeRequired')
+  if (!form.value.value || form.value.value <= 0) return t('promotions.validation.valueRequired')
   if (form.value.type === 'percentage' && form.value.value > 100)
-    return 'Percentage cannot exceed 100.'
+    return t('promotions.validation.percentageMax')
   if (form.value.isAuto && (!form.value.starts_at || !form.value.ends_at))
-    return 'Auto discounts require a time window.'
+    return t('promotions.validation.autoTimeWindow')
   if (
     (form.value.starts_at && !form.value.ends_at) ||
     (!form.value.starts_at && form.value.ends_at)
   )
-    return 'Please set both start and end times.'
+    return t('promotions.validation.bothTimes')
   return null
 }
 
@@ -507,8 +506,8 @@ async function savePromo() {
   if (error) {
     formError.value =
       error.code === '23505'
-        ? 'That discount code already exists. Try a different one.'
-        : 'Failed to save. Please try again.'
+        ? t('promotions.validation.duplicateCode')
+        : t('promotions.validation.saveFailed')
     return
   }
 
@@ -558,7 +557,7 @@ function formatTime(t) {
   if (!t) return ''
   const [h, m] = t.split(':')
   const hour = parseInt(h)
-  return `${hour % 12 || 12}:${m} ${hour < 12 ? 'AM' : 'PM'}`
+  return `${hour % 12 || 12}:${m} ${hour < 12 ? t('analytics.time.am') : t('analytics.time.pm')}`
 }
 
 // ─── Init ─────────────────────────────────────────────────────

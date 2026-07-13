@@ -3,14 +3,14 @@
     <!-- ── Page header ──────────────────────────────── -->
     <div class="page-header">
       <div>
-        <h2 class="page-title">Subscriptions</h2>
-        <p class="page-sub">{{ filtered.length }} of {{ rows.length }} restaurants</p>
+        <h2 class="page-title">{{ $t('superAdmin.subscriptions.title') }}</h2>
+        <p class="page-sub">{{ $t('superAdmin.subscriptions.subtitle', { filtered: filtered.length, total: rows.length }) }}</p>
       </div>
       <!-- Summary pills -->
       <div class="summary-pills" v-if="!loading">
-        <span class="summary-pill active">{{ counts.active }} active</span>
-        <span class="summary-pill trial">{{ counts.trial }} trial</span>
-        <span class="summary-pill expired">{{ counts.expired }} expired</span>
+        <span class="summary-pill active">{{ $t('superAdmin.subscriptions.summary.active', { count: counts.active }) }}</span>
+        <span class="summary-pill trial">{{ $t('superAdmin.subscriptions.summary.trial', { count: counts.trial }) }}</span>
+        <span class="summary-pill expired">{{ $t('superAdmin.subscriptions.summary.expired', { count: counts.expired }) }}</span>
       </div>
     </div>
 
@@ -21,7 +21,7 @@
         <input
           v-model="searchQ"
           class="search-input"
-          placeholder="Search by restaurant name…"
+          :placeholder="$t('superAdmin.subscriptions.searchPlaceholder')"
           type="text"
         />
         <button v-if="searchQ" class="search-clear" @click="searchQ = ''">×</button>
@@ -69,19 +69,19 @@
 
       <div v-else-if="filtered.length === 0" class="empty-state">
         <span v-html="icons.empty" />
-        <span>No subscriptions match your filters</span>
+        <span>{{ $t('superAdmin.subscriptions.empty') }}</span>
       </div>
 
       <table v-else class="s-table">
         <thead>
           <tr>
-            <th>Restaurant</th>
-            <th>Plan</th>
-            <th>Billing</th>
-            <th>Status</th>
-            <th>Expiry / Renewal</th>
-            <th>LS Subscription ID</th>
-            <th>Last updated by</th>
+            <th>{{ $t('superAdmin.subscriptions.table.restaurant') }}</th>
+            <th>{{ $t('superAdmin.subscriptions.table.plan') }}</th>
+            <th>{{ $t('superAdmin.subscriptions.table.billing') }}</th>
+            <th>{{ $t('superAdmin.subscriptions.table.status') }}</th>
+            <th>{{ $t('superAdmin.subscriptions.table.expiryRenewal') }}</th>
+            <th>{{ $t('superAdmin.subscriptions.table.lsSubscriptionId') }}</th>
+            <th>{{ $t('superAdmin.subscriptions.table.lastUpdatedBy') }}</th>
             <th></th>
           </tr>
         </thead>
@@ -101,7 +101,7 @@
             </td>
             <td>
               <span class="billing-badge" :class="r.billing_type ?? 'manual'">
-                {{ r.billing_type === 'lemonsqueezy' ? 'LemonSqueezy' : 'Manual' }}
+                {{ r.billing_type === 'lemonsqueezy' ? $t('superAdmin.subscriptions.lemonSqueezy') : $t('superAdmin.subscriptions.manual') }}
               </span>
             </td>
             <td>
@@ -111,7 +111,7 @@
             </td>
             <td class="td-expiry">
               <template v-if="r.billing_type === 'lemonsqueezy'">
-                <span class="td-muted">Auto renew</span>
+                <span class="td-muted">{{ $t('superAdmin.subscriptions.autoRenew') }}</span>
               </template>
               <template v-else-if="r.plan_expires_at">
                 <span :class="expiryClass(r.plan_expires_at)">
@@ -121,7 +121,7 @@
               </template>
               <template v-else-if="r.trial_ends_at">
                 <span :class="expiryClass(r.trial_ends_at)">
-                  Trial · {{ formatDate(r.trial_ends_at) }}
+                  {{ $t('superAdmin.subscriptions.trialPrefix', { date: formatDate(r.trial_ends_at) }) }}
                 </span>
               </template>
               <template v-else>
@@ -137,26 +137,26 @@
             <td>
               <span v-if="r.updater_name" class="updater">{{ r.updater_name }}</span>
               <span v-else class="td-muted">{{
-                r.billing_type === 'lemonsqueezy' ? 'Webhook' : '—'
+                r.billing_type === 'lemonsqueezy' ? $t('superAdmin.subscriptions.webhook') : '—'
               }}</span>
             </td>
             <td>
               <div class="action-btns">
                 <button
                   class="action-btn"
-                  title="View details"
+                  :title="$t('superAdmin.subscriptions.action.viewDetails')"
                   @click="openDetails(r)"
                   v-html="icons.eye"
                 />
                 <button
                   class="action-btn"
-                  title="Edit plan & expiry"
+                  :title="$t('superAdmin.subscriptions.action.editPlan')"
                   @click="openBilling(r)"
                   v-html="icons.edit"
                 />
                 <button
                   class="action-btn danger"
-                  title="Mark as expired"
+                  :title="$t('superAdmin.subscriptions.action.markExpired')"
                   :disabled="r.plan === 'expired'"
                   @click="openExpire(r)"
                   v-html="icons.expire"
@@ -177,7 +177,7 @@
               <div class="r-avatar lg">{{ detailsModal.name?.[0]?.toUpperCase() }}</div>
               <div>
                 <h3 class="modal-title">{{ detailsModal.name }}</h3>
-                <span class="modal-sub">Subscription details</span>
+                <span class="modal-sub">{{ $t('superAdmin.subscriptions.detailsModal.subtitle') }}</span>
               </div>
             </div>
             <button class="modal-close" @click="detailsModal = null">×</button>
@@ -202,7 +202,7 @@
             <div class="modal-title-wrap">
               <span v-html="icons.edit" style="color: #f97316" />
               <div>
-                <h3 class="modal-title">Edit subscription</h3>
+                <h3 class="modal-title">{{ $t('superAdmin.subscriptions.editModal.title') }}</h3>
                 <span class="modal-sub">{{ billingModal.name }}</span>
               </div>
             </div>
@@ -210,42 +210,42 @@
           </div>
           <div class="modal-body">
             <div class="form-group">
-              <label class="form-label">Plan</label>
+              <label class="form-label">{{ $t('superAdmin.subscriptions.editModal.planLabel') }}</label>
               <select v-model="billingForm.plan" class="form-select">
-                <option value="trial">Trial</option>
-                <option value="starter">Starter</option>
-                <option value="pro">Pro</option>
-                <option value="expired">Expired</option>
+                <option value="trial">{{ $t('superAdmin.subscriptions.editModal.planOption.trial') }}</option>
+                <option value="starter">{{ $t('superAdmin.subscriptions.editModal.planOption.starter') }}</option>
+                <option value="pro">{{ $t('superAdmin.subscriptions.editModal.planOption.pro') }}</option>
+                <option value="expired">{{ $t('superAdmin.subscriptions.editModal.planOption.expired') }}</option>
               </select>
             </div>
             <div class="form-group">
-              <label class="form-label">Billing type</label>
+              <label class="form-label">{{ $t('superAdmin.subscriptions.editModal.billingTypeLabel') }}</label>
               <select v-model="billingForm.billing_type" class="form-select">
-                <option value="manual">Manual</option>
-                <option value="lemonsqueezy">LemonSqueezy</option>
+                <option value="manual">{{ $t('superAdmin.subscriptions.editModal.billingOption.manual') }}</option>
+                <option value="lemonsqueezy">{{ $t('superAdmin.subscriptions.editModal.billingOption.lemonSqueezy') }}</option>
               </select>
             </div>
             <div class="form-group" v-if="billingForm.billing_type === 'manual'">
-              <label class="form-label">Plan expires at</label>
+              <label class="form-label">{{ $t('superAdmin.subscriptions.editModal.expiresAtLabel') }}</label>
               <input v-model="billingForm.plan_expires_at" type="date" class="form-input" />
-              <div class="form-hint">Leave empty for indefinite access</div>
+              <div class="form-hint">{{ $t('superAdmin.subscriptions.editModal.expiresAtHint') }}</div>
             </div>
             <div class="form-group" v-if="billingForm.billing_type === 'manual'">
               <div class="quick-dates">
-                <span class="quick-label">Quick set:</span>
-                <button class="quick-btn" @click="setExpiry(30)">+30 days</button>
-                <button class="quick-btn" @click="setExpiry(90)">+90 days</button>
-                <button class="quick-btn" @click="setExpiry(365)">+1 year</button>
+                <span class="quick-label">{{ $t('superAdmin.subscriptions.editModal.quickSet') }}</span>
+                <button class="quick-btn" @click="setExpiry(30)">{{ $t('superAdmin.subscriptions.editModal.plus30Days') }}</button>
+                <button class="quick-btn" @click="setExpiry(90)">{{ $t('superAdmin.subscriptions.editModal.plus90Days') }}</button>
+                <button class="quick-btn" @click="setExpiry(365)">{{ $t('superAdmin.subscriptions.editModal.plus1Year') }}</button>
                 <button class="quick-btn danger" @click="billingForm.plan_expires_at = ''">
-                  Clear
+                  {{ $t('superAdmin.subscriptions.editModal.clear') }}
                 </button>
               </div>
             </div>
           </div>
           <div class="modal-footer">
-            <button class="btn-secondary" @click="closeBilling">Cancel</button>
+            <button class="btn-secondary" @click="closeBilling">{{ $t('superAdmin.subscriptions.editModal.cancel') }}</button>
             <button class="btn-primary" :disabled="saving" @click="saveBilling">
-              {{ saving ? 'Saving…' : 'Save changes' }}
+              {{ saving ? $t('superAdmin.subscriptions.editModal.saving') : $t('superAdmin.subscriptions.editModal.save') }}
             </button>
           </div>
         </div>
@@ -259,25 +259,23 @@
           <div class="modal-header">
             <div class="modal-title-wrap">
               <span v-html="icons.expire" style="color: #e11d48" />
-              <h3 class="modal-title">Mark as expired</h3>
+              <h3 class="modal-title">{{ $t('superAdmin.subscriptions.expireModal.title') }}</h3>
             </div>
             <button class="modal-close" @click="expireTarget = null">×</button>
           </div>
           <div class="modal-body">
             <p class="confirm-text">
-              Mark <strong>{{ expireTarget.name }}</strong
-              >'s subscription as expired?
+              {{ $t('superAdmin.subscriptions.expireModal.confirmText', { name: expireTarget.name }) }}
             </p>
             <div class="confirm-info danger">
               <span v-html="icons.info" />
-              Their plan will be set to <strong>expired</strong> and they will be redirected to the
-              trial wall immediately on next login.
+              {{ $t('superAdmin.subscriptions.expireModal.infoText') }}
             </div>
           </div>
           <div class="modal-footer">
-            <button class="btn-secondary" @click="expireTarget = null">Cancel</button>
+            <button class="btn-secondary" @click="expireTarget = null">{{ $t('superAdmin.subscriptions.expireModal.cancel') }}</button>
             <button class="btn-danger" :disabled="saving" @click="confirmExpire">
-              {{ saving ? 'Saving…' : 'Mark as expired' }}
+              {{ saving ? $t('superAdmin.subscriptions.expireModal.saving') : $t('superAdmin.subscriptions.expireModal.confirm') }}
             </button>
           </div>
         </div>
@@ -290,8 +288,10 @@
 import { ref, computed, onMounted } from 'vue'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
+import { useI18n } from 'vue-i18n'
 
 const authStore = useAuthStore()
+const { t } = useI18n()
 const loading = ref(true)
 const saving = ref(false)
 const rows = ref([])
@@ -303,23 +303,23 @@ const billingFilter = ref('all')
 const statusFilter = ref('all')
 
 const planFilters = [
-  { label: 'All plans', value: 'all' },
-  { label: 'Trial', value: 'trial' },
-  { label: 'Starter', value: 'starter' },
-  { label: 'Pro', value: 'pro' },
-  { label: 'Expired', value: 'expired' },
+  { label: t('superAdmin.subscriptions.filter.allPlans'), value: 'all' },
+  { label: t('superAdmin.subscriptions.filter.trial'), value: 'trial' },
+  { label: t('superAdmin.subscriptions.filter.starter'), value: 'starter' },
+  { label: t('superAdmin.subscriptions.filter.pro'), value: 'pro' },
+  { label: t('superAdmin.subscriptions.filter.expired'), value: 'expired' },
 ]
 const billingFilters = [
-  { label: 'All billing', value: 'all' },
-  { label: 'Manual', value: 'manual' },
-  { label: 'LemonSqueezy', value: 'lemonsqueezy' },
+  { label: t('superAdmin.subscriptions.filter.allBilling'), value: 'all' },
+  { label: t('superAdmin.subscriptions.filter.manual'), value: 'manual' },
+  { label: t('superAdmin.subscriptions.filter.lemonSqueezy'), value: 'lemonsqueezy' },
 ]
 const statusFilters = [
-  { label: 'All status', value: 'all' },
-  { label: 'Active', value: 'active' },
-  { label: 'Trial', value: 'trial' },
-  { label: 'Expiring', value: 'expiring' },
-  { label: 'Expired', value: 'expired' },
+  { label: t('superAdmin.subscriptions.filter.allStatus'), value: 'all' },
+  { label: t('superAdmin.subscriptions.filter.active'), value: 'active' },
+  { label: t('superAdmin.subscriptions.filter.trial'), value: 'trial' },
+  { label: t('superAdmin.subscriptions.filter.expiring'), value: 'expiring' },
+  { label: t('superAdmin.subscriptions.filter.expired'), value: 'expired' },
 ]
 
 // ── Status helpers ─────────────────────────────────────
@@ -338,7 +338,7 @@ function subStatus(r) {
 
 function subStatusLabel(r) {
   const s = subStatus(r)
-  if (s === 'expiring') return 'Expiring soon'
+  if (s === 'expiring') return t('superAdmin.subscriptions.status.expiringSoon')
   return s.charAt(0).toUpperCase() + s.slice(1)
 }
 
@@ -470,9 +470,9 @@ function daysUntil(dateStr) {
 
 function daysLabel(dateStr) {
   const d = daysUntil(dateStr)
-  if (d < 0) return '(expired)'
-  if (d === 0) return '(today)'
-  return `(${d}d left)`
+  if (d < 0) return t('superAdmin.subscriptions.daysLabel.expired')
+  if (d === 0) return t('superAdmin.subscriptions.daysLabel.today')
+  return t('superAdmin.subscriptions.daysLabel.daysLeft', { days: d })
 }
 
 function expiryClass(dateStr) {
@@ -485,27 +485,27 @@ function expiryClass(dateStr) {
 
 function detailFields(r) {
   return [
-    { label: 'Restaurant ID', value: `<code>${r.id}</code>` },
-    { label: 'Name', value: r.name },
-    { label: 'Plan', value: r.plan ?? 'trial' },
-    { label: 'Billing type', value: r.billing_type ?? 'manual' },
-    { label: 'Status', value: subStatusLabel(r) },
-    { label: 'Trial ends', value: formatDate(r.trial_ends_at) },
-    { label: 'Plan expires', value: formatDate(r.plan_expires_at) },
-    { label: 'LS customer ID', value: r.lemonsqueezy_customer_id ?? '—' },
-    { label: 'LS subscription ID', value: r.lemonsqueezy_subscription_id ?? '—' },
+    { label: t('superAdmin.subscriptions.details.restaurantId'), value: `<code>${r.id}</code>` },
+    { label: t('superAdmin.subscriptions.details.name'), value: r.name },
+    { label: t('superAdmin.subscriptions.details.plan'), value: r.plan ?? 'trial' },
+    { label: t('superAdmin.subscriptions.details.billingType'), value: r.billing_type ?? 'manual' },
+    { label: t('superAdmin.subscriptions.details.status'), value: subStatusLabel(r) },
+    { label: t('superAdmin.subscriptions.details.trialEnds'), value: formatDate(r.trial_ends_at) },
+    { label: t('superAdmin.subscriptions.details.planExpires'), value: formatDate(r.plan_expires_at) },
+    { label: t('superAdmin.subscriptions.details.lsCustomerId'), value: r.lemonsqueezy_customer_id ?? '—' },
+    { label: t('superAdmin.subscriptions.details.lsSubscriptionId'), value: r.lemonsqueezy_subscription_id ?? '—' },
     {
-      label: 'Customer portal URL',
+      label: t('superAdmin.subscriptions.details.customerPortalUrl'),
       value: r.customer_portal_url
-        ? `<a href="${r.customer_portal_url}" target="_blank" style="color:#f97316">Open portal ↗</a>`
+        ? `<a href="${r.customer_portal_url}" target="_blank" style="color:#f97316">${t('superAdmin.subscriptions.details.openPortal')}</a>`
         : '—',
     },
     {
-      label: 'Last updated by',
-      value: r.updater_name ?? (r.billing_type === 'lemonsqueezy' ? 'Webhook' : '—'),
+      label: t('superAdmin.subscriptions.details.lastUpdatedBy'),
+      value: r.updater_name ?? (r.billing_type === 'lemonsqueezy' ? t('superAdmin.subscriptions.webhook') : '—'),
     },
-    { label: 'Updated at', value: formatDate(r.updated_at) },
-    { label: 'Created', value: formatDate(r.created_at) },
+    { label: t('superAdmin.subscriptions.details.updatedAt'), value: formatDate(r.updated_at) },
+    { label: t('superAdmin.subscriptions.details.created'), value: formatDate(r.created_at) },
   ]
 }
 

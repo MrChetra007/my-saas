@@ -8,7 +8,7 @@
           <img
             v-if="restaurantLogoUrl"
             :src="restaurantLogoUrl"
-            alt="Restaurant Logo"
+            :alt="$t('layouts.restaurantLogo')"
             style="width: 32px; height: 32px; border-radius: 8px; object-fit: cover; display: block"
           />
           <svg v-else width="16" height="16" viewBox="0 0 32 32" fill="none">
@@ -145,7 +145,7 @@
       <button
         class="collapse-btn"
         @click="sidebarCollapsed = !sidebarCollapsed"
-        :title="sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'"
+        :title="sidebarCollapsed ? $t('layouts.expandSidebar') : $t('layouts.collapseSidebar')"
       >
         <ChevronLeft v-if="!sidebarCollapsed" :size="14" />
         <ChevronRight v-else :size="14" />
@@ -168,7 +168,7 @@
     <div class="main-area" :class="{ expanded: sidebarCollapsed }">
       <!-- Topbar -->
       <header class="topbar">
-        <button class="mobile-menu-btn" @click="mobileOpen = !mobileOpen" aria-label="Open menu">
+        <button class="mobile-menu-btn" @click="mobileOpen = !mobileOpen" :aria-label="$t('layouts.openMenu')">
           <Menu :size="18" />
         </button>
         <div class="topbar-title">
@@ -181,7 +181,7 @@
           </select>
           <button class="pending-pill" v-if="pendingCount > 0" @click="$router.push('/app/orders')">
             <span class="pill-dot" />
-            {{ pendingCount }} {{ $t('common.pending') || 'pending' }}
+            {{ pendingCount }} {{ $t('common.pending') }}
           </button>
           <div class="user-avatar" :title="userName">{{ userInitial }}</div>
         </div>
@@ -271,9 +271,9 @@ const pageTitles = {
 }
 const currentPageTitle = computed(() => {
   const key = pageTitles[route.path]
-  return key ? t(`nav.${key}`) : 'Qrserve'
+  return key ? t(`nav.${key}`) : t('onboarding.brand')
 })
-const userName = computed(() => authStore.profile?.full_name || 'User')
+const userName = computed(() => authStore.profile?.full_name || t('common.user'))
 const userInitial = computed(() => userName.value.charAt(0).toUpperCase())
 const restaurantInitial = computed(() => restaurantName.value.charAt(0).toUpperCase() || 'R')
 const planLabel = computed(() => {

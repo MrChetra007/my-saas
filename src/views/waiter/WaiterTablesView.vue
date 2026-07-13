@@ -3,23 +3,21 @@
     <!-- Header -->
     <div class="page-header">
       <div class="header-content">
-        <h1 class="page-title">Tables</h1>
-        <p class="page-subtitle">
-          Toggle tables active or inactive. Inactive tables won't accept new orders via QR.
-        </p>
+        <h1 class="page-title">{{ $t('waiter.tables.title') }}</h1>
+        <p class="page-subtitle">{{ $t('waiter.tables.subtitle') }}</p>
       </div>
       <div class="stats-pill" v-if="!loading && tables.length > 0">
         <span class="stats-active">{{ activeCount }}</span>
         <span class="stats-separator">/</span>
         <span class="stats-total">{{ tables.length }}</span>
-        <span class="stats-label">active</span>
+        <span class="stats-label">{{ $t('waiter.tables.active') }}</span>
       </div>
     </div>
 
     <!-- Loading -->
     <div v-if="loading" class="loading-state">
       <div class="spinner"></div>
-      <p>Loading tables...</p>
+      <p>{{ $t('waiter.tables.loading') }}</p>
     </div>
 
     <!-- Empty State -->
@@ -27,8 +25,8 @@
       <div class="empty-icon-wrap">
         <LayoutGrid class="empty-icon" />
       </div>
-      <h3 class="empty-title">No tables found</h3>
-      <p class="empty-subtitle">Contact your manager to add tables to the system</p>
+      <h3 class="empty-title">{{ $t('waiter.tables.emptyTitle') }}</h3>
+      <p class="empty-subtitle">{{ $t('waiter.tables.emptySubtitle') }}</p>
     </div>
 
     <!-- Tables Grid -->
@@ -51,9 +49,9 @@
             <h3 class="table-name">{{ table.name }}</h3>
             <div class="table-status">
               <span class="status-dot" :class="{ 'status-dot--active': table.is_active }"></span>
-              <span class="status-text">{{ table.is_active ? 'Active' : 'Inactive' }}</span>
+              <span class="status-text">{{ table.is_active ? $t('waiter.tables.statusActive') : $t('waiter.tables.statusInactive') }}</span>
             </div>
-            <p class="table-hint" v-if="!table.is_active">QR ordering disabled</p>
+            <p class="table-hint" v-if="!table.is_active">{{ $t('waiter.tables.qrDisabled') }}</p>
           </div>
         </div>
 
@@ -63,7 +61,7 @@
           :class="{ 'toggle-btn--on': table.is_active }"
           @click="toggleTable(table)"
           :disabled="toggling === table.id"
-          :aria-label="table.is_active ? `Deactivate ${table.name}` : `Activate ${table.name}`"
+          :aria-label="table.is_active ? $t('waiter.tables.deactivate', { name: table.name }) : $t('waiter.tables.activate', { name: table.name })"
         >
           <span class="toggle-track">
             <span class="toggle-thumb">
@@ -77,10 +75,7 @@
     <!-- Info Footer -->
     <div class="info-footer" v-if="!loading && tables.length > 0">
       <Info class="info-icon" />
-      <p>
-        Active tables can receive orders via QR code scanning. Inactive tables are temporarily
-        disabled.
-      </p>
+      <p>{{ $t('waiter.tables.infoFooter') }}</p>
     </div>
   </div>
 </template>

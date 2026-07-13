@@ -11,14 +11,14 @@
     <!-- ── Loading ──────────────────────────── -->
     <div v-if="loading" class="full-center">
       <div class="spinner" />
-      <p class="loading-text">Loading menu…</p>
+      <p class="loading-text">{{ $t('orderView.loading') }}</p>
     </div>
 
     <!-- ── Not found ────────────────────────── -->
     <div v-else-if="notFound" class="full-center">
       <UtensilsCrossed :size="48" class="not-found-icon" />
-      <h2 class="not-found-title">Menu not found</h2>
-      <p class="not-found-sub">This QR code may be invalid or the restaurant is unavailable.</p>
+      <h2 class="not-found-title">{{ $t('orderView.menuNotFound') }}</h2>
+      <p class="not-found-sub">{{ $t('orderView.menuNotFoundDesc') }}</p>
     </div>
 
     <!-- ── Order placed (status tracker) ────── -->
@@ -54,7 +54,7 @@
               <Check v-if="orderStatus !== 'pending'" :size="14" />
               <span v-else>1</span>
             </div>
-            <span>Order received</span>
+            <span>{{ $t('orderView.stepOrderReceived') }}</span>
           </div>
           <div
             class="step-line"
@@ -71,7 +71,7 @@
               <Check v-if="['ready', 'paid'].includes(orderStatus)" :size="14" />
               <span v-else>2</span>
             </div>
-            <span>Being prepared</span>
+            <span>{{ $t('orderView.stepBeingPrepared') }}</span>
           </div>
           <div class="step-line" :class="{ done: ['ready', 'paid'].includes(orderStatus) }" />
           <div
@@ -85,13 +85,13 @@
               <Check v-if="['ready', 'paid'].includes(orderStatus)" :size="14" />
               <span v-else>3</span>
             </div>
-            <span>Ready!</span>
+            <span>{{ $t('orderView.stepReady') }}</span>
           </div>
         </div>
 
         <!-- Order summary -->
         <div class="order-summary">
-          <div class="summary-title">Your order</div>
+          <div class="summary-title">{{ $t('orderView.yourOrder') }}</div>
           <div class="summary-items">
             <div v-for="item in placedItems" :key="item.id" class="summary-item">
               <span class="summary-qty">x{{ item.quantity }}</span>
@@ -102,20 +102,20 @@
             </div>
           </div>
           <div v-if="placedDiscountAmount > 0" class="summary-discount-row">
-            <span>Discount</span>
+            <span>{{ $t('orderView.discount') }}</span>
             <span class="summary-discount-val">
               -{{ currencySymbol }}{{ placedDiscountAmount.toFixed(2) }}
             </span>
           </div>
           <div class="summary-total">
-            <span>Total</span>
+            <span>{{ $t('orderView.total') }}</span>
             <span>{{ currencySymbol }}{{ placedTotal.toFixed(2) }}</span>
           </div>
         </div>
 
         <button class="btn-order-again" @click="resetOrder">
           <Plus :size="15" />
-          Order more items
+          {{ $t('orderView.orderMoreItems') }}
         </button>
       </div>
     </div>
@@ -150,11 +150,11 @@
               <span class="flame-discount">
                 {{
                   autoPromo.type === 'percentage'
-                    ? `${autoPromo.value}% OFF`
-                    : `${currencySymbol}${autoPromo.value} OFF`
+                    ? $t('orderView.promoFlameOff', { value: autoPromo.value })
+                    : $t('orderView.promoFlameFixedOff', { symbol: currencySymbol, value: autoPromo.value })
                 }}
               </span>
-              <span class="flame-timer">{{ promoCountdown || 'Expired!' }}</span>
+              <span class="flame-timer">{{ promoCountdown || $t('orderView.promoFlameExpired') }}</span>
             </div>
           </div>
         </Transition>
@@ -164,8 +164,8 @@
           <div v-if="codePromoHint && !appliedPromo" class="promo-code-hint-badge">
             <span class="hint-emoji">🏷️</span>
             <div class="flame-badge-text">
-              <span class="hint-discount">Discount available</span>
-              <span class="hint-sub">Use a code at checkout</span>
+              <span class="hint-discount">{{ $t('orderView.hintDiscountAvailable') }}</span>
+              <span class="hint-sub">{{ $t('orderView.hintUseCode') }}</span>
             </div>
           </div>
         </Transition>
@@ -173,15 +173,14 @@
         <!-- Auto promo announcement banner -->
         <div v-if="autoPromo" class="header-promo-banner">
           <Tag :size="14" />
-          <span>
-            <strong>{{ autoPromo.name }}</strong> is active —
-            {{
-              autoPromo.type === 'percentage'
-                ? `${autoPromo.value}% off`
-                : `${currencySymbol}${autoPromo.value} off`
-            }}
-            your order!
-          </span>
+          <i18n-t keypath="orderView.promoBannerActive" tag="span">
+            <template #name>
+              <strong>{{ autoPromo.name }}</strong>
+            </template>
+            <template #discount>
+              {{ autoPromo.type === 'percentage' ? autoPromo.value + '% off' : currencySymbol + autoPromo.value + ' off' }}
+            </template>
+          </i18n-t>
         </div>
       </div>
 
@@ -194,7 +193,7 @@
             @click="activeCatFilter = 'all'"
           >
             <LayoutGrid :size="13" />
-            All
+            {{ $t('orderView.allTab') }}
           </button>
           <button
             v-for="cat in activeCategories"
@@ -229,7 +228,7 @@
                 <div class="item-info">
                   <div class="item-name-row">
                     <span class="item-name">{{ item.name }}</span>
-                    <span v-if="!item.is_available" class="sold-out-tag">Sold out</span>
+                    <span v-if="!item.is_available" class="sold-out-tag">{{ $t('orderView.soldOut') }}</span>
                   </div>
                   <div v-if="item.description" class="item-desc">{{ item.description }}</div>
                   <div class="item-price">
@@ -266,7 +265,7 @@
           <div ref="scrollSentinel" class="scroll-sentinel" />
           <div v-if="allItemsLoaded" class="end-of-menu">
             <ChefHat :size="20" class="end-icon" />
-            <span>That's our full menu!</span>
+            <span>{{ $t('orderView.fullMenu') }}</span>
           </div>
         </template>
 
@@ -283,7 +282,7 @@
                 <div class="item-info">
                   <div class="item-name-row">
                     <span class="item-name">{{ item.name }}</span>
-                    <span v-if="!item.is_available" class="sold-out-tag">Sold out</span>
+                    <span v-if="!item.is_available" class="sold-out-tag">{{ $t('orderView.soldOut') }}</span>
                   </div>
                   <div v-if="item.description" class="item-desc">{{ item.description }}</div>
                   <div class="item-price">
@@ -327,7 +326,7 @@
         <div v-if="cartItemCount > 0" class="cart-bar" @click="openCart">
           <div class="cart-bar-left">
             <span class="cart-count-badge">{{ cartItemCount }}</span>
-            <span class="cart-bar-label">View order</span>
+            <span class="cart-bar-label">{{ $t('orderView.viewOrder') }}</span>
           </div>
           <span class="cart-bar-total">{{ currencySymbol }}{{ orderTotal.toFixed(2) }}</span>
         </div>
@@ -361,12 +360,12 @@
             </div>
             <div class="field-group">
               <label class="field-label">
-                Special instructions <span class="optional">(optional)</span>
+                {{ $t('orderView.specialInstructions') }} <span class="optional">{{ $t('common.optional') }}</span>
               </label>
               <textarea
                 v-model="itemModal.notes"
                 class="field-input field-textarea"
-                placeholder="e.g. no onions, extra sauce..."
+                :placeholder="$t('orderView.specialInstructionsPlaceholder')"
                 rows="2"
               />
             </div>
@@ -393,7 +392,7 @@
       <div v-if="cartOpen" class="modal-backdrop" @click.self="cartOpen = false">
         <div class="modal modal-cart">
           <div class="modal-header">
-            <h2 class="modal-title">Your Order</h2>
+            <h2 class="modal-title">{{ $t('orderView.cartTitle') }}</h2>
             <button class="modal-close" @click="cartOpen = false"><X :size="15" /></button>
           </div>
           <div class="cart-body">
@@ -414,12 +413,12 @@
 
             <div class="field-group" style="margin-top: 16px">
               <label class="field-label">
-                Order notes <span class="optional">(optional)</span>
+                {{ $t('orderView.orderNotes') }} <span class="optional">{{ $t('common.optional') }}</span>
               </label>
               <textarea
                 v-model="orderNotes"
                 class="field-input field-textarea"
-                placeholder="Any notes for the kitchen..."
+                :placeholder="$t('orderView.orderNotesPlaceholder')"
                 rows="2"
               />
             </div>
@@ -427,16 +426,16 @@
             <!-- Auto promo applied banner -->
             <div v-if="autoPromo && !appliedPromo" class="auto-promo-banner">
               <Tag :size="14" />
-              <div>
-                <strong>{{ autoPromo.name }}</strong> applied automatically —
-                <span class="auto-promo-value">
-                  {{
-                    autoPromo.type === 'percentage'
-                      ? `${autoPromo.value}% off`
-                      : `${currencySymbol}${autoPromo.value} off`
-                  }}
-                </span>
-              </div>
+              <i18n-t keypath="orderView.autoPromoApplied" tag="div">
+                <template #name>
+                  <strong>{{ autoPromo.name }}</strong>
+                </template>
+                <template #discount>
+                  <span class="auto-promo-value">
+                    {{ autoPromo.type === 'percentage' ? autoPromo.value + '% off' : currencySymbol + autoPromo.value + ' off' }}
+                  </span>
+                </template>
+              </i18n-t>
             </div>
 
             <!-- Manual promo code input -->
@@ -445,7 +444,7 @@
                 <input
                   v-model="promoInput"
                   type="text"
-                  placeholder="Discount code"
+                  :placeholder="$t('orderView.discountCode')"
                   class="field-input promo-input"
                   @keyup.enter="applyPromoCode"
                   @input="promoInput = promoInput.toUpperCase()"
@@ -456,7 +455,7 @@
                   @click="applyPromoCode"
                   :disabled="promoLoading || !promoInput.trim()"
                 >
-                  {{ promoLoading ? '...' : 'Apply' }}
+                  {{ promoLoading ? $t('orderView.applying') : $t('orderView.apply') }}
                 </button>
               </div>
               <p v-if="promoError" class="promo-error">{{ promoError }}</p>
@@ -468,12 +467,7 @@
               <div class="applied-info">
                 <span class="applied-code">{{ appliedPromoCode }}</span>
                 <span class="applied-desc">
-                  {{
-                    appliedPromo.type === 'percentage'
-                      ? `${appliedPromo.value}% off`
-                      : `${currencySymbol}${appliedPromo.value} off`
-                  }}
-                  — saving {{ currencySymbol }}{{ discountAmount.toFixed(2) }}
+                  {{ $t('orderView.appliedPromoDesc', { discount: appliedPromo.type === 'percentage' ? appliedPromo.value + '% off' : currencySymbol + appliedPromo.value + ' off', symbol: currencySymbol, amount: discountAmount.toFixed(2) }) }}
                 </span>
               </div>
               <button class="remove-promo-btn" @click="removePromoCode"><X :size="13" /></button>
@@ -482,17 +476,17 @@
 
           <div class="cart-footer">
             <div v-if="discountAmount > 0" class="cart-subtotal-row">
-              <span class="cart-total-label">Subtotal</span>
+              <span class="cart-total-label">{{ $t('orderView.subtotal') }}</span>
               <span class="cart-total-val">{{ currencySymbol }}{{ cartSubtotal.toFixed(2) }}</span>
             </div>
             <div v-if="discountAmount > 0" class="cart-discount-row">
               <span class="cart-discount-label">
-                Discount
+                {{ $t('orderView.discountLabel') }}
                 <span class="discount-pill">
                   {{
                     (appliedPromo || autoPromo).type === 'percentage'
                       ? `${(appliedPromo || autoPromo).value}%`
-                      : 'Fixed'
+                      : $t('orderView.fixed')
                   }}
                 </span>
               </span>
@@ -501,7 +495,7 @@
               </span>
             </div>
             <div class="cart-total-row" :class="{ 'has-discount': discountAmount > 0 }">
-              <span class="cart-total-label">Total</span>
+              <span class="cart-total-label">{{ $t('orderView.totalLabel') }}</span>
               <span class="cart-total-val">{{ currencySymbol }}{{ orderTotal.toFixed(2) }}</span>
             </div>
             <button class="btn-place-order" :disabled="placing" @click="placeOrder">
@@ -509,8 +503,8 @@
               <div v-else class="btn-spinner" />
               {{
                 placing
-                  ? 'Placing order...'
-                  : `Place Order · ${currencySymbol}${orderTotal.toFixed(2)}`
+                  ? $t('orderView.placingOrder')
+                  : $t('orderView.placeOrder', { total: currencySymbol + orderTotal.toFixed(2) })
               }}
             </button>
             <div v-if="orderError" class="order-error">{{ orderError }}</div>
@@ -525,6 +519,7 @@
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { supabase } from '@/lib/supabase'
+import { useI18n } from 'vue-i18n'
 import { v4 as uuidv4 } from 'uuid'
 import {
   UtensilsCrossed,
@@ -545,6 +540,7 @@ import {
 } from 'lucide-vue-next'
 
 const route = useRoute()
+const { t } = useI18n()
 
 const restaurantIdFromUrl = route.query.rid || null
 
@@ -697,34 +693,34 @@ const statusClass = computed(() => ({
   'status-rejected': orderStatus.value === 'rejected',
 }))
 const statusTitle = computed(() => {
-  if (orderStatus.value === 'pending') return 'Order received!'
-  if (orderStatus.value === 'cooking') return 'Being prepared...'
-  if (orderStatus.value === 'ready') return 'Your order is ready!'
-  if (orderStatus.value === 'rejected') return 'Order not accepted'
-  return 'Order complete!'
+  if (orderStatus.value === 'pending') return t('orderView.statusTitle.pending')
+  if (orderStatus.value === 'cooking') return t('orderView.statusTitle.cooking')
+  if (orderStatus.value === 'ready') return t('orderView.statusTitle.ready')
+  if (orderStatus.value === 'rejected') return t('orderView.statusTitle.rejected')
+  return t('orderView.statusTitle.complete')
 })
 const statusDesc = computed(() => {
   if (orderStatus.value === 'pending')
-    return 'The kitchen has your order and will confirm it shortly.'
-  if (orderStatus.value === 'cooking') return 'Your food is being prepared. Sit back and relax!'
-  if (orderStatus.value === 'ready') return 'A staff member will bring it to your table shortly.'
-  if (orderStatus.value === 'rejected') return 'Please speak to a staff member for assistance.'
-  return 'Thank you for dining with us!'
+    return t('orderView.statusDesc.pending')
+  if (orderStatus.value === 'cooking') return t('orderView.statusDesc.cooking')
+  if (orderStatus.value === 'ready') return t('orderView.statusDesc.ready')
+  if (orderStatus.value === 'rejected') return t('orderView.statusDesc.rejected')
+  return t('orderView.statusDesc.complete')
 })
 
 function handleStatusChange(newStatus) {
   orderStatus.value = newStatus
   if (newStatus === 'cooking') {
     playStatusChime('cooking')
-    showToast('Kitchen accepted your order — now cooking! 🍳', 'info')
+    showToast(t('orderView.toast.kitchenAccepted'), 'info')
   }
   if (newStatus === 'ready') {
     playStatusChime('ready')
-    showToast('Your order is ready for pickup! 🎉', 'success')
+    showToast(t('orderView.toast.readyPickup'), 'success')
   }
   if (newStatus === 'rejected') {
     playStatusChime('rejected')
-    showToast('Your order was not accepted. Please ask staff.', 'error')
+    showToast(t('orderView.toast.orderRejected'), 'error')
   }
 }
 
@@ -810,7 +806,7 @@ async function checkPromotion() {
   }
 
   if (!data) {
-    if (autoPromo.value) showToast('The automatic discount has ended.', 'warning')
+    if (autoPromo.value) showToast(t('orderView.toast.promoEnded'), 'warning')
     autoPromo.value = null
     codePromoHint.value = null
     return
@@ -821,7 +817,7 @@ async function checkPromotion() {
     const todayDate = new Date().toISOString().split('T')[0]
     const endsAt = new Date(`${todayDate}T${data.ends_at}`)
     if (endsAt < new Date()) {
-      if (autoPromo.value) showToast('The automatic discount has ended.', 'warning')
+      if (autoPromo.value) showToast(t('orderView.toast.promoEnded'), 'warning')
       autoPromo.value = null
       codePromoHint.value = null
       return
@@ -831,8 +827,8 @@ async function checkPromotion() {
 
   if (data.is_auto) {
     codePromoHint.value = null
-    if (!autoPromo.value || autoPromo.value.id !== data.id) {
-      if (autoPromo.value !== null) showToast(`🎉 "${data.name}" discount is now active!`, 'info')
+      if (!autoPromo.value || autoPromo.value.id !== data.id) {
+        if (autoPromo.value !== null) showToast(t('orderView.toast.promoNowActive', { name: data.name }), 'info')
       autoPromo.value = data
     }
   } else {
@@ -856,7 +852,7 @@ async function applyPromoCode() {
 
   const rid = resolvedRestaurantId.value
   if (!rid) {
-    promoError.value = 'Unable to validate code. Please try again.'
+    promoError.value = t('orderView.promoErrorValidate')
     return
   }
 
@@ -869,7 +865,7 @@ async function applyPromoCode() {
   promoLoading.value = false
 
   if (error || !data || data.length === 0) {
-    promoError.value = 'Invalid or expired code.'
+    promoError.value = t('orderView.promoErrorInvalid')
     return
   }
 
@@ -1134,7 +1130,7 @@ async function placeOrder() {
       )
       .subscribe()
   } catch (e) {
-    orderError.value = e.message || 'Failed to place order. Please try again.'
+    orderError.value = e.message || t('orderView.orderError')
   } finally {
     placing.value = false
   }

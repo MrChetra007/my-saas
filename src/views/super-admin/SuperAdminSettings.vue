@@ -2,8 +2,8 @@
   <div class="page">
     <div class="page-header">
       <div>
-        <h2 class="page-title">Settings</h2>
-        <p class="page-sub">Manage your super admin account and app-wide configuration.</p>
+        <h2 class="page-title">{{ $t('superAdmin.settings.title') }}</h2>
+        <p class="page-sub">{{ $t('superAdmin.settings.subtitle') }}</p>
       </div>
     </div>
 
@@ -13,8 +13,8 @@
         <div class="panel-header">
           <span v-html="icons.user" class="panel-icon" />
           <div>
-            <h3 class="panel-title">Profile</h3>
-            <p class="panel-desc">Update your display name and email address.</p>
+            <h3 class="panel-title">{{ $t('superAdmin.settings.profile.title') }}</h3>
+            <p class="panel-desc">{{ $t('superAdmin.settings.profile.desc') }}</p>
           </div>
         </div>
 
@@ -22,30 +22,30 @@
           <div class="avatar-row">
             <div class="big-avatar">{{ initials }}</div>
             <div>
-              <div class="avatar-name">{{ authStore.profile?.full_name || 'Super Admin' }}</div>
+              <div class="avatar-name">{{ authStore.profile?.full_name || $t('superAdmin.settings.profile.fallbackName') }}</div>
               <div class="avatar-email">{{ authStore.user?.email }}</div>
-              <span class="super-badge">Super Admin</span>
+              <span class="super-badge">{{ $t('superAdmin.settings.profile.badge') }}</span>
             </div>
           </div>
 
           <div class="form-group">
-            <label class="form-label">Display name</label>
+            <label class="form-label">{{ $t('superAdmin.settings.profile.displayNameLabel') }}</label>
             <input
               v-model="profileForm.full_name"
               class="form-input"
-              placeholder="Your name"
+              :placeholder="$t('superAdmin.settings.profile.displayNamePlaceholder')"
               type="text"
             />
           </div>
           <div class="form-group">
-            <label class="form-label">Email address</label>
+            <label class="form-label">{{ $t('superAdmin.settings.profile.emailLabel') }}</label>
             <input
               v-model="profileForm.email"
               class="form-input"
-              placeholder="your@email.com"
+              :placeholder="$t('superAdmin.settings.profile.emailPlaceholder')"
               type="email"
             />
-            <div class="form-hint">A confirmation will be sent to the new email address.</div>
+            <div class="form-hint">{{ $t('superAdmin.settings.profile.emailHint') }}</div>
           </div>
         </div>
 
@@ -55,7 +55,7 @@
             {{ profileMsg.text }}
           </div>
           <button class="btn-primary" :disabled="profileSaving" @click="saveProfile">
-            {{ profileSaving ? 'Saving…' : 'Save profile' }}
+            {{ profileSaving ? $t('superAdmin.settings.profile.saving') : $t('superAdmin.settings.profile.save') }}
           </button>
         </div>
       </div>
@@ -65,20 +65,20 @@
         <div class="panel-header">
           <span v-html="icons.lock" class="panel-icon" />
           <div>
-            <h3 class="panel-title">Password</h3>
-            <p class="panel-desc">Set a new password for your account.</p>
+            <h3 class="panel-title">{{ $t('superAdmin.settings.password.title') }}</h3>
+            <p class="panel-desc">{{ $t('superAdmin.settings.password.desc') }}</p>
           </div>
         </div>
 
         <div class="panel-body">
           <div class="form-group">
-            <label class="form-label">New password</label>
+            <label class="form-label">{{ $t('superAdmin.settings.password.newPasswordLabel') }}</label>
             <div class="input-wrap">
               <input
                 v-model="passwordForm.password"
                 :type="showPw ? 'text' : 'password'"
                 class="form-input"
-                placeholder="Min. 8 characters"
+                :placeholder="$t('superAdmin.settings.password.newPasswordPlaceholder')"
               />
               <button
                 class="input-toggle"
@@ -88,13 +88,13 @@
             </div>
           </div>
           <div class="form-group">
-            <label class="form-label">Confirm new password</label>
+            <label class="form-label">{{ $t('superAdmin.settings.password.confirmLabel') }}</label>
             <div class="input-wrap">
               <input
                 v-model="passwordForm.confirm"
                 :type="showPwConfirm ? 'text' : 'password'"
                 class="form-input"
-                placeholder="Repeat password"
+                :placeholder="$t('superAdmin.settings.password.confirmPlaceholder')"
               />
               <button
                 class="input-toggle"
@@ -111,7 +111,7 @@
             "
             class="mismatch-warn"
           >
-            <span v-html="icons.warn" /> Passwords do not match
+            <span v-html="icons.warn" /> {{ $t('superAdmin.settings.password.mismatch') }}
           </div>
         </div>
 
@@ -125,7 +125,7 @@
             :disabled="passwordSaving || !passwordValid"
             @click="savePassword"
           >
-            {{ passwordSaving ? 'Saving…' : 'Update password' }}
+            {{ passwordSaving ? $t('superAdmin.settings.password.saving') : $t('superAdmin.settings.password.update') }}
           </button>
         </div>
       </div>
@@ -135,9 +135,9 @@
         <div class="panel-header">
           <span v-html="icons.dollar" class="panel-icon" />
           <div>
-            <h3 class="panel-title">Pricing configuration</h3>
+            <h3 class="panel-title">{{ $t('superAdmin.settings.pricing.title') }}</h3>
             <p class="panel-desc">
-              Set prices per billing type. Used for MRR calculations on the dashboard.
+              {{ $t('superAdmin.settings.pricing.desc') }}
             </p>
           </div>
         </div>
@@ -149,44 +149,44 @@
             <div class="pricing-header">
               <div class="pricing-cell plan-col"></div>
               <div class="pricing-cell">
-                <span class="billing-pill manual">Manual</span>
-                <p class="billing-desc">Cash / bank transfer — you set expiry date manually</p>
+                <span class="billing-pill manual">{{ $t('superAdmin.settings.pricing.manualPill') }}</span>
+                <p class="billing-desc">{{ $t('superAdmin.settings.pricing.manualDesc') }}</p>
               </div>
               <div class="pricing-cell">
-                <span class="billing-pill ls">LemonSqueezy</span>
-                <p class="billing-desc">Auto billing — customer pays online, webhook handles it</p>
+                <span class="billing-pill ls">{{ $t('superAdmin.settings.pricing.lsPill') }}</span>
+                <p class="billing-desc">{{ $t('superAdmin.settings.pricing.lsDesc') }}</p>
               </div>
             </div>
 
             <!-- Starter row -->
             <div class="pricing-row">
               <div class="pricing-cell plan-col">
-                <span class="plan-pill starter">Starter</span>
+                <span class="plan-pill starter">{{ $t('superAdmin.settings.pricing.starterPill') }}</span>
               </div>
               <div class="pricing-cell">
                 <div class="input-prefix-wrap">
-                  <span class="input-prefix input-prefix-text">$</span>
+                  <span class="input-prefix input-prefix-text">{{ $t('superAdmin.settings.pricing.dollarPrefix') }}</span>
                   <input
                     v-model.number="appForm.starter_price_manual"
                     class="form-input with-prefix"
                     type="number"
                     min="0"
-                    placeholder="e.g. 15"
+                    :placeholder="$t('superAdmin.settings.pricing.placeholder', { value: '15' })"
                   />
-                  <span class="input-suffix">/mo</span>
+                  <span class="input-suffix">{{ $t('superAdmin.settings.pricing.perMonthSuffix') }}</span>
                 </div>
               </div>
               <div class="pricing-cell">
                 <div class="input-prefix-wrap">
-                  <span class="input-prefix input-prefix-text">$</span>
+                  <span class="input-prefix input-prefix-text">{{ $t('superAdmin.settings.pricing.dollarPrefix') }}</span>
                   <input
                     v-model.number="appForm.starter_price_ls"
                     class="form-input with-prefix"
                     type="number"
                     min="0"
-                    placeholder="e.g. 49"
+                    :placeholder="$t('superAdmin.settings.pricing.placeholder', { value: '49' })"
                   />
-                  <span class="input-suffix">/mo</span>
+                  <span class="input-suffix">{{ $t('superAdmin.settings.pricing.perMonthSuffix') }}</span>
                 </div>
               </div>
             </div>
@@ -194,32 +194,32 @@
             <!-- Pro row -->
             <div class="pricing-row">
               <div class="pricing-cell plan-col">
-                <span class="plan-pill pro">Pro</span>
+                <span class="plan-pill pro">{{ $t('superAdmin.settings.pricing.proPill') }}</span>
               </div>
               <div class="pricing-cell">
                 <div class="input-prefix-wrap">
-                  <span class="input-prefix input-prefix-text">$</span>
+                  <span class="input-prefix input-prefix-text">{{ $t('superAdmin.settings.pricing.dollarPrefix') }}</span>
                   <input
                     v-model.number="appForm.pro_price_manual"
                     class="form-input with-prefix"
                     type="number"
                     min="0"
-                    placeholder="e.g. 25"
+                    :placeholder="$t('superAdmin.settings.pricing.placeholder', { value: '25' })"
                   />
-                  <span class="input-suffix">/mo</span>
+                  <span class="input-suffix">{{ $t('superAdmin.settings.pricing.perMonthSuffix') }}</span>
                 </div>
               </div>
               <div class="pricing-cell">
                 <div class="input-prefix-wrap">
-                  <span class="input-prefix input-prefix-text">$</span>
+                  <span class="input-prefix input-prefix-text">{{ $t('superAdmin.settings.pricing.dollarPrefix') }}</span>
                   <input
                     v-model.number="appForm.pro_price_ls"
                     class="form-input with-prefix"
                     type="number"
                     min="0"
-                    placeholder="e.g. 99"
+                    :placeholder="$t('superAdmin.settings.pricing.placeholder', { value: '99' })"
                   />
-                  <span class="input-suffix">/mo</span>
+                  <span class="input-suffix">{{ $t('superAdmin.settings.pricing.perMonthSuffix') }}</span>
                 </div>
               </div>
             </div>
@@ -228,30 +228,30 @@
           <!-- Preview bar -->
           <div class="config-preview">
             <div class="preview-item">
-              <span class="preview-label">Starter · Manual</span>
+              <span class="preview-label">{{ $t('superAdmin.settings.pricing.preview.starterManual') }}</span>
               <span class="preview-value"
-                >${{ appForm.starter_price_manual }}<span class="preview-unit">/mo</span></span
+                >{{ $t('superAdmin.settings.pricing.dollarPrefix') }}{{ appForm.starter_price_manual }}<span class="preview-unit">{{ $t('superAdmin.settings.pricing.perMonthSuffix') }}</span></span
               >
             </div>
             <div class="preview-divider" />
             <div class="preview-item">
-              <span class="preview-label">Pro · Manual</span>
+              <span class="preview-label">{{ $t('superAdmin.settings.pricing.preview.proManual') }}</span>
               <span class="preview-value"
-                >${{ appForm.pro_price_manual }}<span class="preview-unit">/mo</span></span
+                >{{ $t('superAdmin.settings.pricing.dollarPrefix') }}{{ appForm.pro_price_manual }}<span class="preview-unit">{{ $t('superAdmin.settings.pricing.perMonthSuffix') }}</span></span
               >
             </div>
             <div class="preview-divider" />
             <div class="preview-item">
-              <span class="preview-label">Starter · LemonSqueezy</span>
+              <span class="preview-label">{{ $t('superAdmin.settings.pricing.preview.starterLs') }}</span>
               <span class="preview-value"
-                >${{ appForm.starter_price_ls }}<span class="preview-unit">/mo</span></span
+                >{{ $t('superAdmin.settings.pricing.dollarPrefix') }}{{ appForm.starter_price_ls }}<span class="preview-unit">{{ $t('superAdmin.settings.pricing.perMonthSuffix') }}</span></span
               >
             </div>
             <div class="preview-divider" />
             <div class="preview-item">
-              <span class="preview-label">Pro · LemonSqueezy</span>
+              <span class="preview-label">{{ $t('superAdmin.settings.pricing.preview.proLs') }}</span>
               <span class="preview-value"
-                >${{ appForm.pro_price_ls }}<span class="preview-unit">/mo</span></span
+                >{{ $t('superAdmin.settings.pricing.dollarPrefix') }}{{ appForm.pro_price_ls }}<span class="preview-unit">{{ $t('superAdmin.settings.pricing.perMonthSuffix') }}</span></span
               >
             </div>
           </div>
@@ -263,7 +263,7 @@
             {{ pricingMsg.text }}
           </div>
           <button class="btn-primary" :disabled="pricingSaving" @click="savePricing">
-            {{ pricingSaving ? 'Saving…' : 'Save pricing' }}
+            {{ pricingSaving ? $t('superAdmin.settings.pricing.saving') : $t('superAdmin.settings.pricing.save') }}
           </button>
         </div>
       </div>
@@ -273,14 +273,14 @@
         <div class="panel-header">
           <span v-html="icons.settings" class="panel-icon" />
           <div>
-            <h3 class="panel-title">App-wide configuration</h3>
-            <p class="panel-desc">Trial duration and expiry warning threshold.</p>
+            <h3 class="panel-title">{{ $t('superAdmin.settings.appConfig.title') }}</h3>
+            <p class="panel-desc">{{ $t('superAdmin.settings.appConfig.desc') }}</p>
           </div>
         </div>
 
         <div class="panel-body two-col">
           <div class="form-group">
-            <label class="form-label">Default trial duration (days)</label>
+            <label class="form-label">{{ $t('superAdmin.settings.appConfig.trialDaysLabel') }}</label>
             <div class="input-prefix-wrap">
               <span class="input-prefix" v-html="icons.calendar" />
               <input
@@ -291,11 +291,11 @@
                 max="365"
               />
             </div>
-            <div class="form-hint">New restaurants get this many days of free trial.</div>
+            <div class="form-hint">{{ $t('superAdmin.settings.appConfig.trialDaysHint') }}</div>
           </div>
 
           <div class="form-group">
-            <label class="form-label">Expiry warning threshold (days)</label>
+            <label class="form-label">{{ $t('superAdmin.settings.appConfig.warningDaysLabel') }}</label>
             <div class="input-prefix-wrap">
               <span class="input-prefix" v-html="icons.clock" />
               <input
@@ -306,7 +306,7 @@
                 max="60"
               />
             </div>
-            <div class="form-hint">Highlight expiring plans on dashboard within this window.</div>
+            <div class="form-hint">{{ $t('superAdmin.settings.appConfig.warningDaysHint') }}</div>
           </div>
         </div>
 
@@ -316,7 +316,7 @@
             {{ appMsg.text }}
           </div>
           <button class="btn-primary" :disabled="appSaving" @click="saveAppSettings">
-            {{ appSaving ? 'Saving…' : 'Save configuration' }}
+            {{ appSaving ? $t('superAdmin.settings.appConfig.saving') : $t('superAdmin.settings.appConfig.save') }}
           </button>
         </div>
       </div>
@@ -328,8 +328,10 @@
 import { ref, computed, onMounted } from 'vue'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
+import { useI18n } from 'vue-i18n'
 
 const authStore = useAuthStore()
+const { t } = useI18n()
 
 // ── Profile ────────────────────────────────────────────
 const profileSaving = ref(false)
@@ -379,7 +381,7 @@ const initials = computed(() => {
       .map((n) => n[0])
       .join('')
       .toUpperCase()
-      .slice(0, 2) || 'SA'
+      .slice(0, 2) || t('superAdmin.settings.fallbackInitials')
   )
 })
 
@@ -399,10 +401,10 @@ async function saveProfile() {
       if (emailErr) throw emailErr
       profileMsg.value = {
         type: 'success',
-        text: 'Profile saved. Check your new email for a confirmation link.',
+        text: t('superAdmin.settings.profile.successEmail'),
       }
     } else {
-      profileMsg.value = { type: 'success', text: 'Profile saved successfully.' }
+      profileMsg.value = { type: 'success', text: t('superAdmin.settings.profile.success') }
     }
 
     await authStore.fetchProfile()
@@ -424,7 +426,7 @@ async function savePassword() {
   try {
     const { error } = await supabase.auth.updateUser({ password: passwordForm.value.password })
     if (error) throw error
-    passwordMsg.value = { type: 'success', text: 'Password updated successfully.' }
+    passwordMsg.value = { type: 'success', text: t('superAdmin.settings.password.success') }
     passwordForm.value = { password: '', confirm: '' }
     setTimeout(() => {
       passwordMsg.value = null
@@ -442,12 +444,12 @@ async function savePricing() {
   pricingMsg.value = null
   try {
     localStorage.setItem(APP_SETTINGS_KEY, JSON.stringify(appForm.value))
-    pricingMsg.value = { type: 'success', text: 'Pricing saved.' }
+    pricingMsg.value = { type: 'success', text: t('superAdmin.settings.pricing.success') }
     setTimeout(() => {
       pricingMsg.value = null
     }, 3000)
   } catch {
-    pricingMsg.value = { type: 'error', text: 'Failed to save.' }
+    pricingMsg.value = { type: 'error', text: t('superAdmin.settings.pricing.error') }
   } finally {
     pricingSaving.value = false
   }
@@ -459,12 +461,12 @@ async function saveAppSettings() {
   appMsg.value = null
   try {
     localStorage.setItem(APP_SETTINGS_KEY, JSON.stringify(appForm.value))
-    appMsg.value = { type: 'success', text: 'Configuration saved.' }
+    appMsg.value = { type: 'success', text: t('superAdmin.settings.appConfig.success') }
     setTimeout(() => {
       appMsg.value = null
     }, 3000)
   } catch {
-    appMsg.value = { type: 'error', text: 'Failed to save.' }
+    appMsg.value = { type: 'error', text: t('superAdmin.settings.appConfig.error') }
   } finally {
     appSaving.value = false
   }

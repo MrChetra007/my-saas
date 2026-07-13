@@ -52,7 +52,7 @@
             />
           </svg>
         </div>
-        <span class="logo-wordmark">Qrder</span>
+        <span class="logo-wordmark">{{ $t('trialWall.logo') }}</span>
       </div>
 
       <!-- Main card -->
@@ -64,16 +64,13 @@
           <TimerOff :size="28" />
         </div>
 
-        <h1 class="wall-title">Your trial has ended</h1>
-        <p class="wall-subtitle">
-          Your 14-day free trial is over. Choose a plan to keep your restaurant running — orders,
-          kitchen, staff, and everything in between.
-        </p>
+        <h1 class="wall-title">{{ $t('trialWall.title') }}</h1>
+        <p class="wall-subtitle">{{ $t('trialWall.subtitle') }}</p>
 
         <!-- Account pill -->
         <div class="account-pill" v-if="restaurantName">
           <Store :size="13" />
-          <span class="pill-label">Account</span>
+          <span class="pill-label">{{ $t('trialWall.accountLabel') }}</span>
           <span class="pill-sep">·</span>
           <span class="pill-value">{{ restaurantName }}</span>
         </div>
@@ -83,13 +80,13 @@
           <!-- Starter -->
           <div class="plan-card">
             <div class="plan-top">
-              <div class="plan-name">Starter</div>
+              <div class="plan-name">{{ $t('trialWall.starterName') }}</div>
               <div class="plan-price">
                 <span class="price-dollar">$</span>
                 <span class="price-amount">49</span>
                 <span class="price-mo">/mo</span>
               </div>
-              <p class="plan-tagline">Perfect for small restaurants getting started.</p>
+              <p class="plan-tagline">{{ $t('trialWall.starterTagline') }}</p>
             </div>
 
             <ul class="plan-features">
@@ -104,22 +101,22 @@
               :disabled="!!loading"
             >
               <Loader2 v-if="loading === 'starter'" :size="15" class="spin" />
-              <span v-else>Get Starter</span>
+              <span v-else>{{ $t('trialWall.starterCta') }}</span>
             </button>
           </div>
 
           <!-- Pro -->
           <div class="plan-card plan-card-pro">
-            <div class="pro-badge"><Star :size="10" /> Recommended</div>
+            <div class="pro-badge"><Star :size="10" /> {{ $t('trialWall.proBadge') }}</div>
 
             <div class="plan-top">
-              <div class="plan-name plan-name-pro">Pro</div>
+              <div class="plan-name plan-name-pro">{{ $t('trialWall.proName') }}</div>
               <div class="plan-price plan-price-pro">
                 <span class="price-dollar">$</span>
                 <span class="price-amount">99</span>
                 <span class="price-mo">/mo</span>
               </div>
-              <p class="plan-tagline">For restaurants running their full operation digitally.</p>
+              <p class="plan-tagline">{{ $t('trialWall.proTagline') }}</p>
             </div>
 
             <ul class="plan-features">
@@ -134,7 +131,7 @@
               :disabled="!!loading"
             >
               <Loader2 v-if="loading === 'pro'" :size="15" class="spin" />
-              <span v-else>Get Pro</span>
+              <span v-else>{{ $t('trialWall.proCta') }}</span>
             </button>
           </div>
         </div>
@@ -148,17 +145,17 @@
         <!-- Footer -->
         <div class="wall-footer">
           <button class="footer-link" @click="goToSettings">
-            <Settings :size="13" /> Manage subscription in Settings
+            <Settings :size="13" /> {{ $t('trialWall.manageSubscription') }}
           </button>
           <span class="footer-divider" aria-hidden="true" />
           <button class="footer-link footer-link-danger" @click="signOut">
-            <LogOut :size="13" /> Sign out
+            <LogOut :size="13" /> {{ $t('trialWall.signOut') }}
           </button>
         </div>
       </div>
 
       <p class="secure-note">
-        <Lock :size="11" /> Payments secured by Lemon Squeezy · Cancel anytime · No hidden fees
+        <Lock :size="11" /> {{ $t('trialWall.secureNote') }}
       </p>
     </div>
   </div>
@@ -168,6 +165,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { supabase } from '@/lib/supabase'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
 
 import {
@@ -184,29 +182,30 @@ import {
 
 const router = useRouter()
 const authStore = useAuthStore()
+const { t } = useI18n()
 
 const restaurantName = ref('')
 const loading = ref(null)
 const error = ref('')
 
 const starterFeatures = [
-  'Up to 15 tables',
-  'Up to 3 staff accounts',
-  'Unlimited orders',
-  'QR code ordering',
-  'All staff role views',
-  'Menu management',
+  t('trialWall.feature.upTo15Tables'),
+  t('trialWall.feature.upTo3Staff'),
+  t('trialWall.feature.unlimitedOrders'),
+  t('trialWall.feature.qrOrdering'),
+  t('trialWall.feature.allStaffViews'),
+  t('trialWall.feature.menuManagement'),
 ]
 
 const proFeatures = [
-  'Unlimited tables',
-  'Up to 10 staff accounts',
-  'Unlimited orders',
-  'QR code ordering',
-  'All staff role views',
-  'Menu management',
-  'Analytics & charts',
-  'Promotions & discounts',
+  t('trialWall.feature.unlimitedTables'),
+  t('trialWall.feature.upTo10Staff'),
+  t('trialWall.feature.unlimitedOrders'),
+  t('trialWall.feature.qrOrdering'),
+  t('trialWall.feature.allStaffViews'),
+  t('trialWall.feature.menuManagement'),
+  t('trialWall.feature.analytics'),
+  t('trialWall.feature.promotions'),
 ]
 
 onMounted(async () => {
@@ -239,7 +238,7 @@ async function checkout(plan) {
     } else throw new Error('No checkout URL returned')
   } catch (err) {
     console.error('Checkout error:', err)
-    error.value = 'Could not start checkout. Please try again or contact support.'
+    error.value = t('trialWall.checkoutError')
   } finally {
     loading.value = null
   }

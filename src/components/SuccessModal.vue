@@ -50,7 +50,7 @@
                   v-if="item.copyable"
                   class="copy-btn"
                   @click="copy(item.value, i)"
-                  :title="copiedIndex === i ? 'Copied!' : 'Copy'"
+                  :title="copiedIndex === i ? t('promotions.copied') : t('common.done')"
                 >
                   <svg
                     v-if="copiedIndex !== i"
@@ -103,7 +103,7 @@
           <slot />
 
           <button class="success-close-btn" @click="$emit('update:modelValue', false)">
-            {{ closeLabel || 'Done' }}
+            {{ closeLabel || $t('common.done') }}
           </button>
         </div>
       </div>
@@ -113,6 +113,9 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const props = defineProps({
   modelValue: {

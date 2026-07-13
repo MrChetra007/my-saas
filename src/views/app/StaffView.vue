@@ -3,23 +3,23 @@
     <!-- Header -->
     <div class="page-header">
       <div>
-        <h1 class="page-title">Staff</h1>
-        <p class="page-subtitle">Manage team members and their permissions</p>
+        <h1 class="page-title">{{ $t('staff.title') }}</h1>
+        <p class="page-subtitle">{{ $t('staff.subtitle') }}</p>
       </div>
       <div class="header-right">
         <div class="limit-badge" :class="{ 'limit-reached': isAtLimit }">
           <Users :size="14" />
-          <span>{{ staffList.length }} / {{ staffLimit }} staff</span>
+          <span>{{ staffList.length }} / {{ staffLimit }} {{ $t('staff.staff') }}</span>
           <span v-if="planLabel" class="plan-tag">{{ planLabel }}</span>
         </div>
         <button
           class="btn-add"
           @click="openAddModal"
           :disabled="isAtLimit"
-          :title="isAtLimit ? 'Staff limit reached for your plan' : ''"
+          :title="isAtLimit ? $t('staff.limitReachedTitle') : ''"
         >
           <UserPlus :size="16" />
-          Add Staff
+          {{ $t('staff.addStaff') }}
         </button>
       </div>
     </div>
@@ -28,26 +28,26 @@
     <div v-if="isAtLimit" class="limit-banner">
       <AlertCircle :size="16" />
       <span
-        >You've reached the <strong>{{ staffLimit }}-staff limit</strong> on your
-        {{ planLabel }} plan.</span
+        >{{ $t('staff.limitBannerPrefix') }} <strong>{{ staffLimit }}{{ $t('staff.limitBannerMid') }}</strong> {{ $t('staff.limitBannerOnYour') }}
+        {{ planLabel }} {{ $t('staff.limitBannerSuffix') }}</span
       >
-      <a href="/app/settings" class="upgrade-link">Upgrade to Pro →</a>
+      <a href="/app/settings" class="upgrade-link">{{ $t('staff.upgradeToPro') }}</a>
     </div>
 
     <!-- Loading -->
     <div v-if="loading" class="loading-state">
       <div class="spinner" />
-      <span>Loading team members…</span>
+      <span>{{ $t('staff.loading') }}</span>
     </div>
 
     <!-- Empty -->
     <div v-else-if="staffList.length === 0" class="empty-state">
       <Users :size="64" class="empty-icon" />
-      <h3>No staff members yet</h3>
-      <p class="empty-text">Add team members to manage kitchen, cashier, and waiter tasks</p>
+      <h3>{{ $t('staff.noStaff') }}</h3>
+      <p class="empty-text">{{ $t('staff.emptyDescription') }}</p>
       <button class="btn-add" @click="openAddModal" :disabled="isAtLimit">
         <UserPlus :size="16" />
-        Add Staff
+        {{ $t('staff.addStaff') }}
       </button>
     </div>
 
@@ -58,10 +58,10 @@
         <table class="staff-table">
           <thead>
             <tr>
-              <th>Staff Member</th>
-              <th>Role</th>
-              <th>Status</th>
-              <th>Actions</th>
+              <th>{{ $t('staff.staffMember') }}</th>
+              <th>{{ $t('staff.role') }}</th>
+              <th>{{ $t('staff.status') }}</th>
+              <th>{{ $t('staff.actions') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -71,7 +71,7 @@
                   {{ initials(member.full_name || member.email) }}
                 </div>
                 <div class="name-block">
-                  <div class="member-name">{{ member.full_name || 'Unnamed' }}</div>
+                  <div class="member-name">{{ member.full_name || $t('staff.unnamed') }}</div>
                   <div class="member-email">{{ member.email }}</div>
                 </div>
               </td>
@@ -82,23 +82,23 @@
               </td>
               <td>
                 <span class="status-pill" :class="{ active: member.is_active }">
-                  {{ member.is_active ? 'Active' : 'Inactive' }}
+                  {{ member.is_active ? $t('staff.active') : $t('staff.inactive') }}
                 </span>
               </td>
               <td class="td-actions">
-                <button class="action-btn" title="Edit" @click="openEditModal(member)">
+                <button class="action-btn" :title="$t('staff.edit')" @click="openEditModal(member)">
                   <Pencil :size="15" />
                 </button>
                 <button
                   class="action-btn"
                   :class="member.is_active ? 'deactivate' : 'activate'"
                   @click="toggleActive(member)"
-                  :title="member.is_active ? 'Deactivate' : 'Reactivate'"
+                  :title="member.is_active ? $t('staff.deactivate') : $t('staff.reactivate')"
                 >
                   <PowerOff v-if="member.is_active" :size="15" />
                   <RefreshCw v-else :size="15" />
                 </button>
-                <button class="action-btn remove" title="Remove" @click="confirmRemove(member)">
+                <button class="action-btn remove" :title="$t('staff.remove')" @click="confirmRemove(member)">
                   <Trash2 :size="15" />
                 </button>
               </td>
@@ -115,11 +115,11 @@
               {{ initials(member.full_name || member.email) }}
             </div>
             <div class="card-info">
-              <div class="member-name">{{ member.full_name || 'Unnamed' }}</div>
+              <div class="member-name">{{ member.full_name || $t('staff.unnamed') }}</div>
               <div class="member-email">{{ member.email }}</div>
             </div>
             <span class="status-pill mobile" :class="{ active: member.is_active }">
-              {{ member.is_active ? 'Active' : 'Inactive' }}
+              {{ member.is_active ? $t('staff.active') : $t('staff.inactive') }}
             </span>
           </div>
           <div class="card-role">
@@ -128,19 +128,19 @@
             </span>
           </div>
           <div class="card-actions">
-            <button class="action-btn mobile" title="Edit" @click="openEditModal(member)">
+            <button class="action-btn mobile" :title="$t('staff.edit')" @click="openEditModal(member)">
               <Pencil :size="17" />
             </button>
             <button
               class="action-btn mobile"
               :class="member.is_active ? 'deactivate' : 'activate'"
               @click="toggleActive(member)"
-              :title="member.is_active ? 'Deactivate' : 'Reactivate'"
+              :title="member.is_active ? $t('staff.deactivate') : $t('staff.reactivate')"
             >
               <PowerOff v-if="member.is_active" :size="17" />
               <RefreshCw v-else :size="17" />
             </button>
-            <button class="action-btn mobile remove" title="Remove" @click="confirmRemove(member)">
+            <button class="action-btn mobile remove" :title="$t('staff.remove')" @click="confirmRemove(member)">
               <Trash2 :size="17" />
             </button>
           </div>
@@ -153,7 +153,7 @@
       <div v-if="addModal.open" class="modal-backdrop" @click.self="closeAddModal">
         <div class="modal">
           <div class="modal-header">
-            <h2 class="modal-title">Add Staff Member</h2>
+            <h2 class="modal-title">{{ $t('staff.addStaffMember') }}</h2>
             <button class="modal-close-btn" @click="closeAddModal">
               <X :size="20" />
             </button>
@@ -162,38 +162,38 @@
             <div v-if="addModal.error" class="modal-error">{{ addModal.error }}</div>
 
             <div class="form-group">
-              <label class="form-label">Full Name</label>
+              <label class="form-label">{{ $t('staff.fullName') }}</label>
               <input
                 v-model="addModal.form.fullName"
                 class="form-input"
                 type="text"
-                placeholder="e.g. Priya Nair"
+                :placeholder="$t('staff.fullNamePlaceholder')"
                 :disabled="addModal.submitting"
               />
             </div>
 
             <div class="form-group">
-              <label class="form-label">Email Address</label>
+              <label class="form-label">{{ $t('staff.emailAddress') }}</label>
               <input
                 v-model="addModal.form.email"
                 class="form-input"
                 type="email"
-                placeholder="e.g. priya@yourrestaurant.com"
+                :placeholder="$t('staff.emailPlaceholder')"
                 :disabled="addModal.submitting"
               />
             </div>
 
             <div class="form-group">
-              <label class="form-label">Role</label>
+              <label class="form-label">{{ $t('staff.roleLabel') }}</label>
               <select
                 v-model="addModal.form.role"
                 class="form-select"
                 :disabled="addModal.submitting"
               >
-                <option value="" disabled>Select role</option>
-                <option value="kitchen">Kitchen Staff</option>
-                <option value="cashier">Cashier</option>
-                <option value="waiter">Waiter</option>
+                <option value="" disabled>{{ $t('staff.selectRole') }}</option>
+                <option value="kitchen">{{ $t('staff.kitchenStaff') }}</option>
+                <option value="cashier">{{ $t('staff.cashier') }}</option>
+                <option value="waiter">{{ $t('staff.waiter') }}</option>
               </select>
               <p v-if="addModal.form.role" class="role-description">
                 {{ roleDescription(addModal.form.role) }}
@@ -202,15 +202,15 @@
 
             <div class="form-group">
               <label class="form-label">
-                Password
-                <span class="field-required">required</span>
+                {{ $t('staff.passwordLabel') }}
+                <span class="field-required">{{ $t('staff.required') }}</span>
               </label>
               <div class="password-wrap">
                 <input
                   v-model="addModal.form.password"
                   class="form-input password-input"
                   :type="addModal.showPassword ? 'text' : 'password'"
-                  placeholder="Enter a password for this staff member"
+                  :placeholder="$t('staff.passwordPlaceholder')"
                   :disabled="addModal.submitting"
                   autocomplete="new-password"
                 />
@@ -218,7 +218,7 @@
                   type="button"
                   class="password-toggle"
                   @click="addModal.showPassword = !addModal.showPassword"
-                  :title="addModal.showPassword ? 'Hide password' : 'Show password'"
+                  :title="addModal.showPassword ? $t('staff.hidePassword') : $t('staff.showPassword')"
                 >
                   <!-- Eye open -->
                   <svg
@@ -269,12 +269,12 @@
                   {{ passwordStrength(addModal.form.password).label }}
                 </span>
               </div>
-              <p class="field-hint">Staff will use this password to log in. Min 8 characters.</p>
+              <p class="field-hint">{{ $t('staff.passwordHint') }}</p>
             </div>
           </div>
           <div class="modal-footer">
             <button class="btn-ghost" @click="closeAddModal" :disabled="addModal.submitting">
-              Cancel
+              {{ $t('common.cancel') }}
             </button>
             <button
               class="btn-primary"
@@ -288,7 +288,7 @@
             >
               <Loader2 v-if="addModal.submitting" :size="15" class="spin-icon" />
               <UserPlus v-else :size="15" />
-              {{ addModal.submitting ? 'Adding…' : 'Add Staff' }}
+              {{ addModal.submitting ? $t('staff.adding') : $t('staff.addStaff') }}
             </button>
           </div>
         </div>
@@ -300,7 +300,7 @@
       <div v-if="editModal.open" class="modal-backdrop" @click.self="closeEditModal">
         <div class="modal">
           <div class="modal-header">
-            <h2 class="modal-title">Edit Staff Member</h2>
+            <h2 class="modal-title">{{ $t('staff.editStaffMember') }}</h2>
             <button class="modal-close-btn" @click="closeEditModal">
               <X :size="20" />
             </button>
@@ -308,7 +308,7 @@
           <div class="modal-body">
             <div v-if="editModal.error" class="modal-error">{{ editModal.error }}</div>
             <div class="form-group">
-              <label class="form-label">Full Name</label>
+              <label class="form-label">{{ $t('staff.fullName') }}</label>
               <input
                 v-model="editModal.form.fullName"
                 class="form-input"
@@ -317,32 +317,32 @@
               />
             </div>
             <div class="form-group">
-              <label class="form-label">Role</label>
+              <label class="form-label">{{ $t('staff.roleLabel') }}</label>
               <select
                 v-model="editModal.form.role"
                 class="form-select"
                 :disabled="editModal.submitting"
               >
-                <option value="kitchen">Kitchen Staff</option>
-                <option value="cashier">Cashier</option>
-                <option value="waiter">Waiter</option>
+                <option value="kitchen">{{ $t('staff.kitchenStaff') }}</option>
+                <option value="cashier">{{ $t('staff.cashier') }}</option>
+                <option value="waiter">{{ $t('staff.waiter') }}</option>
               </select>
             </div>
             <div class="form-group">
-              <label class="form-label">Status</label>
+              <label class="form-label">{{ $t('staff.status') }}</label>
               <select
                 v-model="editModal.form.isActive"
                 class="form-select"
                 :disabled="editModal.submitting"
               >
-                <option :value="true">Active</option>
-                <option :value="false">Inactive</option>
+                <option :value="true">{{ $t('staff.active') }}</option>
+                <option :value="false">{{ $t('staff.inactive') }}</option>
               </select>
             </div>
           </div>
           <div class="modal-footer">
             <button class="btn-ghost" @click="closeEditModal" :disabled="editModal.submitting">
-              Cancel
+              {{ $t('common.cancel') }}
             </button>
             <button
               class="btn-primary"
@@ -351,7 +351,7 @@
             >
               <Loader2 v-if="editModal.submitting" :size="15" class="spin-icon" />
               <Check v-else :size="15" />
-              {{ editModal.submitting ? 'Saving…' : 'Save Changes' }}
+              {{ editModal.submitting ? $t('common.saving') : $t('staff.saveChanges') }}
             </button>
           </div>
         </div>
@@ -363,19 +363,18 @@
       <div v-if="confirm.open" class="modal-backdrop" @click.self="confirm.open = false">
         <div class="modal modal-sm">
           <div class="modal-header">
-            <h2 class="modal-title">Remove Staff Member?</h2>
+            <h2 class="modal-title">{{ $t('staff.removeStaffTitle') }}</h2>
             <button class="modal-close-btn" @click="confirm.open = false">
               <X :size="20" />
             </button>
           </div>
           <div class="modal-body">
             <p class="confirm-text">
-              <strong>{{ confirm.member?.full_name || confirm.member?.email }}</strong> will be
-              permanently removed.
+              <strong>{{ confirm.member?.full_name || confirm.member?.email }}</strong> {{ $t('staff.removeWarning') }}
             </p>
           </div>
           <div class="modal-footer">
-            <button class="btn-ghost" @click="confirm.open = false">Cancel</button>
+            <button class="btn-ghost" @click="confirm.open = false">{{ $t('common.cancel') }}</button>
             <button
               class="btn-danger"
               @click="removeStaff(confirm.member)"
@@ -383,7 +382,7 @@
             >
               <Loader2 v-if="confirm.submitting" :size="15" class="spin-icon" />
               <Trash2 v-else :size="15" />
-              {{ confirm.submitting ? 'Removing…' : 'Remove' }}
+              {{ confirm.submitting ? $t('staff.removing') : $t('staff.remove') }}
             </button>
           </div>
         </div>
@@ -397,7 +396,7 @@
       :message="successModal.message"
       :details="successModal.details"
       :warning="successModal.warning"
-      close-label="Done"
+      :close-label="$t('common.done')"
     />
   </div>
 </template>
@@ -418,9 +417,11 @@ import {
 } from 'lucide-vue-next'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
+import { useI18n } from 'vue-i18n'
 import SuccessModal from '@/components/SuccessModal.vue'
 
 const authStore = useAuthStore()
+const { t } = useI18n()
 
 const loading = ref(true)
 const staffList = ref([])
@@ -451,10 +452,10 @@ const staffLimit = computed(() => STAFF_LIMITS[resolvedPlan.value] ?? 3)
 const planLabel = computed(
   () =>
     ({
-      trial: 'Trial',
-      starter: 'Starter',
-      pro: 'Pro',
-      enterprise: 'Enterprise',
+      trial: t('staff.planTrial'),
+      starter: t('staff.planStarter'),
+      pro: t('staff.planPro'),
+      enterprise: t('staff.planEnterprise'),
     })[resolvedPlan.value] || '',
 )
 
@@ -505,10 +506,10 @@ function passwordStrength(pw) {
   if (/[0-9]/.test(pw)) score++
   if (/[^A-Za-z0-9]/.test(pw)) score++
 
-  if (score <= 1) return { level: 'weak', label: 'Weak', pct: 25 }
-  if (score === 2) return { level: 'fair', label: 'Fair', pct: 50 }
-  if (score === 3) return { level: 'good', label: 'Good', pct: 75 }
-  return { level: 'strong', label: 'Strong', pct: 100 }
+  if (score <= 1) return { level: 'weak', label: t('staff.passwordWeak'), pct: 25 }
+  if (score === 2) return { level: 'fair', label: t('staff.passwordFair'), pct: 50 }
+  if (score === 3) return { level: 'good', label: t('staff.passwordGood'), pct: 75 }
+  return { level: 'strong', label: t('staff.passwordStrong'), pct: 100 }
 }
 
 function resizeListener() {
@@ -572,17 +573,17 @@ async function addStaff() {
   const m = addModal.value
 
   if (isAtLimit.value) {
-    m.error = `You've reached the ${staffLimit.value}-staff limit on your ${planLabel.value} plan. Upgrade to add more.`
+    m.error = `${t('staff.limitErrorPrefix')} ${staffLimit.value}${t('staff.limitErrorMid')} ${planLabel.value} ${t('staff.limitErrorSuffix')}`
     return
   }
 
   if (!m.form.password.trim()) {
-    m.error = 'Please enter a password for this staff member.'
+    m.error = t('staff.passwordRequired')
     return
   }
 
   if (m.form.password.trim().length < 8) {
-    m.error = 'Password must be at least 8 characters.'
+    m.error = t('staff.passwordMinLength')
     return
   }
 
@@ -606,19 +607,19 @@ async function addStaff() {
     m.open = false
 
     showSuccess({
-      title: 'Staff Member Added!',
-      message: `${m.form.fullName || m.form.email} has been added as ${roleLabel(m.form.role)}.`,
+      title: t('staff.addedTitle'),
+      message: `${m.form.fullName || m.form.email} ${t('staff.addedMessage')} ${roleLabel(m.form.role)}.`,
       details: [
-        { label: 'Email', value: m.form.email.trim(), copyable: true },
-        { label: 'Password', value: m.form.password.trim(), copyable: true },
-        { label: 'Role', value: roleLabel(m.form.role), copyable: false },
+        { label: t('staff.email'), value: m.form.email.trim(), copyable: true },
+        { label: t('staff.passwordLabel'), value: m.form.password.trim(), copyable: true },
+        { label: t('staff.roleLabel'), value: roleLabel(m.form.role), copyable: false },
       ],
-      warning: "Save these credentials now — the password won't be shown again.",
+      warning: t('staff.saveCredentialsWarning'),
     })
 
     await fetchStaff()
   } catch (err) {
-    m.error = err.message || 'Failed to add staff'
+    m.error = err.message || t('staff.failedToAdd')
   } finally {
     m.submitting = false
   }
@@ -665,11 +666,11 @@ async function saveEdit() {
     e.open = false
 
     showSuccess({
-      title: 'Changes Saved',
-      message: `${e.form.fullName || 'Staff member'} has been updated successfully.`,
+      title: t('staff.changesSaved'),
+      message: `${e.form.fullName || t('staff.staffMember')} ${t('staff.updatedMessage')}`,
     })
   } catch (err) {
-    e.error = err.message || 'Failed to update'
+    e.error = err.message || t('staff.failedToUpdate')
   } finally {
     e.submitting = false
   }
@@ -718,15 +719,15 @@ function getAvatarColor(email) {
 }
 
 function roleLabel(role) {
-  return { kitchen: 'Kitchen', cashier: 'Cashier', waiter: 'Waiter', admin: 'Admin' }[role] || role
+  return { kitchen: t('staff.roleKitchen'), cashier: t('staff.roleCashier'), waiter: t('staff.roleWaiter'), admin: t('staff.roleAdmin') }[role] || role
 }
 
 function roleDescription(role) {
   return (
     {
-      kitchen: 'Can view & update order status in Kitchen view (accept, prepare, ready)',
-      cashier: 'Can mark orders as paid and handle payments',
-      waiter: 'Can create & manage orders from tables',
+      kitchen: t('staff.roleKitchenDesc'),
+      cashier: t('staff.roleCashierDesc'),
+      waiter: t('staff.roleWaiterDesc'),
     }[role] || ''
   )
 }

@@ -3,8 +3,8 @@
     <!-- ── Page header ──────────────────────────────── -->
     <div class="page-header">
       <div>
-        <h2 class="page-title">Users</h2>
-        <p class="page-sub">{{ filtered.length }} of {{ users.length }} users</p>
+        <h2 class="page-title">{{ $t('superAdmin.users.title') }}</h2>
+        <p class="page-sub">{{ $t('superAdmin.users.subtitle', { filtered: filtered.length, total: users.length }) }}</p>
       </div>
     </div>
 
@@ -15,7 +15,7 @@
         <input
           v-model="searchQ"
           class="search-input"
-          placeholder="Search by name or email…"
+          :placeholder="$t('superAdmin.users.searchPlaceholder')"
           type="text"
         />
         <button v-if="searchQ" class="search-clear" @click="searchQ = ''">×</button>
@@ -34,7 +34,7 @@
       </div>
 
       <select v-model="restaurantFilter" class="filter-select">
-        <option value="all">All restaurants</option>
+        <option value="all">{{ $t('superAdmin.users.filter.allRestaurants') }}</option>
         <option v-for="r in restaurantOptions" :key="r.id" :value="r.id">{{ r.name }}</option>
       </select>
     </div>
@@ -47,17 +47,17 @@
 
       <div v-else-if="filtered.length === 0" class="empty-state">
         <span v-html="icons.empty" />
-        <span>No users match your filters</span>
+        <span>{{ $t('superAdmin.users.empty') }}</span>
       </div>
 
       <table v-else class="u-table">
         <thead>
           <tr>
-            <th>User</th>
-            <th>Role</th>
-            <th>Restaurant</th>
-            <th>Status</th>
-            <th>Created</th>
+            <th>{{ $t('superAdmin.users.table.user') }}</th>
+            <th>{{ $t('superAdmin.users.table.role') }}</th>
+            <th>{{ $t('superAdmin.users.table.restaurant') }}</th>
+            <th>{{ $t('superAdmin.users.table.status') }}</th>
+            <th>{{ $t('superAdmin.users.table.created') }}</th>
             <th></th>
           </tr>
         </thead>
@@ -83,7 +83,7 @@
             <td>
               <span class="status-badge" :class="u.is_active !== false ? 'active' : 'inactive'">
                 <span class="status-dot" />
-                {{ u.is_active !== false ? 'Active' : 'Inactive' }}
+                {{ u.is_active !== false ? $t('superAdmin.users.status.active') : $t('superAdmin.users.status.inactive') }}
               </span>
             </td>
             <td class="td-muted">{{ formatDate(u.created_at) }}</td>
@@ -91,20 +91,20 @@
               <div class="action-btns">
                 <button
                   class="action-btn"
-                  title="View details"
+                  :title="$t('superAdmin.users.action.viewDetails')"
                   @click="openDetails(u)"
                   v-html="icons.eye"
                 />
                 <button
                   class="action-btn"
-                  :title="u.is_active !== false ? 'Deactivate' : 'Reactivate'"
+                  :title="u.is_active !== false ? $t('superAdmin.users.action.deactivate') : $t('superAdmin.users.action.reactivate')"
                   :class="u.is_active !== false ? 'warn' : 'ok'"
                   @click="toggleActive(u)"
                   v-html="u.is_active !== false ? icons.deactivate : icons.activate"
                 />
                 <button
                   class="action-btn"
-                  title="Send password reset"
+                  :title="$t('superAdmin.users.action.sendPasswordReset')"
                   @click="openReset(u)"
                   v-html="icons.reset"
                 />
@@ -125,7 +125,7 @@
                 {{ initials(detailsModal.full_name || detailsModal.email) }}
               </div>
               <div>
-                <h3 class="modal-title">{{ detailsModal.full_name || 'No name' }}</h3>
+                <h3 class="modal-title">{{ detailsModal.full_name || $t('superAdmin.users.details.noName') }}</h3>
                 <span class="modal-sub">{{ detailsModal.email }}</span>
               </div>
             </div>
@@ -154,17 +154,14 @@
                 :style="toggleTarget.is_active !== false ? 'color:#e11d48' : 'color:#16a34a'"
               />
               <h3 class="modal-title">
-                {{ toggleTarget.is_active !== false ? 'Deactivate user' : 'Reactivate user' }}
+                {{ toggleTarget.is_active !== false ? $t('superAdmin.users.toggleModal.deactivateTitle') : $t('superAdmin.users.toggleModal.reactivateTitle') }}
               </h3>
             </div>
             <button class="modal-close" @click="toggleTarget = null">×</button>
           </div>
           <div class="modal-body">
             <p class="confirm-text">
-              Are you sure you want to
-              <strong>{{ toggleTarget.is_active !== false ? 'deactivate' : 'reactivate' }}</strong>
-              <strong>{{ toggleTarget.full_name || toggleTarget.email }}</strong
-              >?
+              {{ $t('superAdmin.users.toggleModal.confirmText', { action: toggleTarget.is_active !== false ? t('superAdmin.users.toggleModal.deactivateAction') : t('superAdmin.users.toggleModal.reactivateAction'), name: toggleTarget.full_name || toggleTarget.email }) }}
             </p>
             <div
               class="confirm-info"
@@ -173,20 +170,20 @@
               <span v-html="icons.info" />
               {{
                 toggleTarget.is_active !== false
-                  ? 'This user will not be able to log in until reactivated.'
-                  : 'This user will regain access to their account.'
+                  ? $t('superAdmin.users.toggleModal.deactivateInfo')
+                  : $t('superAdmin.users.toggleModal.reactivateInfo')
               }}
             </div>
           </div>
           <div class="modal-footer">
-            <button class="btn-secondary" @click="toggleTarget = null">Cancel</button>
+            <button class="btn-secondary" @click="toggleTarget = null">{{ $t('superAdmin.users.toggleModal.cancel') }}</button>
             <button
               :class="toggleTarget.is_active !== false ? 'btn-danger' : 'btn-success'"
               :disabled="saving"
               @click="confirmToggle"
             >
               {{
-                saving ? 'Saving…' : toggleTarget.is_active !== false ? 'Deactivate' : 'Reactivate'
+                saving ? $t('superAdmin.users.toggleModal.saving') : toggleTarget.is_active !== false ? $t('superAdmin.users.toggleModal.deactivateConfirm') : $t('superAdmin.users.toggleModal.reactivateConfirm')
               }}
             </button>
           </div>
@@ -201,30 +198,29 @@
           <div class="modal-header">
             <div class="modal-title-wrap">
               <span v-html="icons.reset" style="color: #3b82f6" />
-              <h3 class="modal-title">Send password reset</h3>
+              <h3 class="modal-title">{{ $t('superAdmin.users.resetModal.title') }}</h3>
             </div>
             <button class="modal-close" @click="resetModal = null">×</button>
           </div>
           <div class="modal-body">
             <p class="confirm-text">
-              Send a password reset email to <strong>{{ resetModal.email }}</strong
-              >?
+              {{ $t('superAdmin.users.resetModal.confirmText', { email: resetModal.email }) }}
             </p>
             <div class="confirm-info info">
               <span v-html="icons.info" />
-              They will receive a link to set a new password. The link expires in 24 hours.
+              {{ $t('superAdmin.users.resetModal.infoText') }}
             </div>
             <div v-if="resetSent" class="confirm-info success">
               <span v-html="icons.check" />
-              Reset email sent successfully!
+              {{ $t('superAdmin.users.resetModal.success') }}
             </div>
           </div>
           <div class="modal-footer">
             <button class="btn-secondary" @click="((resetModal = null), (resetSent = false))">
-              {{ resetSent ? 'Close' : 'Cancel' }}
+              {{ resetSent ? $t('superAdmin.users.resetModal.close') : $t('superAdmin.users.resetModal.cancel') }}
             </button>
             <button v-if="!resetSent" class="btn-primary" :disabled="saving" @click="sendReset">
-              {{ saving ? 'Sending…' : 'Send reset email' }}
+              {{ saving ? $t('superAdmin.users.resetModal.sending') : $t('superAdmin.users.resetModal.send') }}
             </button>
           </div>
         </div>
@@ -236,7 +232,9 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { supabase } from '@/lib/supabase'
+import { useI18n } from 'vue-i18n'
 
+const { t } = useI18n()
 const loading = ref(true)
 const saving = ref(false)
 const users = ref([])
@@ -248,11 +246,11 @@ const roleFilter = ref('all')
 const restaurantFilter = ref('all')
 
 const roleFilters = [
-  { label: 'All roles', value: 'all' },
-  { label: 'Admin', value: 'admin' },
-  { label: 'Waiter', value: 'waiter' },
-  { label: 'Cashier', value: 'cashier' },
-  { label: 'Kitchen', value: 'kitchen' },
+  { label: t('superAdmin.users.filter.allRoles'), value: 'all' },
+  { label: t('superAdmin.users.filter.admin'), value: 'admin' },
+  { label: t('superAdmin.users.filter.waiter'), value: 'waiter' },
+  { label: t('superAdmin.users.filter.cashier'), value: 'cashier' },
+  { label: t('superAdmin.users.filter.kitchen'), value: 'kitchen' },
 ]
 
 const filtered = computed(() => {
@@ -350,15 +348,15 @@ function initials(str) {
 // id, restaurant_id, full_name, role, is_active, created_at, email, is_super_admin
 function detailFields(u) {
   return [
-    { label: 'User ID', value: `<code>${u.id}</code>` },
-    { label: 'Full name', value: u.full_name ?? '—' },
-    { label: 'Email', value: u.email ?? '—' },
-    { label: 'Role', value: u.role ?? '—' },
-    { label: 'Restaurant', value: u.restaurant_name ?? '—' },
-    { label: 'Restaurant ID', value: u.restaurant_id ? `<code>${u.restaurant_id}</code>` : '—' },
-    { label: 'Status', value: u.is_active !== false ? 'Active' : 'Inactive' },
-    { label: 'Super admin', value: u.is_super_admin ? 'Yes' : 'No' },
-    { label: 'Created', value: formatDate(u.created_at) },
+    { label: t('superAdmin.users.details.userId'), value: `<code>${u.id}</code>` },
+    { label: t('superAdmin.users.details.fullName'), value: u.full_name ?? '—' },
+    { label: t('superAdmin.users.details.email'), value: u.email ?? '—' },
+    { label: t('superAdmin.users.details.role'), value: u.role ?? '—' },
+    { label: t('superAdmin.users.details.restaurant'), value: u.restaurant_name ?? '—' },
+    { label: t('superAdmin.users.details.restaurantId'), value: u.restaurant_id ? `<code>${u.restaurant_id}</code>` : '—' },
+    { label: t('superAdmin.users.details.status'), value: u.is_active !== false ? t('superAdmin.users.details.statusActive') : t('superAdmin.users.details.statusInactive') },
+    { label: t('superAdmin.users.details.superAdmin'), value: u.is_super_admin ? t('superAdmin.users.details.yes') : t('superAdmin.users.details.no') },
+    { label: t('superAdmin.users.details.created'), value: formatDate(u.created_at) },
   ]
 }
 

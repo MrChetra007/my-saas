@@ -3,15 +3,15 @@
     <!-- ── Header ──────────────────────────────────────── -->
     <div class="page-header">
       <div>
-        <p class="header-sub">Live order management</p>
-        <h1 class="header-title">Orders</h1>
+        <p class="header-sub">{{ $t('orders.subtitle') }}</p>
+        <h1 class="header-title">{{ $t('orders.title') }}</h1>
       </div>
       <div class="header-actions">
         <button
           class="btn-sound-toggle"
           :class="{ 'sound-off': !soundEnabled }"
           @click="soundEnabled = !soundEnabled"
-          :title="soundEnabled ? 'Mute order alerts' : 'Unmute order alerts'"
+          :title="soundEnabled ? $t('orders.muteAlerts') : $t('orders.unmuteAlerts')"
         >
           <svg
             v-if="soundEnabled"
@@ -39,7 +39,7 @@
             <line x1="23" y1="9" x2="17" y2="15" />
             <line x1="17" y1="9" x2="23" y2="15" />
           </svg>
-          {{ soundEnabled ? 'Sound On' : 'Sound Off' }}
+          {{ soundEnabled ? $t('orders.soundOn') : $t('orders.soundOff') }}
         </button>
         <button v-if="isWaiter || isAdmin" class="btn-new-order" @click="openNewOrder">
           <svg
@@ -53,7 +53,7 @@
             <line x1="12" y1="5" x2="12" y2="19" />
             <line x1="5" y1="12" x2="19" y2="12" />
           </svg>
-          New Order
+          {{ $t('orders.newOrder') }}
         </button>
       </div>
     </div>
@@ -99,7 +99,7 @@
         <line x1="9" y1="12" x2="15" y2="12" />
         <line x1="9" y1="16" x2="13" y2="16" />
       </svg>
-      <p>No {{ activeTab === 'all' ? '' : activeTab }} orders right now</p>
+      <p>{{ $t('orders.noOrders') }}</p>
     </div>
 
     <!-- ── Orders Grid ─────────────────────────────────── -->
@@ -118,7 +118,7 @@
           <div class="card-header-left">
             <div class="table-avatar">{{ (order.tables?.name || 'T').charAt(0) }}</div>
             <div>
-              <p class="card-table">{{ order.tables?.name || 'Table' }}</p>
+              <p class="card-table">{{ order.tables?.name || $t('orders.unknownTable') }}</p>
               <p class="card-elapsed">{{ timeElapsed(order.created_at) }}</p>
             </div>
           </div>
@@ -155,7 +155,7 @@
 
         <!-- Total -->
         <div class="card-total">
-          <span class="total-label">Total</span>
+          <span class="total-label">{{ $t('orders.total') }}</span>
           <span class="total-amount">{{ formatCurrency(orderTotal(order)) }}</span>
         </div>
 
@@ -176,7 +176,7 @@
             >
               <polyline points="20 6 9 17 4 12" />
             </svg>
-            Mark as Paid
+            {{ $t('orders.markAsPaid') }}
           </button>
 
           <button
@@ -184,16 +184,16 @@
             class="btn-action btn-cancel-order"
             @click="cancelOrder(order)"
           >
-            Cancel Order
+            {{ $t('orders.cancelOrder') }}
           </button>
 
           <p v-if="(isCashier || isAdmin) && order.status === 'pending'" class="card-waiting">
             <span class="waiting-dot" />
-            Waiting for kitchen to accept…
+            {{ $t('orders.waitingForKitchen') }}
           </p>
           <p v-if="(isCashier || isAdmin) && order.status === 'cooking'" class="card-waiting">
             <span class="waiting-dot waiting-dot--cooking" />
-            Kitchen is cooking…
+            {{ $t('orders.kitchenCooking') }}
           </p>
           <p v-if="order.status === 'paid'" class="card-paid-label">
             <svg
@@ -206,7 +206,7 @@
             >
               <polyline points="20 6 9 17 4 12" />
             </svg>
-            Paid
+            {{ $t('orders.paidLabel') }}
           </p>
         </div>
       </div>
@@ -217,7 +217,7 @@
       <div v-if="showNewOrder" class="modal-overlay" @click.self="closeNewOrder">
         <div class="modal modal--lg">
           <div class="modal-header">
-            <h2 class="modal-title">New Order</h2>
+            <h2 class="modal-title">{{ $t('orders.newOrderTitle') }}</h2>
             <button class="modal-close" @click="closeNewOrder">
               <svg
                 width="15"
@@ -236,9 +236,9 @@
           <div class="modal-body">
             <!-- Table Select -->
             <div class="form-group">
-              <label class="form-label">Table</label>
+              <label class="form-label">{{ $t('orders.tableLabel') }}</label>
               <select v-model="newOrder.tableId" class="form-input">
-                <option value="" disabled>Select a table...</option>
+                <option value="" disabled>{{ $t('orders.selectTable') }}</option>
                 <option v-for="t in tables" :key="t.id" :value="t.id">{{ t.name }}</option>
               </select>
             </div>
@@ -267,8 +267,8 @@
                       <span class="qty-num">{{ cartQty(item.id) }}</span>
                       <button class="qty-btn" @click.stop="addToCart(item)">+</button>
                     </div>
-                    <div v-else-if="!item.is_available" class="sold-out">Sold out</div>
-                    <div v-else class="add-hint">+ Add</div>
+                    <div v-else-if="!item.is_available" class="sold-out">{{ $t('orders.soldOut') }}</div>
+                    <div v-else class="add-hint">{{ $t('orders.addItem') }}</div>
                   </div>
                 </div>
               </div>
@@ -276,24 +276,24 @@
 
             <!-- Note -->
             <div class="form-group">
-              <label class="form-label">Order Note <span class="optional">(optional)</span></label>
+              <label class="form-label">{{ $t('orders.orderNote') }} <span class="optional">{{ $t('common.optional') }}</span></label>
               <input
                 v-model="newOrder.note"
                 type="text"
                 class="form-input"
-                placeholder="e.g. No onions on table 3"
+                :placeholder="$t('orders.notePlaceholder')"
               />
             </div>
 
             <!-- Cart Summary -->
             <div v-if="cartItems.length > 0" class="cart-summary">
-              <p class="cart-title">Order Summary</p>
+              <p class="cart-title">{{ $t('orders.orderSummary') }}</p>
               <div v-for="ci in cartItems" :key="ci.id" class="cart-row">
                 <span>×{{ ci.quantity }} {{ ci.name }}</span>
                 <span>{{ formatCurrency(ci.price * ci.quantity) }}</span>
               </div>
               <div class="cart-total-row">
-                <span>Total</span>
+                <span>{{ $t('orders.total') }}</span>
                 <span class="cart-total-val">{{ formatCurrency(cartTotal) }}</span>
               </div>
             </div>
@@ -302,14 +302,14 @@
           </div>
 
           <div class="modal-footer">
-            <button class="btn-ghost" @click="closeNewOrder" :disabled="submitting">Cancel</button>
+            <button class="btn-ghost" @click="closeNewOrder" :disabled="submitting">{{ $t('common.cancel') }}</button>
             <button
               class="btn-submit"
               @click="submitOrder"
               :disabled="submitting || !newOrder.tableId || cartItems.length === 0"
             >
               <span v-if="submitting" class="spinner" />
-              {{ submitting ? 'Placing…' : `Place Order · ${formatCurrency(cartTotal)}` }}
+              {{ submitting ? $t('orders.placing') : $t('orders.placeOrder', { total: formatCurrency(cartTotal) }) }}
             </button>
           </div>
         </div>
@@ -339,8 +339,8 @@
                 <polyline points="10 9 9 9 8 9" />
               </svg>
               <div>
-                <h2 class="modal-title">Order Receipt</h2>
-                <p class="receipt-modal-subtitle">Preview before downloading</p>
+                <h2 class="modal-title">{{ $t('orders.receiptTitle') }}</h2>
+                <p class="receipt-modal-subtitle">{{ $t('orders.receiptSubtitle') }}</p>
               </div>
             </div>
             <button class="modal-close" @click="receiptModal.open = false">
@@ -363,31 +363,31 @@
             <div class="receipt-preview">
               <div class="receipt-header">
                 <div class="receipt-restaurant">{{ restaurantName }}</div>
-                <div class="receipt-tagline">Thank you for dining with us!</div>
+                <div class="receipt-tagline">{{ $t('orders.receiptTagline') }}</div>
                 <div class="receipt-divider">· · · · · · · · · · · · · · ·</div>
               </div>
 
               <div class="receipt-meta">
                 <div class="receipt-meta-row">
-                  <span class="receipt-meta-label">Table</span>
+                  <span class="receipt-meta-label">{{ $t('orders.tableLabel') }}</span>
                   <span class="receipt-meta-value">{{
                     receiptModal.order?.tables?.name ?? '—'
                   }}</span>
                 </div>
                 <div class="receipt-meta-row">
-                  <span class="receipt-meta-label">Order ID</span>
+                  <span class="receipt-meta-label">{{ $t('orders.receiptOrderId') }}</span>
                   <span class="receipt-meta-value receipt-mono"
                     >#{{ receiptModal.order?.id.slice(-6).toUpperCase() }}</span
                   >
                 </div>
                 <div class="receipt-meta-row">
-                  <span class="receipt-meta-label">Date</span>
+                  <span class="receipt-meta-label">{{ $t('orders.receiptDate') }}</span>
                   <span class="receipt-meta-value">{{
                     formatDate(receiptModal.order?.created_at)
                   }}</span>
                 </div>
                 <div class="receipt-meta-row">
-                  <span class="receipt-meta-label">Time</span>
+                  <span class="receipt-meta-label">{{ $t('orders.receiptTime') }}</span>
                   <span class="receipt-meta-value">{{
                     formatTimeHuman(receiptModal.order?.created_at)
                   }}</span>
@@ -404,7 +404,7 @@
                 >
                   <div class="receipt-item-left">
                     <span class="receipt-item-qty">{{ item.quantity }}×</span>
-                    <span class="receipt-item-name">{{ item.menu_items?.name ?? 'Item' }}</span>
+                    <span class="receipt-item-name">{{ item.menu_items?.name ?? $t('orders.itemFallback') }}</span>
                   </div>
                   <span class="receipt-item-price">{{
                     formatCurrency(item.unit_price * item.quantity)
@@ -415,7 +415,7 @@
               <div class="receipt-divider">· · · · · · · · · · · · · · ·</div>
 
               <div class="receipt-total-row">
-                <span class="receipt-total-label">TOTAL</span>
+                <span class="receipt-total-label">{{ $t('orders.receiptTotal') }}</span>
                 <span class="receipt-total-value">{{
                   formatCurrency(orderTotal(receiptModal.order))
                 }}</span>
@@ -423,14 +423,14 @@
 
               <div class="receipt-footer">
                 <div class="receipt-divider">· · · · · · · · · · · · · · ·</div>
-                <div class="receipt-thanks">✦ Have a great day! ✦</div>
+                <div class="receipt-thanks">{{ $t('orders.receiptFooter') }}</div>
               </div>
             </div>
           </div>
 
           <!-- Modal Footer -->
           <div class="modal-footer receipt-modal-footer">
-            <button class="btn-ghost" @click="receiptModal.open = false">Cancel</button>
+            <button class="btn-ghost" @click="receiptModal.open = false">{{ $t('common.cancel') }}</button>
             <div class="download-group">
               <button class="btn-download-png" @click="downloadPng" :disabled="receiptModal.saving">
                 <svg
@@ -445,7 +445,7 @@
                   <circle cx="8.5" cy="8.5" r="1.5" />
                   <polyline points="21 15 16 10 5 21" />
                 </svg>
-                PNG
+                {{ $t('orders.downloadPng') }}
               </button>
               <button class="btn-download-pdf" @click="downloadPdf" :disabled="receiptModal.saving">
                 <svg
@@ -459,7 +459,7 @@
                   <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                   <polyline points="14 2 14 8 20 8" />
                 </svg>
-                PDF
+                {{ $t('orders.downloadPdf') }}
               </button>
             </div>
             <button class="btn-confirm-paid" @click="confirmPaid" :disabled="receiptModal.saving">
@@ -473,7 +473,7 @@
               >
                 <polyline points="20 6 9 17 4 12" />
               </svg>
-              {{ receiptModal.saving ? 'Processing…' : 'Confirm Paid' }}
+              {{ receiptModal.saving ? $t('orders.processing') : $t('orders.confirmPaid') }}
             </button>
           </div>
         </div>
@@ -500,7 +500,7 @@
               </svg>
             </div>
             <div class="toast-content">
-              <span class="toast-title">New Order Ready!</span>
+              <span class="toast-title">{{ $t('orders.newOrderReady') }}</span>
               <span class="toast-body">{{ toast.message }}</span>
             </div>
             <button class="toast-close" @click.stop="removeToast(toast.id)">×</button>
@@ -516,8 +516,10 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
+import { useI18n } from 'vue-i18n'
 
 const authStore = useAuthStore()
+const { t } = useI18n()
 
 // ─── Role Helpers ─────────────────────────────────────────────────────────────
 const userRole = computed(() => authStore.profile?.role)
@@ -534,11 +536,11 @@ const activeTab = ref('all')
 const restaurantName = ref('Restaurant')
 
 const allTabs = [
-  { label: 'All', value: 'all' },
-  { label: 'Pending', value: 'pending' },
-  { label: 'Cooking', value: 'cooking' },
-  { label: 'Ready', value: 'ready' },
-  { label: 'Paid', value: 'paid' },
+  { label: t('orders.tabAll'), value: 'all' },
+  { label: t('orders.tabPending'), value: 'pending' },
+  { label: t('orders.tabCooking'), value: 'cooking' },
+  { label: t('orders.tabReady'), value: 'ready' },
+  { label: t('orders.tabPaid'), value: 'paid' },
 ]
 const visibleTabs = computed(() => allTabs)
 
@@ -684,7 +686,7 @@ function drawReceiptToCanvas(order) {
 
   ctx.fillStyle = '#6b7280'
   ctx.font = '13px sans-serif'
-  ctx.fillText('Thank you for dining with us!', W / 2, y)
+  ctx.fillText(t('orders.receiptTagline'), W / 2, y)
   y += 24
 
   ctx.fillStyle = '#d1d5db'
@@ -692,10 +694,10 @@ function drawReceiptToCanvas(order) {
   y += 24
 
   const meta = [
-    ['Table', order.tables?.name ?? '—'],
-    ['Order ID', `#${order.id.slice(-6).toUpperCase()}`],
-    ['Date', formatDate(order.created_at)],
-    ['Time', formatTimeHuman(order.created_at)],
+    [t('orders.tableLabel'), order.tables?.name ?? '—'],
+    [t('orders.receiptOrderId'), `#${order.id.slice(-6).toUpperCase()}`],
+    [t('orders.receiptDate'), formatDate(order.created_at)],
+    [t('orders.receiptTime'), formatTimeHuman(order.created_at)],
   ]
   ctx.textAlign = 'left'
   for (const [label, value] of meta) {
@@ -718,7 +720,7 @@ function drawReceiptToCanvas(order) {
     ctx.textAlign = 'left'
     ctx.fillStyle = '#374151'
     ctx.font = '14px sans-serif'
-    ctx.fillText(`${item.quantity}× ${item.menu_items?.name ?? 'Item'}`, padding, y)
+    ctx.fillText(`${item.quantity}× ${item.menu_items?.name ?? t('orders.itemFallback')}`, padding, y)
     ctx.textAlign = 'right'
     ctx.fillStyle = '#111827'
     ctx.fillText(formatCurrency(item.unit_price * item.quantity), W - padding, y)
@@ -733,7 +735,7 @@ function drawReceiptToCanvas(order) {
   ctx.textAlign = 'left'
   ctx.fillStyle = '#111827'
   ctx.font = 'bold 16px sans-serif'
-  ctx.fillText('TOTAL', padding, y)
+  ctx.fillText(t('orders.receiptTotal'), padding, y)
   ctx.textAlign = 'right'
   ctx.font = 'bold 18px sans-serif'
   ctx.fillText(formatCurrency(orderTotal(order)), W - padding, y)
@@ -745,7 +747,7 @@ function drawReceiptToCanvas(order) {
   ctx.fillText('· · · · · · · · · · · · · · · · · ·', W / 2, y)
   y += 20
   ctx.fillStyle = '#9ca3af'
-  ctx.fillText('✦ Have a great day! ✦', W / 2, y)
+  ctx.fillText(t('orders.receiptFooter'), W / 2, y)
 
   return canvas
 }
@@ -762,7 +764,7 @@ function downloadPdf() {
       (item) => `
       <tr>
         <td class="item-qty">${item.quantity}×</td>
-        <td class="item-name">${item.menu_items?.name ?? 'Item'}</td>
+        <td class="item-name">${item.menu_items?.name ?? t('orders.itemFallback')}</td>
         <td class="item-price">${formatCurrency(item.unit_price * item.quantity)}</td>
       </tr>`,
     )
@@ -798,23 +800,23 @@ function downloadPdf() {
 <body>
   <div class="receipt">
     <div class="restaurant">${restaurantName.value}</div>
-    <div class="tagline">Thank you for dining with us!</div>
+    <div class="tagline">${t('orders.receiptTagline')}</div>
     <div class="divider">· · · · · · · · · · · · ·</div>
     <table class="meta-table">
-      <tr><td class="label">Table</td><td class="value">${order.tables?.name ?? '—'}</td></tr>
-      <tr><td class="label">Order ID</td><td class="value">#${order.id.slice(-6).toUpperCase()}</td></tr>
-      <tr><td class="label">Date</td><td class="value">${formatDate(order.created_at)}</td></tr>
-      <tr><td class="label">Time</td><td class="value">${formatTimeHuman(order.created_at)}</td></tr>
+      <tr><td class="label">${t('orders.tableLabel')}</td><td class="value">${order.tables?.name ?? '—'}</td></tr>
+      <tr><td class="label">${t('orders.receiptOrderId')}</td><td class="value">#${order.id.slice(-6).toUpperCase()}</td></tr>
+      <tr><td class="label">${t('orders.receiptDate')}</td><td class="value">${formatDate(order.created_at)}</td></tr>
+      <tr><td class="label">${t('orders.receiptTime')}</td><td class="value">${formatTimeHuman(order.created_at)}</td></tr>
     </table>
     <div class="divider">· · · · · · · · · · · · ·</div>
     <table class="items-table">${itemRows}</table>
     <div class="divider">· · · · · · · · · · · · ·</div>
     <div class="total-row">
-      <span class="total-label">TOTAL</span>
+      <span class="total-label">${t('orders.receiptTotal')}</span>
       <span class="total-value">${formatCurrency(orderTotal(order))}</span>
     </div>
     <div class="divider">· · · · · · · · · · · · ·</div>
-    <div class="footer-thanks">✦ Have a great day! ✦</div>
+    <div class="footer-thanks">${t('orders.receiptFooter')}</div>
   </div>
   <script>window.onload = () => { window.print(); window.onafterprint = () => window.close(); }<\/script>
 </body>
@@ -874,13 +876,19 @@ function formatCurrency(amount) {
 
 function timeElapsed(createdAt) {
   const diff = Math.floor((Date.now() - new Date(createdAt)) / 1000)
-  if (diff < 60) return `${diff}s ago`
-  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`
-  return `${Math.floor(diff / 3600)}h ago`
+  if (diff < 60) return `${diff}${t('orders.timeElapsedSeconds')}`
+  if (diff < 3600) return `${Math.floor(diff / 60)}${t('orders.timeElapsedMinutes')}`
+  return `${Math.floor(diff / 3600)}${t('orders.timeElapsedHours')}`
 }
 
 function statusLabel(status) {
-  return { pending: 'Pending', cooking: 'Cooking', ready: 'Ready', paid: 'Paid' }[status] || status
+  const map = {
+    pending: t('orders.tabPending'),
+    cooking: t('orders.tabCooking'),
+    ready: t('orders.tabReady'),
+    paid: t('orders.tabPaid'),
+  }
+  return map[status] || status
 }
 
 function orderTotal(order) {
@@ -934,9 +942,9 @@ async function fetchOrders() {
     if (knownOrderIds.size > 0) {
       const newReady = incoming.filter((o) => o.status === 'ready' && !knownOrderIds.has(o.id))
       newReady.forEach((o) => {
-        const tableName = o.tables?.name ?? 'Unknown Table'
+        const tableName = o.tables?.name ?? t('orders.unknownTable')
         const itemCount = o.order_items?.length ?? 0
-        addToast(`${tableName} · ${itemCount} item${itemCount !== 1 ? 's' : ''}`)
+        addToast(`${tableName} · ${itemCount} ${itemCount !== 1 ? 'items' : 'item'}`)
         playCashRegisterSound()
       })
     }
@@ -1012,7 +1020,7 @@ async function submitOrder() {
     showNewOrder.value = false
     await fetchOrders()
   } catch (err) {
-    newOrderError.value = err.message || 'Failed to place order. Please try again.'
+    newOrderError.value = err.message || t('orders.failedToPlace')
   } finally {
     submitting.value = false
   }

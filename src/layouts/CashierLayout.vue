@@ -4,7 +4,7 @@
     <aside class="sidebar">
       <div class="sidebar-brand">
         <div class="brand-icon-wrap">
-          <img v-if="restaurantLogo" :src="restaurantLogo" alt="logo" class="brand-logo-img" />
+          <img v-if="restaurantLogo" :src="restaurantLogo" :alt="$t('layouts.logo')" class="brand-logo-img" />
           <Utensils v-else class="brand-icon" />
         </div>
         <span class="brand-name">{{ restaurantName }}</span>
@@ -53,12 +53,12 @@
       <header class="mobile-header">
         <div class="mobile-brand">
           <div class="brand-icon-wrap sm">
-            <img v-if="restaurantLogo" :src="restaurantLogo" alt="logo" class="brand-logo-img" />
+            <img v-if="restaurantLogo" :src="restaurantLogo" :alt="$t('layouts.logo')" class="brand-logo-img" />
             <Utensils v-else class="brand-icon" />
           </div>
           <span class="brand-text">{{ restaurantName }}</span>
         </div>
-        <button class="btn-icon" @click="signOut" title="Sign out">
+        <button class="btn-icon" @click="signOut" :title="$t('layouts.signOut')">
           <LogOut class="icon" />
         </button>
       </header>
@@ -78,7 +78,7 @@
             <ClipboardList class="bottom-nav-icon" />
             <span v-if="pendingOrdersCount > 0" class="bottom-badge">{{ pendingOrdersCount }}</span>
           </div>
-          <span class="bottom-nav-label">Orders</span>
+          <span class="bottom-nav-label">{{ $t('layouts.orders') }}</span>
         </RouterLink>
         <RouterLink
           to="/cashier/history"
@@ -86,7 +86,7 @@
           :class="{ 'bottom-nav-item--active': $route.path === '/cashier/history' }"
         >
           <History class="bottom-nav-icon" />
-          <span class="bottom-nav-label">History</span>
+          <span class="bottom-nav-label">{{ $t('layouts.history') }}</span>
         </RouterLink>
       </nav>
     </div>

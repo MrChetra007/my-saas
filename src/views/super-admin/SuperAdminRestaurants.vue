@@ -3,8 +3,8 @@
     <!-- ── Page header ──────────────────────────────── -->
     <div class="page-header">
       <div>
-        <h2 class="page-title">Restaurants</h2>
-        <p class="page-sub">{{ filtered.length }} of {{ restaurants.length }} restaurants</p>
+        <h2 class="page-title">{{ $t('superAdmin.restaurants.title') }}</h2>
+        <p class="page-sub">{{ $t('superAdmin.restaurants.subtitle', { filtered: filtered.length, total: restaurants.length }) }}</p>
       </div>
     </div>
 
@@ -15,7 +15,7 @@
         <input
           v-model="searchQ"
           class="search-input"
-          placeholder="Search by name or slug…"
+          :placeholder="$t('superAdmin.restaurants.searchPlaceholder')"
           type="text"
         />
         <button v-if="searchQ" class="search-clear" @click="searchQ = ''">×</button>
@@ -52,18 +52,18 @@
 
       <div v-else-if="filtered.length === 0" class="empty-state">
         <span v-html="icons.empty" />
-        <span>No restaurants match your filters</span>
+        <span>{{ $t('superAdmin.restaurants.empty') }}</span>
       </div>
 
       <table v-else class="r-table">
         <thead>
           <tr>
-            <th>Restaurant</th>
-            <th>Owner</th>
-            <th>Plan</th>
-            <th>Billing</th>
-            <th>Trial / Expiry</th>
-            <th>Created</th>
+            <th>{{ $t('superAdmin.restaurants.table.restaurant') }}</th>
+            <th>{{ $t('superAdmin.restaurants.table.owner') }}</th>
+            <th>{{ $t('superAdmin.restaurants.table.plan') }}</th>
+            <th>{{ $t('superAdmin.restaurants.table.billing') }}</th>
+            <th>{{ $t('superAdmin.restaurants.table.trialExpiry') }}</th>
+            <th>{{ $t('superAdmin.restaurants.table.created') }}</th>
             <th></th>
           </tr>
         </thead>
@@ -86,12 +86,12 @@
             </td>
             <td>
               <span class="billing-badge" :class="r.billing_type ?? 'manual'">
-                {{ r.billing_type === 'lemonsqueezy' ? 'LemonSqueezy' : 'Manual' }}
+                {{ r.billing_type === 'lemonsqueezy' ? $t('superAdmin.restaurants.lemonSqueezy') : $t('superAdmin.restaurants.manual') }}
               </span>
             </td>
             <td class="td-date">
               <template v-if="r.billing_type === 'lemonsqueezy'">
-                <span class="td-muted">— auto renew</span>
+                <span class="td-muted">{{ $t('superAdmin.restaurants.autoRenew') }}</span>
               </template>
               <template v-else-if="r.plan_expires_at">
                 <span :class="expiryClass(r.plan_expires_at)">
@@ -101,7 +101,7 @@
               </template>
               <template v-else-if="r.trial_ends_at">
                 <span :class="expiryClass(r.trial_ends_at)">
-                  Trial ends {{ formatDate(r.trial_ends_at) }}
+                  {{ $t('superAdmin.restaurants.trialEnds', { date: formatDate(r.trial_ends_at) }) }}
                 </span>
               </template>
               <template v-else>
@@ -113,19 +113,19 @@
               <div class="action-btns">
                 <button
                   class="action-btn"
-                  title="View details"
+                  :title="$t('superAdmin.restaurants.action.viewDetails')"
                   @click="openDetails(r)"
                   v-html="icons.eye"
                 />
                 <button
                   class="action-btn"
-                  title="Manage billing"
+                  :title="$t('superAdmin.restaurants.action.manageBilling')"
                   @click="openBilling(r)"
                   v-html="icons.billing"
                 />
                 <button
                   class="action-btn danger"
-                  title="Impersonate"
+                  :title="$t('superAdmin.restaurants.action.impersonate')"
                   @click="impersonate(r)"
                   v-html="icons.impersonate"
                 />
@@ -170,7 +170,7 @@
             <div class="modal-title-wrap">
               <span v-html="icons.billing" style="color: #f97316" />
               <div>
-                <h3 class="modal-title">Manage billing</h3>
+                <h3 class="modal-title">{{ $t('superAdmin.restaurants.billingModal.title') }}</h3>
                 <span class="modal-sub">{{ billingModal.name }}</span>
               </div>
             </div>
@@ -178,44 +178,44 @@
           </div>
           <div class="modal-body">
             <div class="form-group">
-              <label class="form-label">Plan</label>
+              <label class="form-label">{{ $t('superAdmin.restaurants.billingModal.planLabel') }}</label>
               <select v-model="billingForm.plan" class="form-select">
-                <option value="trial">Trial</option>
-                <option value="starter">Starter</option>
-                <option value="pro">Pro</option>
-                <option value="expired">Expired</option>
+                <option value="trial">{{ $t('superAdmin.restaurants.billingModal.planOption.trial') }}</option>
+                <option value="starter">{{ $t('superAdmin.restaurants.billingModal.planOption.starter') }}</option>
+                <option value="pro">{{ $t('superAdmin.restaurants.billingModal.planOption.pro') }}</option>
+                <option value="expired">{{ $t('superAdmin.restaurants.billingModal.planOption.expired') }}</option>
               </select>
             </div>
             <div class="form-group">
-              <label class="form-label">Billing type</label>
+              <label class="form-label">{{ $t('superAdmin.restaurants.billingModal.billingTypeLabel') }}</label>
               <select v-model="billingForm.billing_type" class="form-select">
-                <option value="manual">Manual</option>
-                <option value="lemonsqueezy">LemonSqueezy</option>
+                <option value="manual">{{ $t('superAdmin.restaurants.billingModal.billingOption.manual') }}</option>
+                <option value="lemonsqueezy">{{ $t('superAdmin.restaurants.billingModal.billingOption.lemonSqueezy') }}</option>
               </select>
             </div>
             <div class="form-group" v-if="billingForm.billing_type === 'manual'">
-              <label class="form-label">Plan expires at</label>
+              <label class="form-label">{{ $t('superAdmin.restaurants.billingModal.expiresAtLabel') }}</label>
               <input v-model="billingForm.plan_expires_at" type="date" class="form-input" />
               <div class="form-hint">
-                Leave empty for indefinite access (e.g. your test accounts)
+                {{ $t('superAdmin.restaurants.billingModal.expiresAtHint') }}
               </div>
             </div>
             <div class="form-group" v-if="billingForm.billing_type === 'manual'">
               <div class="quick-dates">
-                <span class="quick-label">Quick set:</span>
-                <button class="quick-btn" @click="setExpiry(30)">+30 days</button>
-                <button class="quick-btn" @click="setExpiry(90)">+90 days</button>
-                <button class="quick-btn" @click="setExpiry(365)">+1 year</button>
+                <span class="quick-label">{{ $t('superAdmin.restaurants.billingModal.quickSet') }}</span>
+                <button class="quick-btn" @click="setExpiry(30)">{{ $t('superAdmin.restaurants.billingModal.plus30Days') }}</button>
+                <button class="quick-btn" @click="setExpiry(90)">{{ $t('superAdmin.restaurants.billingModal.plus90Days') }}</button>
+                <button class="quick-btn" @click="setExpiry(365)">{{ $t('superAdmin.restaurants.billingModal.plus1Year') }}</button>
                 <button class="quick-btn danger" @click="billingForm.plan_expires_at = ''">
-                  Clear
+                  {{ $t('superAdmin.restaurants.billingModal.clear') }}
                 </button>
               </div>
             </div>
           </div>
           <div class="modal-footer">
-            <button class="btn-secondary" @click="closeBilling">Cancel</button>
+            <button class="btn-secondary" @click="closeBilling">{{ $t('superAdmin.restaurants.billingModal.cancel') }}</button>
             <button class="btn-primary" :disabled="saving" @click="saveBilling">
-              {{ saving ? 'Saving…' : 'Save changes' }}
+              {{ saving ? $t('superAdmin.restaurants.billingModal.saving') : $t('superAdmin.restaurants.billingModal.save') }}
             </button>
           </div>
         </div>
@@ -229,24 +229,20 @@
           <div class="modal-header">
             <div class="modal-title-wrap">
               <span v-html="icons.impersonate" style="color: #e11d48" />
-              <h3 class="modal-title">Impersonate restaurant</h3>
+              <h3 class="modal-title">{{ $t('superAdmin.restaurants.impersonateModal.title') }}</h3>
             </div>
             <button class="modal-close" @click="impersonateTarget = null">×</button>
           </div>
           <div class="modal-body">
-            <p class="impersonate-warning">
-              You are about to view <strong>{{ impersonateTarget.name }}</strong> as their admin.
-              This will open their dashboard in a new tab using their restaurant context.
-            </p>
+            <p class="impersonate-warning" v-html="$t('superAdmin.restaurants.impersonateModal.warning', { name: impersonateTarget.name })"></p>
             <div class="impersonate-info">
               <span v-html="icons.info" />
-              You will still be logged in as yourself — this just navigates to their slug-based
-              order URL for reference.
+              {{ $t('superAdmin.restaurants.impersonateModal.info') }}
             </div>
           </div>
           <div class="modal-footer">
-            <button class="btn-secondary" @click="impersonateTarget = null">Cancel</button>
-            <button class="btn-danger" @click="confirmImpersonate">Open their dashboard</button>
+            <button class="btn-secondary" @click="impersonateTarget = null">{{ $t('superAdmin.restaurants.impersonateModal.cancel') }}</button>
+            <button class="btn-danger" @click="confirmImpersonate">{{ $t('superAdmin.restaurants.impersonateModal.confirm') }}</button>
           </div>
         </div>
       </div>
@@ -258,8 +254,10 @@
 import { ref, computed, onMounted } from 'vue'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
+import { useI18n } from 'vue-i18n'
 
 const authStore = useAuthStore()
+const { t } = useI18n()
 const loading = ref(true)
 const restaurants = ref([])
 const saving = ref(false)
@@ -270,17 +268,17 @@ const planFilter = ref('all')
 const billingFilter = ref('all')
 
 const planFilters = [
-  { label: 'All plans', value: 'all' },
-  { label: 'Trial', value: 'trial' },
-  { label: 'Starter', value: 'starter' },
-  { label: 'Pro', value: 'pro' },
-  { label: 'Expired', value: 'expired' },
+  { label: t('superAdmin.restaurants.filter.allPlans'), value: 'all' },
+  { label: t('superAdmin.restaurants.filter.trial'), value: 'trial' },
+  { label: t('superAdmin.restaurants.filter.starter'), value: 'starter' },
+  { label: t('superAdmin.restaurants.filter.pro'), value: 'pro' },
+  { label: t('superAdmin.restaurants.filter.expired'), value: 'expired' },
 ]
 
 const billingFilters = [
-  { label: 'All billing', value: 'all' },
-  { label: 'Manual', value: 'manual' },
-  { label: 'LemonSqueezy', value: 'lemonsqueezy' },
+  { label: t('superAdmin.restaurants.filter.allBilling'), value: 'all' },
+  { label: t('superAdmin.restaurants.filter.manual'), value: 'manual' },
+  { label: t('superAdmin.restaurants.filter.lemonSqueezy'), value: 'lemonsqueezy' },
 ]
 
 const filtered = computed(() => {
@@ -387,9 +385,9 @@ function daysUntil(dateStr) {
 
 function daysLabel(dateStr) {
   const d = daysUntil(dateStr)
-  if (d < 0) return '(expired)'
-  if (d === 0) return '(today)'
-  return `(${d}d left)`
+  if (d < 0) return t('superAdmin.restaurants.daysLabel.expired')
+  if (d === 0) return t('superAdmin.restaurants.daysLabel.today')
+  return t('superAdmin.restaurants.daysLabel.daysLeft', { days: d })
 }
 
 function expiryClass(dateStr) {
@@ -402,20 +400,20 @@ function expiryClass(dateStr) {
 
 function detailFields(r) {
   return [
-    { label: 'Restaurant ID', value: `<code>${r.id}</code>` },
-    { label: 'Name', value: r.name },
-    { label: 'Slug', value: `/${r.slug}` },
-    { label: 'Owner email', value: r.owner_email ?? '—' },
-    { label: 'Plan', value: r.plan ?? 'trial' },
-    { label: 'Billing type', value: r.billing_type ?? 'manual' },
-    { label: 'Trial ends', value: formatDate(r.trial_ends_at) },
-    { label: 'Plan expires', value: formatDate(r.plan_expires_at) },
-    { label: 'LS customer ID', value: r.lemonsqueezy_customer_id ?? '—' },
-    { label: 'LS subscription ID', value: r.lemonsqueezy_subscription_id ?? '—' },
-    { label: 'Currency', value: r.currency ?? '—' },
-    { label: 'Timezone', value: r.timezone ?? '—' },
-    { label: 'Created', value: formatDate(r.created_at) },
-    { label: 'Last updated', value: formatDate(r.updated_at) },
+    { label: t('superAdmin.restaurants.details.restaurantId'), value: `<code>${r.id}</code>` },
+    { label: t('superAdmin.restaurants.details.name'), value: r.name },
+    { label: t('superAdmin.restaurants.details.slug'), value: `/${r.slug}` },
+    { label: t('superAdmin.restaurants.details.ownerEmail'), value: r.owner_email ?? '—' },
+    { label: t('superAdmin.restaurants.details.plan'), value: r.plan ?? 'trial' },
+    { label: t('superAdmin.restaurants.details.billingType'), value: r.billing_type ?? 'manual' },
+    { label: t('superAdmin.restaurants.details.trialEnds'), value: formatDate(r.trial_ends_at) },
+    { label: t('superAdmin.restaurants.details.planExpires'), value: formatDate(r.plan_expires_at) },
+    { label: t('superAdmin.restaurants.details.lsCustomerId'), value: r.lemonsqueezy_customer_id ?? '—' },
+    { label: t('superAdmin.restaurants.details.lsSubscriptionId'), value: r.lemonsqueezy_subscription_id ?? '—' },
+    { label: t('superAdmin.restaurants.details.currency'), value: r.currency ?? '—' },
+    { label: t('superAdmin.restaurants.details.timezone'), value: r.timezone ?? '—' },
+    { label: t('superAdmin.restaurants.details.created'), value: formatDate(r.created_at) },
+    { label: t('superAdmin.restaurants.details.lastUpdated'), value: formatDate(r.updated_at) },
   ]
 }
 

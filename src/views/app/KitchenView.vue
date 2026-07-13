@@ -11,10 +11,10 @@
     <!-- Header -->
     <div class="kitchen-header">
       <div class="header-left">
-        <h1 class="page-title">Kitchen Display</h1>
+        <h1 class="page-title">{{ $t('kitchen.title') }}</h1>
         <div class="connection-status">
           <span class="status-dot" :class="{ connected: isConnected }" />
-          <span class="status-text">{{ isConnected ? 'Live' : 'Reconnecting…' }}</span>
+          <span class="status-text">{{ isConnected ? $t('kitchen.live') : $t('kitchen.reconnecting') }}</span>
         </div>
       </div>
 
@@ -23,7 +23,7 @@
         <button
           class="icon-btn audio-toggle"
           @click="audioEnabled = !audioEnabled"
-          :title="audioEnabled ? 'Mute new order alerts' : 'Enable new order alerts'"
+          :title="audioEnabled ? $t('kitchen.muteAlerts') : $t('kitchen.enableAlerts')"
         >
           <Volume2 v-if="audioEnabled" :size="20" />
           <VolumeX v-else :size="20" />
@@ -52,7 +52,7 @@
     <div class="orders-area">
       <div v-if="loading" class="loading-state">
         <div class="spinner" />
-        <span>Loading orders…</span>
+        <span>{{ $t('kitchen.loading') }}</span>
       </div>
 
       <div v-else-if="visibleOrders.length === 0" class="empty-state">
@@ -99,20 +99,20 @@
 
           <div class="card-actions">
             <template v-if="order.status === 'pending'">
-              <button class="btn-reject" @click="openRejectModal(order)">Reject</button>
-              <button class="btn-accept" @click="acceptOrder(order)">Accept → Cooking</button>
+              <button class="btn-reject" @click="openRejectModal(order)">{{ $t('kitchen.reject') }}</button>
+              <button class="btn-accept" @click="acceptOrder(order)">{{ $t('kitchen.accept') }}</button>
             </template>
 
             <template v-else-if="order.status === 'cooking'">
-              <button class="btn-ready" @click="markReady(order)">Mark Ready</button>
+              <button class="btn-ready" @click="markReady(order)">{{ $t('kitchen.markReady') }}</button>
             </template>
 
             <template v-else-if="order.status === 'ready'">
-              <div class="status-indicator ready">Ready for pickup</div>
+              <div class="status-indicator ready">{{ $t('kitchen.readyForPickup') }}</div>
             </template>
 
             <template v-else-if="order.status === 'rejected'">
-              <div class="status-indicator rejected">Rejected</div>
+              <div class="status-indicator rejected">{{ $t('kitchen.rejected') }}</div>
             </template>
           </div>
         </div>
@@ -124,13 +124,13 @@
       <div v-if="rejectModal.open" class="modal-backdrop" @click.self="rejectModal.open = false">
         <div class="modal">
           <div class="modal-header">
-            <h2 class="modal-title">Reject Order</h2>
+            <h2 class="modal-title">{{ $t('kitchen.rejectOrderTitle') }}</h2>
             <button class="modal-close-btn" @click="rejectModal.open = false">
               <X :size="24" />
             </button>
           </div>
           <div class="modal-body">
-            <p class="reject-info">Select or enter a reason (visible to customer).</p>
+            <p class="reject-info">{{ $t('kitchen.rejectInfo') }}</p>
 
             <div class="reason-chips">
               <button
@@ -145,19 +145,19 @@
             </div>
 
             <div class="form-group">
-              <label class="form-label">Custom reason (optional)</label>
+              <label class="form-label">{{ $t('kitchen.customReason') }}</label>
               <input
                 v-model="rejectModal.reason"
                 class="form-input"
                 type="text"
-                placeholder="e.g. Temporarily out of stock…"
+                :placeholder="$t('kitchen.reasonPlaceholder')"
               />
             </div>
           </div>
           <div class="modal-footer">
-            <button class="btn-ghost" @click="rejectModal.open = false">Cancel</button>
+            <button class="btn-ghost" @click="rejectModal.open = false">{{ $t('common.cancel') }}</button>
             <button class="btn-danger" :disabled="rejectModal.saving" @click="rejectOrder">
-              {{ rejectModal.saving ? 'Rejecting…' : 'Reject Order' }}
+              {{ rejectModal.saving ? $t('kitchen.rejecting') : $t('kitchen.rejectOrder') }}
             </button>
           </div>
         </div>
@@ -170,6 +170,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
+import { useI18n } from 'vue-i18n'
 import {
   Volume2,
   VolumeX,
@@ -186,6 +187,7 @@ import {
 } from 'lucide-vue-next'
 
 const authStore = useAuthStore()
+const { t } = useI18n()
 
 const loading = ref(true)
 const isConnected = ref(false)
@@ -259,19 +261,19 @@ const todayLabel = computed(() =>
 const tabs = computed(() => [
   {
     key: 'pending',
-    label: 'Pending',
+    label: t('kitchen.tabPending'),
     count: orders.value.filter((o) => o.status === 'pending').length,
     icon: Clock,
   },
   {
     key: 'cooking',
-    label: 'Cooking',
+    label: t('kitchen.tabCooking'),
     count: orders.value.filter((o) => o.status === 'cooking').length,
     icon: Flame,
   },
   {
     key: 'done',
-    label: 'Done',
+    label: t('kitchen.tabDone'),
     count: orders.value.filter((o) => ['ready', 'paid', 'rejected'].includes(o.status)).length,
     icon: CheckCircle,
   },
@@ -298,26 +300,26 @@ const emptyStateIcon = computed(() => {
 })
 
 const emptyTitle = computed(() => {
-  if (activeTab.value === 'pending') return 'No pending orders'
-  if (activeTab.value === 'cooking') return 'No orders in progress'
-  return 'No completed orders today'
+  if (activeTab.value === 'pending') return t('kitchen.noPendingOrders')
+  if (activeTab.value === 'cooking') return t('kitchen.noOrdersInProgress')
+  return t('kitchen.noCompletedOrders')
 })
 
 const emptyMessage = computed(() => {
-  if (activeTab.value === 'pending') return 'New orders will appear here automatically.'
-  if (activeTab.value === 'cooking') return 'Accept orders to start preparing them.'
-  return 'Finished or rejected orders will show here.'
+  if (activeTab.value === 'pending') return t('kitchen.pendingEmptyMsg')
+  if (activeTab.value === 'cooking') return t('kitchen.cookingEmptyMsg')
+  return t('kitchen.doneEmptyMsg')
 })
 
 // ── Reject modal ───────────────────────────────────────────────────────────────
 const rejectModal = ref({ open: false, order: null, reason: '', saving: false })
 
 const rejectReasons = [
-  'Item out of stock',
-  'Kitchen too busy',
-  'Ingredient unavailable',
-  'Duplicate order',
-  'Customer requested cancel',
+  t('kitchen.rejectReasonOutOfStock'),
+  t('kitchen.rejectReasonTooBusy'),
+  t('kitchen.rejectReasonIngredient'),
+  t('kitchen.rejectReasonDuplicate'),
+  t('kitchen.rejectReasonCustomerCancel'),
 ]
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -327,22 +329,22 @@ function elapsedMinutes(order) {
 
 function elapsedLabel(order) {
   const m = elapsedMinutes(order)
-  if (m < 1) return 'just now'
-  if (m === 1) return '1 min'
-  return `${m} min`
+  if (m < 1) return t('kitchen.justNow')
+  if (m === 1) return t('kitchen.oneMin')
+  return `${m} ${t('kitchen.minSuffix')}`
 }
 
 // ── Actions ────────────────────────────────────────────────────────────────────
 async function acceptOrder(order) {
   const { error } = await updateOrderStatus(order.id, 'cooking')
-  if (!error) showToast(`Order ${order.id.slice(-4).toUpperCase()} accepted — now cooking!`, 'info')
-  else showToast('Failed to accept order.', 'error')
+  if (!error) showToast(`Order ${order.id.slice(-4).toUpperCase()} ${t('kitchen.acceptedToast')}`, 'info')
+  else showToast(t('kitchen.acceptFailedToast'), 'error')
 }
 
 async function markReady(order) {
   const { error } = await updateOrderStatus(order.id, 'ready')
-  if (!error) showToast(`Order ${order.id.slice(-4).toUpperCase()} is ready for pickup!`, 'success')
-  else showToast('Failed to mark order as ready.', 'error')
+  if (!error) showToast(`Order ${order.id.slice(-4).toUpperCase()} ${t('kitchen.readyToast')}`, 'success')
+  else showToast(t('kitchen.readyFailedToast'), 'error')
 }
 
 function openRejectModal(order) {
@@ -353,8 +355,8 @@ async function rejectOrder() {
   const m = rejectModal.value
   m.saving = true
   const { error } = await updateOrderStatus(m.order.id, 'rejected', m.reason.trim() || null)
-  if (!error) showToast(`Order ${m.order.id.slice(-4).toUpperCase()} rejected.`, 'error')
-  else showToast('Failed to reject order.', 'error')
+  if (!error) showToast(`Order ${m.order.id.slice(-4).toUpperCase()} ${t('kitchen.rejectedToast')}`, 'error')
+  else showToast(t('kitchen.rejectFailedToast'), 'error')
   m.open = false
   m.saving = false
 }
@@ -436,7 +438,7 @@ onMounted(async () => {
         // Ding + toast for new order
         playDing()
         activeTab.value = 'pending'
-        showToast('New order received!', 'info')
+        showToast(t('kitchen.newOrderToast'), 'info')
 
         setTimeout(() => {
           const o = orders.value.find((o) => o.id === enriched.id)
@@ -476,10 +478,10 @@ onUnmounted(() => {
 function enrichOrder(raw) {
   return {
     ...raw,
-    _tableName: tableMap.value[raw.table_id] || 'Table ?',
+    _tableName: tableMap.value[raw.table_id] || t('kitchen.unknownTable'),
     _items: (raw.order_items || []).map((item) => ({
       ...item,
-      _name: menuItemMap.value[item.menu_item_id] || 'Unknown item',
+      _name: menuItemMap.value[item.menu_item_id] || t('kitchen.unknownItem'),
     })),
     _isNew: raw._isNew ?? false,
   }
