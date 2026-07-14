@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { BakongKHQR, IndividualInfo, khqrData } from 'npm:bakong-khqr@1.0.20'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -23,10 +24,14 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
     )
 
-    const { data: { user }, error: userError } = await authClient.auth.getUser()
+    const {
+      data: { user },
+      error: userError,
+    } = await authClient.auth.getUser()
     if (userError || !user) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-        status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
 
@@ -38,14 +43,16 @@ Deno.serve(async (req) => {
 
     if (callerError || !caller) {
       return new Response(JSON.stringify({ error: 'Forbidden' }), {
-        status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
 
     const { restaurant_id, plan_id, period_start, period_end } = await req.json()
     if (!restaurant_id || !plan_id || !period_start || !period_end) {
       return new Response(JSON.stringify({ error: 'Missing required fields' }), {
-        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
 
@@ -53,11 +60,16 @@ Deno.serve(async (req) => {
     const isOwnRestaurant = caller.restaurant_id === restaurant_id
     if (!isSuperAdmin && !isOwnRestaurant) {
       return new Response(JSON.stringify({ error: 'Forbidden' }), {
-        status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
 
-    // Dedup: return existing open invoice
+    // ── Dedup: return existing open invoice ────────────────────────────────
+    // IMPORTANT: only treat it as a valid dedup hit if it actually has a QR.
+    // Otherwise a previously-broken invoice (e.g. generated before
+    // bakong_account_id was configured) gets served forever and KHQR
+    // generation never gets retried.
     const { data: existing } = await serviceClient
       .from('subscription_invoices')
       .select('*')
@@ -66,11 +78,20 @@ Deno.serve(async (req) => {
       .order('created_at', { ascending: false })
       .limit(1)
 
-    if (existing && existing.length > 0) {
+    if (existing && existing.length > 0 && existing[0].khqr_string) {
       return new Response(JSON.stringify({ invoice: existing[0], deduped: true }), {
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
+    }
+
+    // If we found a stale invoice with no QR, mark it expired instead of
+    // leaving it dangling — we're about to create a fresh one below.
+    if (existing && existing.length > 0 && !existing[0].khqr_string) {
+      await serviceClient
+        .from('subscription_invoices')
+        .update({ status: 'expired' })
+        .eq('id', existing[0].id)
     }
 
     const { data: plan, error: planError } = await serviceClient
@@ -81,7 +102,8 @@ Deno.serve(async (req) => {
 
     if (planError || !plan) {
       return new Response(JSON.stringify({ error: 'Plan not found' }), {
-        status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
 
@@ -111,7 +133,8 @@ Deno.serve(async (req) => {
 
     if (settingsError) {
       return new Response(JSON.stringify({ error: 'Platform settings not found' }), {
-        status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
 
@@ -121,28 +144,28 @@ Deno.serve(async (req) => {
 
     if (settings.bakong_account_id) {
       try {
-        const { BakongKHQR, MerchantInfo, khqrData } = await import('npm:bakong-khqr@1')
-        const isKhr = settings.currency === 'KHR'
-        const amountNum = Math.round(totalAmount * (isKhr ? 4000 : 1)) // approximate KHR conversion
+        const expirationTimestamp = Date.now() + 10 * 60 * 1000
+        const billNumber = `INV-${restaurant_id.slice(0, 8)}-${Date.now()}`.slice(-20)
         const optionalData = {
-          currency: isKhr ? khqrData.currency.khr : khqrData.currency.usd,
-          amount: amountNum,
-          storeLabel: restaurant_id.slice(0, 25),
-          terminalLabel: plan_id,
+          currency: khqrData.currency.usd,
+          amount: Math.round(totalAmount * 100) / 100,
+          billNumber,
+          storeLabel: 'QRserve',
+          expirationTimestamp,
+          merchantCategoryCode: '5999',
         }
-        const merchantInfo = new MerchantInfo(
+        const individualInfo = new IndividualInfo(
           settings.bakong_account_id,
           settings.merchant_name || 'QRserve',
           settings.merchant_city || 'Phnom Penh',
-          0, // merchantID (optional)
-          '', // acquiringBank
           optionalData,
         )
         const khqr = new BakongKHQR()
-        const response = khqr.generateMerchant(merchantInfo)
+        const response = khqr.generateIndividual(individualInfo)
         if (response?.status?.code === 0 && response?.data) {
-          khqrString = response.data.qr || null
-          khqrMd5 = response.data.md5 || null
+          const { qr, md5 } = response.data as { qr: string; md5: string }
+          khqrString = qr || null
+          khqrMd5 = md5 || null
         } else {
           khqrError = response?.status?.message || 'KHQR generation returned non-zero code'
         }
@@ -150,6 +173,9 @@ Deno.serve(async (req) => {
         console.error('KHQR generation failed:', err)
         khqrError = err.message
       }
+    } else {
+      // Surface this clearly instead of silently producing a QR-less invoice.
+      khqrError = 'bakong_account_id not configured in platform_settings'
     }
 
     const invoiceAmount = Math.round(totalAmount * 100) / 100
@@ -175,7 +201,8 @@ Deno.serve(async (req) => {
 
     if (invoiceError) {
       return new Response(JSON.stringify({ error: invoiceError.message }), {
-        status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
 
