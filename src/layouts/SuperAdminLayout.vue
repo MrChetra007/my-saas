@@ -100,6 +100,7 @@ import { useI18n } from 'vue-i18n'
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
+const { t } = useI18n()
 
 const collapsed = ref(false)
 const mobileOpen = ref(false)
