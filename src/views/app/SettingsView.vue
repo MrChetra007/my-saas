@@ -417,6 +417,9 @@ import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
 
+// LemonSqueezy billing is disabled — flip to true to re-enable checkout/portal UI
+const LEMONSQUEEZY_ENABLED = false
+
 import {
   Save,
   Loader2,

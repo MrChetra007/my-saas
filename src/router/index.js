@@ -159,25 +159,23 @@ const router = createRouter({ history: createWebHistory(), routes })
 // isTrialExpired — supports both billing types
 //
 // LemonSqueezy: webhook keeps `plan` field updated → trust it directly
-// Manual:       super admin sets plan_expires_at → check the date
+// Manual:       only redirects for trial expiry; plan expiry is handled by
+//               SubscriptionGateModal (grace period flow)
 // Trial:        falls back to trial_ends_at for both types on signup
 // ---------------------------------------------------------------------------
 function isTrialExpired(plan, trialEndsAt, billingType, planExpiresAt) {
   // ── LemonSqueezy: webhook manages everything ──────
   if (billingType === 'lemonsqueezy') {
-    if (['pro', 'starter'].includes(plan)) return false // active LS sub
-    if (plan === 'expired') return true // webhook cancelled it
-    // fallthrough to trial check below
+    if (['pro', 'starter'].includes(plan)) return false
+    if (plan === 'expired') return true
   }
 
-  // ── Manual: check plan_expires_at date ────────────
+  // ── Manual: plan expiry is handled by SubscriptionGateModal ────
+  // Only redirect if the user is on a trial that expired or has no plan
   if (billingType === 'manual') {
     if (plan === 'expired') return true
-    if (['pro', 'starter'].includes(plan)) {
-      if (!planExpiresAt) return false // no expiry = indefinite (test accounts)
-      return new Date(planExpiresAt) < new Date() // expired if date passed
-    }
-    // fallthrough to trial check below
+    // If they have a valid plan (pro/starter), do NOT redirect — let modal handle it
+    if (['pro', 'starter'].includes(plan)) return false
   }
 
   // ── Trial fallback (new signups, both billing types) ──

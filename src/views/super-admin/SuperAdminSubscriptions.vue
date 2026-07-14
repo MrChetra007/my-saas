@@ -61,6 +61,9 @@
       </div>
     </div>
 
+    <!-- ── Pending approvals ───────────────────────── -->
+    <PendingApprovalsPanel @approved="onApproved" @rejected="onRejected" />
+
     <!-- ── Table ────────────────────────────────────── -->
     <div class="table-wrap">
       <div v-if="loading" class="skeleton-rows">
@@ -304,6 +307,7 @@ import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
 import { useI18n } from 'vue-i18n'
 import RestaurantInvoicePanel from '@/components/RestaurantInvoicePanel.vue'
+import PendingApprovalsPanel from '@/components/PendingApprovalsPanel.vue'
 
 const authStore = useAuthStore()
 const { t } = useI18n()
@@ -527,6 +531,16 @@ function detailFields(r) {
     { label: t('superAdmin.subscriptions.details.updatedAt'), value: formatDate(r.updated_at) },
     { label: t('superAdmin.subscriptions.details.created'), value: formatDate(r.created_at) },
   ]
+}
+
+// ── Pending approvals handlers ─────────────────────────
+function onApproved() {
+  // Refresh the restaurant count
+  rows.value = [...rows.value]
+}
+
+function onRejected() {
+  rows.value = [...rows.value]
 }
 
 // ── Icons ──────────────────────────────────────────────

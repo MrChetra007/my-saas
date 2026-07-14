@@ -64,7 +64,7 @@
         </div>
       </div>
 
-      <div v-if="inv.status === 'pending'" class="ip-invoice-actions">
+      <div v-if="inv.status === 'pending' || inv.status === 'pending_review' || inv.status === 'rejected'" class="ip-invoice-actions">
         <div v-if="inv.khqr_string" class="ip-khqr-section">
           <div class="ip-khqr-img-wrap">
             <img :src="`data:image/svg+xml;utf8,${encodeURIComponent(inv.khqr_string)}`" alt="KHQR" class="ip-khqr-img" />
@@ -81,9 +81,21 @@
             <p class="ip-khqr-hint">{{ $t('superAdmin.restaurantInvoice.scanHint') }}</p>
           </div>
         </div>
-        <button class="btn-primary ip-paid-btn" :disabled="paying" @click="markPaid(inv)">
-          {{ paying ? $t('superAdmin.restaurantInvoice.paying') : $t('superAdmin.restaurantInvoice.markPaid') }}
-        </button>
+
+        <div v-if="inv.proof_url" class="ip-proof-row">
+          <span class="ip-proof-label">{{ $t('superAdmin.restaurantInvoice.viewProof') }}</span>
+          <button class="ip-proof-btn" @click="viewProof(inv.proof_url)">{{ $t('superAdmin.restaurantInvoice.viewProof') }}</button>
+        </div>
+
+        <div v-if="inv.status === 'pending_review'">
+          <button class="btn-primary ip-paid-btn" :disabled="paying" @click="approveInvoice(inv)">
+            {{ paying ? $t('superAdmin.restaurantInvoice.paying') : $t('superAdmin.restaurantInvoice.markPaid') }}
+          </button>
+        </div>
+
+        <div v-if="inv.status === 'rejected' && inv.rejected_reason" class="ip-rejected-note">
+          {{ $t('superAdmin.restaurantInvoice.rejected', { reason: inv.rejected_reason }) }}
+        </div>
       </div>
 
       <div v-if="inv.status === 'paid'" class="ip-paid-info">
@@ -179,13 +191,13 @@ async function generateInvoice() {
   }
 }
 
-async function markPaid(invoice) {
+async function approveInvoice(invoice) {
   paying.value = true
   errorMsg.value = ''
   try {
     const token = (await supabase.auth.getSession()).data.session?.access_token
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-    const res = await fetch(`${supabaseUrl}/functions/v1/mark-invoice-paid`, {
+    const res = await fetch(`${supabaseUrl}/functions/v1/approve-invoice`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -195,12 +207,23 @@ async function markPaid(invoice) {
     })
 
     const data = await res.json()
-    if (!res.ok) throw new Error(data.error || 'Failed to mark as paid')
+    if (!res.ok) throw new Error(data.error || 'Failed to approve invoice')
     await fetchInvoices()
   } catch (err) {
     errorMsg.value = err.message
   } finally {
     paying.value = false
+  }
+}
+
+async function viewProof(proofUrl) {
+  if (!proofUrl) return
+  const token = (await supabase.auth.getSession()).data.session?.access_token
+  const { data } = await supabase.storage
+    .from('payment-proofs')
+    .createSignedUrl(proofUrl, 300)
+  if (data?.signedUrl) {
+    window.open(data.signedUrl, '_blank')
   }
 }
 
@@ -393,7 +416,9 @@ const icons = {
   text-transform: capitalize;
 }
 .ip-status-badge.pending { background: #fff7ed; color: #c2410c; }
+.ip-status-badge.pending_review { background: #fef3c7; color: #92400e; }
 .ip-status-badge.paid { background: #f0fdf4; color: #15803d; }
+.ip-status-badge.rejected { background: #fff1f2; color: #e11d48; }
 .ip-status-badge.void { background: #f3f1ee; color: #6b6963; }
 
 .ip-invoice-body {
@@ -482,6 +507,37 @@ const icons = {
 }
 .ip-paid-btn {
   align-self: flex-end;
+}
+.ip-proof-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ip-proof-label {
+  font-size: 12px;
+  color: #6b6963;
+}
+.ip-proof-btn {
+  font-size: 12px;
+  font-weight: 600;
+  color: #f97316;
+  background: transparent;
+  border: 1px solid #fed7aa;
+  border-radius: 7px;
+  padding: 4px 10px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.ip-proof-btn:hover {
+  background: #fff7ed;
+}
+.ip-rejected-note {
+  font-size: 12px;
+  color: #e11d48;
+  background: #fff1f2;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-style: italic;
 }
 
 .ip-paid-info {

@@ -26,11 +26,11 @@ Deno.serve(async (req) => {
 
     const { data: caller, error: callerError } = await supabase
       .from('users')
-      .select('is_super_admin')
+      .select('role, restaurant_id, is_super_admin')
       .eq('id', user.id)
       .single()
 
-    if (callerError || !caller?.is_super_admin) {
+    if (callerError || !caller) {
       return new Response(JSON.stringify({ error: 'Forbidden' }), {
         status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
@@ -40,6 +40,30 @@ Deno.serve(async (req) => {
     if (!restaurant_id || !plan_id || !period_start || !period_end) {
       return new Response(JSON.stringify({ error: 'Missing required fields' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
+    const isSuperAdmin = caller.is_super_admin === true
+    const isOwnRestaurant = caller.restaurant_id === restaurant_id
+    if (!isSuperAdmin && !isOwnRestaurant) {
+      return new Response(JSON.stringify({ error: 'Forbidden' }), {
+        status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
+    }
+
+    // ── Dedup: return existing open invoice if one exists ──
+    const { data: existing } = await supabase
+      .from('subscription_invoices')
+      .select('*')
+      .eq('restaurant_id', restaurant_id)
+      .in('status', ['pending', 'pending_review'])
+      .order('created_at', { ascending: false })
+      .limit(1)
+
+    if (existing && existing.length > 0) {
+      return new Response(JSON.stringify({ invoice: existing[0], deduped: true }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
 

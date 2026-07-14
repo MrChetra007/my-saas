@@ -164,6 +164,15 @@
     <!-- ── Pro Plan Picker Modal ───────────────────── -->
     <ProPlanPicker v-model="showProPicker" :featureName="lockedFeatureName" />
 
+    <!-- ── Subscription Gate Modal (blocking overlay) ── -->
+    <SubscriptionGateModal />
+
+    <!-- ── Grace period banner ─────────────────────── -->
+    <div v-if="graceBannerVisible" class="grace-banner">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="flex-shrink:0"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      <span>{{ $t('layouts.graceBanner', { date: graceDate }) }}</span>
+    </div>
+
     <!-- ── Main area ───────────────────────────── -->
     <div class="main-area" :class="{ expanded: sidebarCollapsed }">
       <!-- Topbar -->
@@ -203,6 +212,7 @@ import { useAuthStore } from '@/stores/auth'
 import { setLocale } from '@/i18n'
 import { useI18n } from 'vue-i18n'
 import ProPlanPicker from '@/components/Proplanpicker.vue'
+import SubscriptionGateModal from '@/components/SubscriptionGateModal.vue'
 
 const { t } = useI18n()
 
@@ -240,6 +250,22 @@ const showProPicker = ref(false)
 const lockedFeatureName = ref('')
 
 const currentLocale = computed(() => localStorage.getItem('locale') || 'en')
+
+// ── Grace period banner ──────────────────────────
+const graceBannerVisible = ref(false)
+const graceDate = ref('')
+
+async function checkGracePeriod() {
+  const r = authStore._restaurant
+  if (r?.grace_period_ends_at) {
+    const now = new Date()
+    const grace = new Date(r.grace_period_ends_at)
+    if (now < grace) {
+      graceBannerVisible.value = true
+      graceDate.value = grace.toLocaleDateString()
+    }
+  }
+}
 
 function switchLang(e) {
   setLocale(e.target.value)
@@ -364,6 +390,7 @@ onMounted(async () => {
   await loadRestaurant()
   await loadCounts()
   subscribeToOrders()
+  checkGracePeriod()
 })
 
 onUnmounted(() => {
@@ -824,6 +851,18 @@ onUnmounted(() => {
   color: var(--color-text-primary);
 }
 
+.grace-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 20px;
+  background: #fff7ed;
+  border-bottom: 1px solid #fed7aa;
+  font-size: 13px;
+  font-weight: 500;
+  color: #c2410c;
+  flex-shrink: 0;
+}
 .page-content {
   flex: 1;
   overflow-y: auto;

@@ -93,7 +93,7 @@ export const useAuthStore = defineStore('auth', {
       if (data?.restaurant_id && !data?.is_super_admin) {
         const { data: restaurant } = await supabase
           .from('restaurants')
-          .select('timezone, currency, onboarding_completed, plan, trial_ends_at, billing_type, plan_expires_at')
+          .select('timezone, currency, onboarding_completed, plan, trial_ends_at, billing_type, plan_expires_at, grace_period_ends_at')
           .eq('id', data.restaurant_id)
           .single()
 
@@ -103,6 +103,20 @@ export const useAuthStore = defineStore('auth', {
       }
 
       console.log('AuthStore: fetchProfile success', !!data, 'super_admin:', !!data?.is_super_admin)
+    },
+
+    async refreshRestaurant() {
+      if (!this.profile?.restaurant_id || this.isSuperAdmin) return
+      const { data } = await supabase
+        .from('restaurants')
+        .select('timezone, currency, onboarding_completed, plan, trial_ends_at, billing_type, plan_expires_at, grace_period_ends_at')
+        .eq('id', this.profile.restaurant_id)
+        .single()
+      if (data) {
+        this._restaurant = data
+        this.restaurantTimezone = data.timezone || 'UTC'
+        this.restaurantCurrency = data.currency || 'USD'
+      }
     },
 
     async signOut() {

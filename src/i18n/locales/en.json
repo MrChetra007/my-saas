@@ -268,7 +268,8 @@
     "collapseSidebar": "Collapse sidebar",
     "openMenu": "Open menu",
     "restaurantLogo": "Restaurant Logo",
-    "logo": "logo"
+    "logo": "logo",
+    "graceBanner": "Payment under review — access until {date}"
   },
   "plans": {
     "trial": "14-day Trial",
@@ -1423,7 +1424,63 @@
         "save": "Save configuration",
         "success": "Configuration saved.",
         "error": "Failed to save."
+      },
+      "restaurantInvoice": {
+        "title": "Invoice",
+        "periodStart": "Period start",
+        "periodEnd": "Period end",
+        "generate": "Generate invoice",
+        "generating": "Generating…",
+        "noInvoices": "No invoices yet",
+        "period": "Period",
+        "baseFee": "Base fee",
+        "transactionFee": "Transaction fee",
+        "total": "Total",
+        "orderVolume": "Order volume",
+        "amount": "Amount",
+        "md5": "MD5",
+        "scanHint": "Scan with Bakong app to pay",
+        "markPaid": "Mark as paid",
+        "paying": "Paying…",
+        "paidOn": "Paid on",
+        "viewProof": "View proof",
+        "pendingReview": "Pending review",
+        "rejected": "Rejected — {reason}"
+      },
+      "pendingApprovals": {
+        "title": "Pending approvals",
+        "empty": "No pending approvals",
+        "viewProof": "View proof image",
+        "approve": "Approve",
+        "approving": "Approving…",
+        "reject": "Reject",
+        "rejectPlaceholder": "Reason for rejection…",
+        "cancel": "Cancel",
+        "confirmReject": "Confirm rejection",
+        "justNow": "Just now",
+        "minAgo": "{n}m ago",
+        "hrAgo": "{n}h ago",
+        "dayAgo": "{n}d ago"
       }
     }
+  },
+  "subscriptionGate": {
+    "title": "Subscription expired",
+    "subtitle": "Your plan has expired. Generate an invoice, pay via Bakong, and upload proof to restore access.",
+    "generateDesc": "We'll calculate your invoice based on your current plan and order volume.",
+    "yourPlan": "Your plan",
+    "generateAndPay": "Generate invoice & pay",
+    "generating": "Generating…",
+    "scanAndPay": "Scan this KHQR with Bakong app to pay",
+    "uploadProofLabel": "Upload payment screenshot",
+    "submitProof": "Submit proof",
+    "submitting": "Submitting…",
+    "submittedTitle": "Proof submitted!",
+    "submittedDesc": "You have access until {date}. A super admin will review your payment.",
+    "rejectedTitle": "Payment rejected",
+    "rejectedReason": "Reason:",
+    "rejectedDesc": "The admin rejected your proof. Upload a new, clearer screenshot.",
+    "retry": "Upload new proof",
+    "footer": "Need help? Contact the restaurant platform admin."
   }
 }
