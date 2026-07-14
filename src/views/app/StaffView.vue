@@ -178,7 +178,7 @@
                 v-model="addModal.form.email"
                 class="form-input"
                 type="email"
-                :placeholder="$t('staff.emailPlaceholder')"
+                :placeholder="$t('staff.emailPlaceholder', { at: '@' })"
                 :disabled="addModal.submitting"
               />
             </div>

@@ -100,6 +100,7 @@ export const useAuthStore = defineStore('auth', {
         this._restaurant = restaurant
         this.restaurantTimezone = restaurant?.timezone || 'UTC'
         this.restaurantCurrency = restaurant?.currency || 'USD'
+        await this._loadPlanPricing()
       }
 
       console.log('AuthStore: fetchProfile success', !!data, 'super_admin:', !!data?.is_super_admin)
@@ -116,6 +117,19 @@ export const useAuthStore = defineStore('auth', {
         this._restaurant = data
         this.restaurantTimezone = data.timezone || 'UTC'
         this.restaurantCurrency = data.currency || 'USD'
+        await this._loadPlanPricing()
+      }
+    },
+
+    async _loadPlanPricing() {
+      if (!this._restaurant?.plan || this._restaurant.plan === 'trial' || this._restaurant.plan === 'expired') return
+      const { data: plan } = await supabase
+        .from('plans')
+        .select('monthly_fee')
+        .eq('id', this._restaurant.plan)
+        .maybeSingle()
+      if (plan) {
+        this._restaurant = { ...this._restaurant, _plan_pricing: plan.monthly_fee }
       }
     },
 

@@ -19,6 +19,10 @@
               <span>{{ $t('subscriptionGate.yourPlan') }}</span>
               <span class="sg-badge">{{ planName }}</span>
             </div>
+            <div class="sg-summary-row">
+              <span>{{ $t('subscriptionGate.monthlyFee') }}</span>
+              <span class="sg-badge" style="color:#1a1917">${{ planPrice }}</span>
+            </div>
             <div class="sg-summary-row" v-if="errorMsg">
               <span class="sg-error" v-html="errorMsg" />
             </div>
@@ -32,11 +36,20 @@
         <!-- Step 2: Show KHQR + upload proof -->
         <div v-else-if="step === 'invoice'" class="sg-body">
           <div v-if="invoice" class="sg-invoice">
-            <div class="sg-khqr-wrap" v-if="invoice.khqr_string">
-              <img :src="`data:image/svg+xml;utf8,${encodeURIComponent(invoice.khqr_string)}`" alt="KHQR" class="sg-khqr-img" />
-            </div>
-            <div class="sg-amount">${{ invoice.total_amount }}</div>
-            <div class="sg-khqr-hint">{{ $t('subscriptionGate.scanAndPay') }}</div>
+            <template v-if="invoice.khqr_string">
+              <div class="sg-khqr-wrap">
+                <img :src="`data:image/svg+xml;utf8,${encodeURIComponent(invoice.khqr_string)}`" alt="KHQR" class="sg-khqr-img" />
+              </div>
+              <div class="sg-amount">${{ invoice.total_amount }}</div>
+              <div class="sg-khqr-hint">{{ $t('subscriptionGate.scanAndPay') }}</div>
+            </template>
+            <template v-else>
+              <div class="sg-no-khqr">
+                <div class="sg-amount">${{ invoice.total_amount }}</div>
+                <p class="sg-bank-info">{{ $t('subscriptionGate.bankTransfer') }}</p>
+                <p class="sg-bank-detail">{{ $t('subscriptionGate.bankAccount') }}</p>
+              </div>
+            </template>
           </div>
 
           <div class="sg-upload">
@@ -92,7 +105,7 @@ import { useBillingStatus } from '@/composables/useBillingStatus'
 
 const authStore = useAuthStore()
 const { t } = useI18n()
-const { billingStatus, planName, graceEndsAt } = useBillingStatus()
+const { billingStatus, planName, planPrice, graceEndsAt } = useBillingStatus()
 
 const visible = computed(() => billingStatus.value === 'blocked')
 
@@ -430,6 +443,21 @@ onMounted(() => {
   font-size: 12px;
   color: #a8a49e;
   text-align: center;
+}
+.sg-no-khqr {
+  text-align: center;
+}
+.sg-bank-info {
+  font-size: 13px;
+  color: #6b6963;
+  margin: 8px 0 0;
+  line-height: 1.5;
+}
+.sg-bank-detail {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a1917;
+  margin: 4px 0 0;
 }
 .sg-upload {
   display: flex;

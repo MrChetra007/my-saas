@@ -111,6 +111,7 @@ Deno.serve(async (req) => {
 
     let khqrString = null
     let khqrMd5 = null
+    let khqrError = null
 
     if (settings.bakong_account_id) {
       try {
@@ -129,7 +130,10 @@ Deno.serve(async (req) => {
         khqrMd5 = result?.md5 || null
       } catch (err) {
         console.error('KHQR generation failed:', err)
+        khqrError = err.message
       }
+    } else if (!settings.bakong_account_id) {
+      khqrError = 'Bakong account not configured'
     }
 
     const invoiceAmount = Math.round(totalAmount * 100) / 100
@@ -159,7 +163,7 @@ Deno.serve(async (req) => {
       })
     }
 
-    return new Response(JSON.stringify({ invoice }), {
+    return new Response(JSON.stringify({ invoice, khqr_error: khqrError }), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })

@@ -194,28 +194,27 @@ const authStore = useAuthStore()
 const { t } = useI18n()
 const loading = ref(true)
 
-// ── Pricing — reads from localStorage set in Settings page ────────
+// ── Pricing — reads from platform_settings.app_config ──
 // Falls back to defaults if not yet configured
-const APP_SETTINGS_KEY = 'sa_app_settings'
-
-function loadPrices() {
-  try {
-    const saved = localStorage.getItem(APP_SETTINGS_KEY)
-    if (saved) {
-      const p = JSON.parse(saved)
-      return {
-        manual: { starter: p.starter_price_manual ?? 15, pro: p.pro_price_manual ?? 25 },
-        lemonsqueezy: { starter: p.starter_price_ls ?? 49, pro: p.pro_price_ls ?? 99 },
-      }
-    }
-  } catch {}
-  return {
-    manual: { starter: 15, pro: 25 },
-    lemonsqueezy: { starter: 49, pro: 99 },
-  }
+let PLAN_PRICE = {
+  manual: { starter: 15, pro: 25 },
+  lemonsqueezy: { starter: 49, pro: 99 },
 }
 
-const PLAN_PRICE = loadPrices()
+async function loadPrices() {
+  const { data } = await supabase
+    .from('platform_settings')
+    .select('app_config')
+    .eq('id', true)
+    .single()
+  if (data?.app_config) {
+    const p = data.app_config
+    PLAN_PRICE = {
+      manual: { starter: p.starter_price_manual ?? 15, pro: p.pro_price_manual ?? 25 },
+      lemonsqueezy: { starter: p.starter_price_ls ?? 49, pro: p.pro_price_ls ?? 99 },
+    }
+  }
+}
 
 function getPlanPrice(billingType, plan) {
   return PLAN_PRICE[billingType ?? 'manual']?.[plan] ?? 0
@@ -362,6 +361,7 @@ function daysUntil(dateStr) {
 
 // ── Fetch ──────────────────────────────────────────────
 onMounted(async () => {
+  await loadPrices()
   try {
     const { data: restaurants, error: rErr } = await supabase
       .from('restaurants')

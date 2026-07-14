@@ -42,7 +42,7 @@
             <input
               v-model="profileForm.email"
               class="form-input"
-              :placeholder="$t('superAdmin.settings.profile.emailPlaceholder')"
+              :placeholder="$t('superAdmin.settings.profile.emailPlaceholder', { at: '@' })"
               type="email"
             />
             <div class="form-hint">{{ $t('superAdmin.settings.profile.emailHint') }}</div>
@@ -355,14 +355,10 @@ const passwordValid = computed(
 )
 
 // ── Pricing + App settings ─────────────────────────────
-// All stored in localStorage under one key
-// To persist to DB later: swap localStorage calls for supabase.from('app_settings')
 const pricingSaving = ref(false)
 const pricingMsg = ref(null)
 const appSaving = ref(false)
 const appMsg = ref(null)
-
-const APP_SETTINGS_KEY = 'sa_app_settings'
 
 const appForm = ref({
   // Manual pricing (cash / bank transfer — you handle manually)
@@ -442,18 +438,31 @@ async function savePassword() {
   }
 }
 
+// ── Persist to platform_settings.app_config ────────────
+async function saveAppConfig() {
+  const { error } = await supabase
+    .from('platform_settings')
+    .update({
+      app_config: appForm.value,
+      updated_by: authStore.user?.id,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', true)
+  if (error) throw error
+}
+
 // ── Save pricing ───────────────────────────────────────
 async function savePricing() {
   pricingSaving.value = true
   pricingMsg.value = null
   try {
-    localStorage.setItem(APP_SETTINGS_KEY, JSON.stringify(appForm.value))
+    await saveAppConfig()
     pricingMsg.value = { type: 'success', text: t('superAdmin.settings.pricing.success') }
     setTimeout(() => {
       pricingMsg.value = null
     }, 3000)
-  } catch {
-    pricingMsg.value = { type: 'error', text: t('superAdmin.settings.pricing.error') }
+  } catch (err) {
+    pricingMsg.value = { type: 'error', text: err.message }
   } finally {
     pricingSaving.value = false
   }
@@ -464,28 +473,31 @@ async function saveAppSettings() {
   appSaving.value = true
   appMsg.value = null
   try {
-    localStorage.setItem(APP_SETTINGS_KEY, JSON.stringify(appForm.value))
+    await saveAppConfig()
     appMsg.value = { type: 'success', text: t('superAdmin.settings.appConfig.success') }
     setTimeout(() => {
       appMsg.value = null
     }, 3000)
-  } catch {
-    appMsg.value = { type: 'error', text: t('superAdmin.settings.appConfig.error') }
+  } catch (err) {
+    appMsg.value = { type: 'error', text: err.message }
   } finally {
     appSaving.value = false
   }
 }
 
 // ── Load on mount ──────────────────────────────────────
-onMounted(() => {
+onMounted(async () => {
   profileForm.value.full_name = authStore.profile?.full_name || ''
   profileForm.value.email = authStore.user?.email || ''
 
-  const saved = localStorage.getItem(APP_SETTINGS_KEY)
-  if (saved) {
-    try {
-      Object.assign(appForm.value, JSON.parse(saved))
-    } catch {}
+  const { data } = await supabase
+    .from('platform_settings')
+    .select('app_config')
+    .eq('id', true)
+    .single()
+
+  if (data?.app_config) {
+    Object.assign(appForm.value, data.app_config)
   }
 })
 

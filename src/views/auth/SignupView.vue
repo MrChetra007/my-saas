@@ -88,7 +88,7 @@
           v-model="email"
           type="email"
           required
-          :placeholder="$t('auth.signup.emailPlaceholder')"
+          :placeholder="$t('auth.signup.emailPlaceholder', { at: '@' })"
           autocomplete="email"
         />
       </div>

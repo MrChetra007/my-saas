@@ -39,6 +39,11 @@ export function useBillingStatus() {
   const graceEndsAt = computed(() => authStore._restaurant?.grace_period_ends_at || null)
   const planExpiresAt = computed(() => authStore._restaurant?.plan_expires_at || null)
   const planName = computed(() => authStore._restaurant?.plan || 'trial')
+  const planPrice = computed(() => {
+    const c = authStore._restaurant?._plan_pricing
+    if (c) return c
+    return authStore._restaurant?.plan === 'pro' ? 25 : 15
+  })
 
-  return { billingStatus, graceEndsAt, planExpiresAt, planName }
+  return { billingStatus, graceEndsAt, planExpiresAt, planName, planPrice }
 }

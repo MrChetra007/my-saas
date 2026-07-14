@@ -531,7 +531,7 @@
             <div class="pricing-name">{{ plan === 'starter' ? 'Starter' : 'Pro' }}</div>
             <div class="pricing-price">
               <span class="price-dollar">$</span>
-              <span class="price-num">{{ plan === 'starter' ? '49' : '99' }}</span>
+              <span class="price-num">{{ prices[plan] }}</span>
               <span class="price-period">/mo</span>
             </div>
             <p class="pricing-desc">
@@ -542,7 +542,7 @@
               }}
             </p>
             <ul class="pricing-features">
-              <li v-for="f in plan === 'starter' ? starterFeatures : proFeatures" :key="f">
+              <li v-for="f in planFeatures[plan]" :key="f">
                 <svg
                   width="13"
                   height="13"
@@ -794,11 +794,34 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted, reactive, computed } from 'vue'
+import { supabase } from '@/lib/supabase'
 
 const scrolled = ref(false)
 const mobileMenuOpen = ref(false)
 const openFaq = ref(null)
 const parallaxY = ref(0)
+
+const prices = ref({ starter: 15, pro: 25 })
+const planFeatures = ref({
+  starter: [
+    'Up to 15 tables',
+    'Up to 3 staff accounts',
+    'Unlimited orders',
+    'QR code ordering',
+    'Kitchen, cashier & waiter views',
+    'Menu management',
+  ],
+  pro: [
+    'Unlimited tables',
+    'Up to 10 staff accounts',
+    'Unlimited orders',
+    'QR code ordering',
+    'All staff role views',
+    'Menu management',
+    'Analytics & charts',
+    'Promotions & discounts',
+  ],
+})
 
 // Counter animation state
 const revenueCounter = ref(0)
@@ -877,7 +900,25 @@ function scrollTo(id) {
   document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
 
+async function loadPricing() {
+  try {
+    const { data } = await supabase
+      .from('platform_settings')
+      .select('app_config')
+      .eq('id', true)
+      .single()
+    if (data?.app_config) {
+      const cfg = data.app_config
+      if (cfg.starter_price_manual) prices.value.starter = cfg.starter_price_manual
+      if (cfg.pro_price_manual) prices.value.pro = cfg.pro_price_manual
+    }
+  } catch (e) {
+    console.warn('Failed to load pricing', e)
+  }
+}
+
 onMounted(() => {
+  loadPricing()
   window.addEventListener('scroll', handleScroll, { passive: true })
 
   observer = new IntersectionObserver(
@@ -997,25 +1038,6 @@ const testimonials = [
     role: 'F&B Manager, Spice Garden — SG',
     initials: 'BT',
   },
-]
-
-const starterFeatures = [
-  'Up to 15 tables',
-  'Up to 3 staff accounts',
-  'Unlimited orders',
-  'QR code ordering',
-  'Kitchen, cashier & waiter views',
-  'Menu management',
-]
-const proFeatures = [
-  'Unlimited tables',
-  'Up to 10 staff accounts',
-  'Unlimited orders',
-  'QR code ordering',
-  'All staff role views',
-  'Menu management',
-  'Analytics & charts',
-  'Promotions & discounts',
 ]
 
 const faq = [

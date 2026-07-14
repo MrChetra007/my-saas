@@ -152,7 +152,7 @@ async function handleForgotPassword() {
           v-model="email"
           type="email"
           required
-          :placeholder="$t('auth.login.emailPlaceholder')"
+          :placeholder="$t('auth.login.emailPlaceholder', { at: '@' })"
           autocomplete="email"
         />
       </div>
@@ -321,7 +321,7 @@ async function handleForgotPassword() {
                   id="reset-email"
                   v-model="resetEmail"
                   type="email"
-                  :placeholder="$t('auth.forgotPassword.emailPlaceholder')"
+                  :placeholder="$t('auth.forgotPassword.emailPlaceholder', { at: '@' })"
                   autocomplete="email"
                   @keyup.enter="handleForgotPassword"
                 />
