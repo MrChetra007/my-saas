@@ -1,9 +1,9 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { KHQR } from 'npm:bakong-khqr@1'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
 Deno.serve(async (req) => {
@@ -121,6 +121,7 @@ Deno.serve(async (req) => {
 
     if (settings.bakong_account_id) {
       try {
+        const { KHQR } = await import('npm:bakong-khqr@1')
         const khqr = new KHQR()
         const result = khqr.generateMerchant({
           accountID: settings.bakong_account_id,
