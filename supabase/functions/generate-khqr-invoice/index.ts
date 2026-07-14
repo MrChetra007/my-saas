@@ -121,19 +121,31 @@ Deno.serve(async (req) => {
 
     if (settings.bakong_account_id) {
       try {
-        const { KHQR } = await import('npm:bakong-khqr@1')
-        const khqr = new KHQR()
-        const result = khqr.generateMerchant({
-          accountID: settings.bakong_account_id,
-          merchantName: settings.merchant_name || 'QRserve',
-          merchantCity: settings.merchant_city || 'Phnom Penh',
-          amount: totalAmount.toFixed(2),
-          currency: settings.currency || 'USD',
-          storeLabel: restaurant_id,
+        const { BakongKHQR, MerchantInfo, khqrData } = await import('npm:bakong-khqr@1')
+        const isKhr = settings.currency === 'KHR'
+        const amountNum = Math.round(totalAmount * (isKhr ? 4000 : 1)) // approximate KHR conversion
+        const optionalData = {
+          currency: isKhr ? khqrData.currency.khr : khqrData.currency.usd,
+          amount: amountNum,
+          storeLabel: restaurant_id.slice(0, 25),
           terminalLabel: plan_id,
-        })
-        khqrString = result?.qr || null
-        khqrMd5 = result?.md5 || null
+        }
+        const merchantInfo = new MerchantInfo(
+          settings.bakong_account_id,
+          settings.merchant_name || 'QRserve',
+          settings.merchant_city || 'Phnom Penh',
+          0, // merchantID (optional)
+          '', // acquiringBank
+          optionalData,
+        )
+        const khqr = new BakongKHQR()
+        const response = khqr.generateMerchant(merchantInfo)
+        if (response?.status?.code === 0 && response?.data) {
+          khqrString = response.data.qr || null
+          khqrMd5 = response.data.md5 || null
+        } else {
+          khqrError = response?.status?.message || 'KHQR generation returned non-zero code'
+        }
       } catch (err) {
         console.error('KHQR generation failed:', err)
         khqrError = err.message
