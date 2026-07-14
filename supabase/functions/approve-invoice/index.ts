@@ -11,20 +11,25 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const supabase = createClient(
+    const authClient = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_ANON_KEY')!,
       { global: { headers: { Authorization: req.headers.get('Authorization')! } } },
     )
 
-    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    const serviceClient = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+    )
+
+    const { data: { user }, error: userError } = await authClient.auth.getUser()
     if (userError || !user) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
 
-    const { data: caller, error: callerError } = await supabase
+    const { data: caller, error: callerError } = await serviceClient
       .from('users')
       .select('is_super_admin')
       .eq('id', user.id)
@@ -43,7 +48,7 @@ Deno.serve(async (req) => {
       })
     }
 
-    const { data: invoice, error: invoiceError } = await supabase
+    const { data: invoice, error: invoiceError } = await serviceClient
       .from('subscription_invoices')
       .select('id, restaurant_id, plan_id, period_end, status')
       .eq('id', invoice_id)
@@ -73,7 +78,7 @@ Deno.serve(async (req) => {
 
     const now = new Date().toISOString()
 
-    const { error: restaurantError } = await supabase
+    const { error: restaurantError } = await serviceClient
       .from('restaurants')
       .update({
         plan: invoice.plan_id,
@@ -90,7 +95,7 @@ Deno.serve(async (req) => {
       })
     }
 
-    const { error: updateError } = await supabase
+    const { error: updateError } = await serviceClient
       .from('subscription_invoices')
       .update({
         status: 'paid',

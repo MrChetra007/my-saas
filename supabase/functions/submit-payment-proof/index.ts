@@ -13,20 +13,25 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const supabase = createClient(
+    const authClient = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_ANON_KEY')!,
       { global: { headers: { Authorization: req.headers.get('Authorization')! } } },
     )
 
-    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    const serviceClient = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+    )
+
+    const { data: { user }, error: userError } = await authClient.auth.getUser()
     if (userError || !user) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
 
-    const { data: caller, error: callerError } = await supabase
+    const { data: caller, error: callerError } = await serviceClient
       .from('users')
       .select('role, restaurant_id, is_super_admin')
       .eq('id', user.id)
@@ -45,7 +50,7 @@ Deno.serve(async (req) => {
       })
     }
 
-    const { data: invoice, error: invoiceError } = await supabase
+    const { data: invoice, error: invoiceError } = await serviceClient
       .from('subscription_invoices')
       .select('id, restaurant_id, status')
       .eq('id', invoice_id)
@@ -75,7 +80,7 @@ Deno.serve(async (req) => {
     const graceEnd = new Date()
     graceEnd.setDate(graceEnd.getDate() + GRACE_DAYS)
 
-    const { error: updateInvoiceError } = await supabase
+    const { error: updateInvoiceError } = await serviceClient
       .from('subscription_invoices')
       .update({
         status: 'pending_review',
@@ -92,7 +97,7 @@ Deno.serve(async (req) => {
       })
     }
 
-    const { error: restaurantError } = await supabase
+    const { error: restaurantError } = await serviceClient
       .from('restaurants')
       .update({
         grace_period_ends_at: graceEnd.toISOString(),

@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { KHQR } from 'npm:bakong-khqr@1'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -11,20 +12,25 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const supabase = createClient(
+    const authClient = createClient(
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_ANON_KEY')!,
       { global: { headers: { Authorization: req.headers.get('Authorization')! } } },
     )
 
-    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    const serviceClient = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
+    )
+
+    const { data: { user }, error: userError } = await authClient.auth.getUser()
     if (userError || !user) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
 
-    const { data: caller, error: callerError } = await supabase
+    const { data: caller, error: callerError } = await serviceClient
       .from('users')
       .select('role, restaurant_id, is_super_admin')
       .eq('id', user.id)
@@ -51,8 +57,8 @@ Deno.serve(async (req) => {
       })
     }
 
-    // ── Dedup: return existing open invoice if one exists ──
-    const { data: existing } = await supabase
+    // Dedup: return existing open invoice
+    const { data: existing } = await serviceClient
       .from('subscription_invoices')
       .select('*')
       .eq('restaurant_id', restaurant_id)
@@ -67,7 +73,7 @@ Deno.serve(async (req) => {
       })
     }
 
-    const { data: plan, error: planError } = await supabase
+    const { data: plan, error: planError } = await serviceClient
       .from('plans')
       .select('monthly_fee, transaction_fee_percent')
       .eq('id', plan_id)
@@ -79,7 +85,7 @@ Deno.serve(async (req) => {
       })
     }
 
-    const { data: orderData } = await supabase
+    const { data: orderData } = await serviceClient
       .from('orders')
       .select('total_amount, discount_amount')
       .eq('restaurant_id', restaurant_id)
@@ -97,7 +103,7 @@ Deno.serve(async (req) => {
     const transactionFee = (orderVolume * txFeePercent) / 100
     const totalAmount = monthlyFee + transactionFee
 
-    const { data: settings, error: settingsError } = await supabase
+    const { data: settings, error: settingsError } = await serviceClient
       .from('platform_settings')
       .select('bakong_account_id, merchant_name, merchant_city, currency')
       .eq('id', true)
@@ -115,7 +121,6 @@ Deno.serve(async (req) => {
 
     if (settings.bakong_account_id) {
       try {
-        const { KHQR } = await import('npm:bakong-khqr@1')
         const khqr = new KHQR()
         const result = khqr.generateMerchant({
           accountID: settings.bakong_account_id,
@@ -132,13 +137,11 @@ Deno.serve(async (req) => {
         console.error('KHQR generation failed:', err)
         khqrError = err.message
       }
-    } else if (!settings.bakong_account_id) {
-      khqrError = 'Bakong account not configured'
     }
 
     const invoiceAmount = Math.round(totalAmount * 100) / 100
 
-    const { data: invoice, error: invoiceError } = await supabase
+    const { data: invoice, error: invoiceError } = await serviceClient
       .from('subscription_invoices')
       .insert({
         restaurant_id,
