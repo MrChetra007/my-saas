@@ -879,12 +879,12 @@
     "starterName": "Starter",
     "starterPrice": "$49/mo",
     "starterTagline": "Perfect for small restaurants getting started.",
-    "starterCta": "Get Starter",
+    "starterCta": "Continue to Settings",
     "proName": "Pro",
     "proBadge": "Recommended",
     "proPrice": "$99/mo",
     "proTagline": "For restaurants running their full operation digitally.",
-    "proCta": "Get Pro",
+    "proCta": "Continue to Settings",
     "feature": {
       "upTo15Tables": "Up to 15 tables",
       "upTo3Staff": "Up to 3 staff accounts",
@@ -900,7 +900,7 @@
     "checkoutError": "Could not start checkout. Please try again or contact support.",
     "manageSubscription": "Manage subscription in Settings",
     "signOut": "Sign out",
-    "secureNote": "Payments secured by Lemon Squeezy · Cancel anytime · No hidden fees"
+    "secureNote": "Pay via Bakong KHQR or bank transfer · Pay as you go · No lock-in"
   },
   "waiter": {
     "newOrder": {

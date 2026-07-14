@@ -83,7 +83,7 @@
               <div class="plan-name">{{ $t('trialWall.starterName') }}</div>
               <div class="plan-price">
                 <span class="price-dollar">$</span>
-                <span class="price-amount">49</span>
+                <span class="price-amount">{{ prices.starter }}</span>
                 <span class="price-mo">/mo</span>
               </div>
               <p class="plan-tagline">{{ $t('trialWall.starterTagline') }}</p>
@@ -95,13 +95,8 @@
               </li>
             </ul>
 
-            <button
-              class="plan-btn plan-btn-secondary"
-              @click="checkout('starter')"
-              :disabled="!!loading"
-            >
-              <Loader2 v-if="loading === 'starter'" :size="15" class="spin" />
-              <span v-else>{{ $t('trialWall.starterCta') }}</span>
+            <button class="plan-btn plan-btn-secondary" @click="checkout()">
+              {{ $t('trialWall.starterCta') }}
             </button>
           </div>
 
@@ -113,7 +108,7 @@
               <div class="plan-name plan-name-pro">{{ $t('trialWall.proName') }}</div>
               <div class="plan-price plan-price-pro">
                 <span class="price-dollar">$</span>
-                <span class="price-amount">99</span>
+                <span class="price-amount">{{ prices.pro }}</span>
                 <span class="price-mo">/mo</span>
               </div>
               <p class="plan-tagline">{{ $t('trialWall.proTagline') }}</p>
@@ -125,13 +120,8 @@
               </li>
             </ul>
 
-            <button
-              class="plan-btn plan-btn-primary"
-              @click="checkout('pro')"
-              :disabled="!!loading"
-            >
-              <Loader2 v-if="loading === 'pro'" :size="15" class="spin" />
-              <span v-else>{{ $t('trialWall.proCta') }}</span>
+            <button class="plan-btn plan-btn-primary" @click="checkout()">
+              {{ $t('trialWall.proCta') }}
             </button>
           </div>
         </div>
@@ -173,7 +163,6 @@ import {
   Store,
   Check,
   Star,
-  Loader2,
   AlertCircle,
   Settings,
   LogOut,
@@ -185,8 +174,8 @@ const authStore = useAuthStore()
 const { t } = useI18n()
 
 const restaurantName = ref('')
-const loading = ref(null)
 const error = ref('')
+const prices = ref({ starter: 15, pro: 25 })
 
 const starterFeatures = [
   t('trialWall.feature.upTo15Tables'),
@@ -218,30 +207,24 @@ onMounted(async () => {
       .single()
     restaurantName.value = data?.name || ''
   }
+  try {
+    const { data: settings } = await supabase
+      .from('platform_settings')
+      .select('app_config')
+      .eq('id', true)
+      .single()
+    if (settings?.app_config) {
+      const cfg = settings.app_config
+      if (cfg.starter_price_manual) prices.value.starter = cfg.starter_price_manual
+      if (cfg.pro_price_manual) prices.value.pro = cfg.pro_price_manual
+    }
+  } catch (e) {
+    console.warn('Failed to load pricing', e)
+  }
 })
 
-async function checkout(plan) {
-  error.value = ''
-  loading.value = plan
-  try {
-    const { data, error: fnError } = await supabase.functions.invoke('create-checkout-session', {
-      body: {
-        plan,
-        restaurantId: authStore.profile.restaurant_id,
-        successUrl: `${window.location.origin}/app/dashboard?upgraded=true`,
-        cancelUrl: `${window.location.origin}/trial-expired`,
-      },
-    })
-    if (fnError) throw fnError
-    if (data?.url) {
-      window.location.href = data.url
-    } else throw new Error('No checkout URL returned')
-  } catch (err) {
-    console.error('Checkout error:', err)
-    error.value = t('trialWall.checkoutError')
-  } finally {
-    loading.value = null
-  }
+function checkout() {
+  router.push('/app/settings')
 }
 
 function goToSettings() {
