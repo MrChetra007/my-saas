@@ -132,7 +132,8 @@ async function generateInvoice() {
     const end = new Date(now.getFullYear(), now.getMonth() + 1, 0)
     const periodStart = start.toISOString().split('T')[0]
     const periodEnd = end.toISOString().split('T')[0]
-    const planId = authStore._restaurant?.plan || 'starter'
+    const rawPlan = authStore._restaurant?.plan || 'starter'
+    const planId = (rawPlan === 'expired' || rawPlan === 'trial') ? 'starter' : rawPlan
 
     const res = await fetch(`${supabaseUrl}/functions/v1/generate-khqr-invoice`, {
       method: 'POST',
