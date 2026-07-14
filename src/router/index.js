@@ -193,12 +193,17 @@ router.beforeEach(async (to) => {
 
   if (to.meta.public) return true
 
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
-  if (!session) return '/login'
-
   const authStore = useAuthStore()
+
+  // ── Use in-memory session if already loaded ─────────
+  if (!authStore.user) {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
+    if (!session) return '/login'
+    authStore.user = session.user
+  }
+
   if (!authStore.profile) await authStore.fetchProfile()
   if (!authStore.profile) return to.name !== 'onboarding' ? '/onboarding' : true
 
@@ -218,11 +223,7 @@ router.beforeEach(async (to) => {
 
   // ── Onboarding + trial checks (admin only) ───────
   if (role === 'admin') {
-    const { data: restaurant } = await supabase
-      .from('restaurants')
-      .select('onboarding_completed, plan, trial_ends_at, billing_type, plan_expires_at') // 👈 new fields
-      .eq('id', authStore.profile.restaurant_id)
-      .single()
+    const restaurant = authStore._restaurant
 
     // Onboarding gate
     const onboarded = restaurant?.onboarding_completed === true
@@ -236,14 +237,13 @@ router.beforeEach(async (to) => {
         isTrialExpired(
           restaurant?.plan,
           restaurant?.trial_ends_at,
-          restaurant?.billing_type, // 👈 pass billing type
-          restaurant?.plan_expires_at, // 👈 pass manual expiry date
+          restaurant?.billing_type,
+          restaurant?.plan_expires_at,
         )
       )
         return '/trial-expired'
     }
 
-    // If already expired but somehow on trial-expired, redirect away if still valid
     if (to.name === 'trial-expired') {
       if (
         !isTrialExpired(

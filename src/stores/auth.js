@@ -9,6 +9,7 @@ export const useAuthStore = defineStore('auth', {
     loading: true,
     restaurantTimezone: 'UTC',
     restaurantCurrency: 'USD',
+    _restaurant: null, // cached restaurant row for admin guard
   }),
 
   getters: {
@@ -90,13 +91,13 @@ export const useAuthStore = defineStore('auth', {
 
       // Super admins have no restaurant — skip restaurant fetch
       if (data?.restaurant_id && !data?.is_super_admin) {
-        // 👈 guard
         const { data: restaurant } = await supabase
           .from('restaurants')
-          .select('timezone, currency')
+          .select('timezone, currency, onboarding_completed, plan, trial_ends_at, billing_type, plan_expires_at')
           .eq('id', data.restaurant_id)
           .single()
 
+        this._restaurant = restaurant
         this.restaurantTimezone = restaurant?.timezone || 'UTC'
         this.restaurantCurrency = restaurant?.currency || 'USD'
       }
