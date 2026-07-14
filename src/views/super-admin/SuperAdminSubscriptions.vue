@@ -86,84 +86,98 @@
           </tr>
         </thead>
         <tbody>
-          <tr v-for="r in filtered" :key="r.id" class="s-row">
-            <td>
-              <div class="r-name-cell">
-                <div class="r-avatar">{{ r.name?.[0]?.toUpperCase() ?? '?' }}</div>
-                <div>
-                  <div class="r-name">{{ r.name }}</div>
-                  <div class="r-slug">/{{ r.slug }}</div>
+          <template v-for="r in filtered" :key="r.id">
+            <tr class="s-row">
+              <td>
+                <div class="r-name-cell">
+                  <div class="r-avatar">{{ r.name?.[0]?.toUpperCase() ?? '?' }}</div>
+                  <div>
+                    <div class="r-name">{{ r.name }}</div>
+                    <div class="r-slug">/{{ r.slug }}</div>
+                  </div>
                 </div>
-              </div>
-            </td>
-            <td>
-              <span class="plan-badge" :class="r.plan ?? 'trial'">{{ r.plan ?? 'trial' }}</span>
-            </td>
-            <td>
-              <span class="billing-badge" :class="r.billing_type ?? 'manual'">
-                {{ r.billing_type === 'lemonsqueezy' ? $t('superAdmin.subscriptions.lemonSqueezy') : $t('superAdmin.subscriptions.manual') }}
-              </span>
-            </td>
-            <td>
-              <span class="status-badge" :class="subStatus(r)">
-                <span class="status-dot" />{{ subStatusLabel(r) }}
-              </span>
-            </td>
-            <td class="td-expiry">
-              <template v-if="r.billing_type === 'lemonsqueezy'">
-                <span class="td-muted">{{ $t('superAdmin.subscriptions.autoRenew') }}</span>
-              </template>
-              <template v-else-if="r.plan_expires_at">
-                <span :class="expiryClass(r.plan_expires_at)">
-                  {{ formatDate(r.plan_expires_at) }}
-                  <span class="expiry-tag">{{ daysLabel(r.plan_expires_at) }}</span>
+              </td>
+              <td>
+                <span class="plan-badge" :class="r.plan ?? 'trial'">{{ r.plan ?? 'trial' }}</span>
+              </td>
+              <td>
+                <span class="billing-badge" :class="r.billing_type ?? 'manual'">
+                  {{ r.billing_type === 'lemonsqueezy' ? $t('superAdmin.subscriptions.lemonSqueezy') : $t('superAdmin.subscriptions.manual') }}
                 </span>
-              </template>
-              <template v-else-if="r.trial_ends_at">
-                <span :class="expiryClass(r.trial_ends_at)">
-                  {{ $t('superAdmin.subscriptions.trialPrefix', { date: formatDate(r.trial_ends_at) }) }}
+              </td>
+              <td>
+                <span class="status-badge" :class="subStatus(r)">
+                  <span class="status-dot" />{{ subStatusLabel(r) }}
                 </span>
-              </template>
-              <template v-else>
-                <span class="td-muted">—</span>
-              </template>
-            </td>
-            <td>
-              <span v-if="r.lemonsqueezy_subscription_id" class="ls-id">
-                {{ r.lemonsqueezy_subscription_id }}
-              </span>
-              <span v-else class="td-muted">—</span>
-            </td>
-            <td>
-              <span v-if="r.updater_name" class="updater">{{ r.updater_name }}</span>
-              <span v-else class="td-muted">{{
-                r.billing_type === 'lemonsqueezy' ? $t('superAdmin.subscriptions.webhook') : '—'
-              }}</span>
-            </td>
-            <td>
-              <div class="action-btns">
-                <button
-                  class="action-btn"
-                  :title="$t('superAdmin.subscriptions.action.viewDetails')"
-                  @click="openDetails(r)"
-                  v-html="icons.eye"
-                />
-                <button
-                  class="action-btn"
-                  :title="$t('superAdmin.subscriptions.action.editPlan')"
-                  @click="openBilling(r)"
-                  v-html="icons.edit"
-                />
-                <button
-                  class="action-btn danger"
-                  :title="$t('superAdmin.subscriptions.action.markExpired')"
-                  :disabled="r.plan === 'expired'"
-                  @click="openExpire(r)"
-                  v-html="icons.expire"
-                />
-              </div>
-            </td>
-          </tr>
+              </td>
+              <td class="td-expiry">
+                <template v-if="r.billing_type === 'lemonsqueezy'">
+                  <span class="td-muted">{{ $t('superAdmin.subscriptions.autoRenew') }}</span>
+                </template>
+                <template v-else-if="r.plan_expires_at">
+                  <span :class="expiryClass(r.plan_expires_at)">
+                    {{ formatDate(r.plan_expires_at) }}
+                    <span class="expiry-tag">{{ daysLabel(r.plan_expires_at) }}</span>
+                  </span>
+                </template>
+                <template v-else-if="r.trial_ends_at">
+                  <span :class="expiryClass(r.trial_ends_at)">
+                    {{ $t('superAdmin.subscriptions.trialPrefix', { date: formatDate(r.trial_ends_at) }) }}
+                  </span>
+                </template>
+                <template v-else>
+                  <span class="td-muted">—</span>
+                </template>
+              </td>
+              <td>
+                <span v-if="r.lemonsqueezy_subscription_id" class="ls-id">
+                  {{ r.lemonsqueezy_subscription_id }}
+                </span>
+                <span v-else class="td-muted">—</span>
+              </td>
+              <td>
+                <span v-if="r.updater_name" class="updater">{{ r.updater_name }}</span>
+                <span v-else class="td-muted">{{
+                  r.billing_type === 'lemonsqueezy' ? $t('superAdmin.subscriptions.webhook') : '—'
+                }}</span>
+              </td>
+              <td>
+                <div class="action-btns">
+                  <button
+                    class="action-btn"
+                    :title="$t('superAdmin.subscriptions.action.viewDetails')"
+                    @click="openDetails(r)"
+                    v-html="icons.eye"
+                  />
+                  <button
+                    class="action-btn"
+                    :class="{ active: showInvoices[r.id] }"
+                    :title="$t('superAdmin.subscriptions.action.invoices')"
+                    @click="toggleInvoices(r)"
+                    v-html="icons.invoice"
+                  />
+                  <button
+                    class="action-btn"
+                    :title="$t('superAdmin.subscriptions.action.editPlan')"
+                    @click="openBilling(r)"
+                    v-html="icons.edit"
+                  />
+                  <button
+                    class="action-btn danger"
+                    :title="$t('superAdmin.subscriptions.action.markExpired')"
+                    :disabled="r.plan === 'expired'"
+                    @click="openExpire(r)"
+                    v-html="icons.expire"
+                  />
+                </div>
+              </td>
+            </tr>
+            <tr v-if="showInvoices[r.id]" class="invoice-expand-row">
+              <td colspan="8" class="invoice-expand-cell">
+                <RestaurantInvoicePanel :restaurant="r" />
+              </td>
+            </tr>
+          </template>
         </tbody>
       </table>
     </div>
@@ -289,12 +303,14 @@ import { ref, computed, onMounted } from 'vue'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
 import { useI18n } from 'vue-i18n'
+import RestaurantInvoicePanel from '@/components/RestaurantInvoicePanel.vue'
 
 const authStore = useAuthStore()
 const { t } = useI18n()
 const loading = ref(true)
 const saving = ref(false)
 const rows = ref([])
+const showInvoices = ref({})
 
 // ── Filters ────────────────────────────────────────────
 const searchQ = ref('')
@@ -359,6 +375,10 @@ const counts = computed(() => ({
   trial: rows.value.filter((r) => subStatus(r) === 'trial').length,
   expired: rows.value.filter((r) => subStatus(r) === 'expired').length,
 }))
+
+function toggleInvoices(r) {
+  showInvoices.value[r.id] = !showInvoices.value[r.id]
+}
 
 // ── Modals ─────────────────────────────────────────────
 const detailsModal = ref(null)
@@ -515,6 +535,7 @@ const icons = {
   eye: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`,
   edit: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`,
   expire: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`,
+  invoice: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>`,
   empty: `<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>`,
   info: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`,
 }
@@ -922,6 +943,21 @@ onMounted(async () => {
   opacity: 0.35;
   cursor: not-allowed;
   pointer-events: none;
+}
+.action-btn.active {
+  background: #fff7ed;
+  border-color: #fed7aa;
+  color: #c2410c;
+}
+
+/* ── Invoice expand row ──────────────────────────── */
+.invoice-expand-row td {
+  padding: 0 !important;
+  border-bottom: 1px solid #e8e6e1;
+  background: #f8f7f4;
+}
+.invoice-expand-cell {
+  padding: 4px 16px 16px !important;
 }
 
 /* ── Modal ──────────────────────────────────────────── */

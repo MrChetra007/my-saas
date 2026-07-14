@@ -320,6 +320,9 @@
           </button>
         </div>
       </div>
+
+      <!-- ── KHQR / Bakong Platform Settings ──────────── -->
+      <PlatformSettingsCard />
     </div>
   </div>
 </template>
@@ -329,6 +332,7 @@ import { ref, computed, onMounted } from 'vue'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
 import { useI18n } from 'vue-i18n'
+import PlatformSettingsCard from '@/components/PlatformSettingsCard.vue'
 
 const authStore = useAuthStore()
 const { t } = useI18n()

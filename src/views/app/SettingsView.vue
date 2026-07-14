@@ -277,9 +277,9 @@
               <span>{{ $t('settings.trialUsed', { used: trialTotalDays }) }}</span>
               <span>{{ $t('settings.ends') }}</span>
             </div>
-            <button class="btn-upgrade" @click="showPlanPicker = true">
-              <Zap :size="14" /> {{ $t('settings.upgrade') }}
-            </button>
+            <div class="manual-billing-notice">
+              <Mail :size="14" /> {{ $t('settings.contactAdminToUpgrade') }}
+            </div>
           </div>
 
           <!-- Expired -->
@@ -288,13 +288,12 @@
             <div>
               <h3 class="expired-title">{{ $t('settings.planStatus.expired') }}</h3>
               <p class="expired-text">
-                {{ $t('settings.planMeta.expired') }}<br />{{ $t('settings.choosePlan') }}
-                to continue using Qrder.
+                {{ $t('settings.planMeta.expired') }}
               </p>
             </div>
-            <button class="btn-upgrade" @click="showPlanPicker = true">
-              <Zap :size="14" /> {{ $t('settings.choosePlan') }}
-            </button>
+            <div class="manual-billing-notice">
+              <Mail :size="14" /> {{ $t('settings.contactAdminForBilling') }}
+            </div>
           </div>
 
           <!-- Starter upsell -->
@@ -306,9 +305,9 @@
                 <div class="starter-desc">{{ $t('settings.unlockProDesc') }}</div>
               </div>
             </div>
-            <button class="btn-upgrade" @click="showPlanPicker = true">
-              <Zap :size="14" /> {{ $t('settings.upgradeToPro') }}
-            </button>
+            <div class="manual-billing-notice">
+              <Mail :size="14" /> {{ $t('settings.contactAdminToUpgrade') }}
+            </div>
           </div>
 
           <!-- Billing Details -->
@@ -321,29 +320,34 @@
               <span class="billing-key">{{ $t('settings.trialEnds') }}</span>
               <span class="billing-value">{{ formatDate(restaurant.trial_ends_at) }}</span>
             </div>
-            <div class="billing-row" v-if="restaurant.lemonsqueezy_customer_id">
-              <span class="billing-key">{{ $t('settings.customerId') }}</span>
-              <span class="billing-value mono">{{ restaurant.lemonsqueezy_customer_id }}</span>
+            <div class="billing-row" v-if="restaurant.plan_expires_at">
+              <span class="billing-key">{{ $t('settings.planExpires') }}</span>
+              <span class="billing-value">{{ formatDate(restaurant.plan_expires_at) }}</span>
             </div>
-            <div class="billing-row" v-if="restaurant.lemonsqueezy_subscription_id">
-              <span class="billing-key">{{ $t('settings.subscriptionId') }}</span>
-              <span class="billing-value mono">{{ restaurant.lemonsqueezy_subscription_id }}</span>
+          </div>
+
+          <!-- Invoice History -->
+          <div class="invoice-history" v-if="invoices.length > 0">
+            <h4 class="invoice-history-title">{{ $t('settings.invoiceHistory') }}</h4>
+            <div
+              v-for="inv in invoices"
+              :key="inv.id"
+              class="invoice-history-row"
+              :class="inv.status"
+            >
+              <div class="inv-period">
+                {{ formatDate(inv.period_start) }} – {{ formatDate(inv.period_end) }}
+              </div>
+              <div class="inv-amount">${{ inv.total_amount }}</div>
+              <span class="inv-status" :class="inv.status">{{ inv.status }}</span>
             </div>
           </div>
 
           <!-- Actions -->
           <div class="billing-actions">
-            <button v-if="!isProPlan" class="btn-upgrade" @click="showPlanPicker = true">
-              <Zap :size="14" />{{ isStarterPlan ? $t('settings.upgradeToPro') : $t('settings.choosePlan') }}
-            </button>
-            <a
-              v-if="isProPlan && restaurant.customer_portal_url"
-              :href="restaurant.customer_portal_url"
-              target="_blank"
-              class="btn-portal"
-            >
-              <ExternalLink :size="14" /> {{ $t('settings.manageBilling') }}
-            </a>
+            <p class="manual-billing-note">
+              {{ $t('settings.contactAdminForBilling') }}
+            </p>
           </div>
         </div>
       </div>
@@ -366,9 +370,6 @@
         </button>
       </div>
     </div>
-
-    <!-- Plan Picker Modal -->
-    <PlanPickerModal v-model="showPlanPicker" @checkout-error="(msg) => (saveError = msg)" />
 
     <!-- Slug Change Confirmation Modal -->
     <Teleport to="body">
@@ -409,12 +410,10 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useRoute } from 'vue-router'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
 import { setLocale } from '@/i18n'
 import { useI18n } from 'vue-i18n'
-import PlanPickerModal from '@/components/PlanPickerModal.vue'
 
 const { t } = useI18n()
 
@@ -433,18 +432,16 @@ import {
   Clock,
   Lock,
   Crown,
+  Mail,
   AlertTriangle,
   AlertCircle,
   CheckCircle2,
   Timer,
-  Zap,
-  ExternalLink,
   RotateCcw,
 } from 'lucide-vue-next'
 
 const LockIcon = Lock
 const authStore = useAuthStore()
-const route = useRoute()
 
 // ── Known currencies ─────────────────────────────────
 const KNOWN_CURRENCIES = [
@@ -466,9 +463,9 @@ const uploadingLogo = ref(false)
 const isDirty = ref(false)
 const saveError = ref('')
 const saveSuccess = ref('')
-const showPlanPicker = ref(false)
 const showUpgradedBanner = ref(false)
 const slugConfirmModal = ref(false)
+const invoices = ref([])
 
 const restaurant = ref({})
 const form = ref({ name: '', slug: '', address: '', logoUrl: '', currency: 'USD', timezone: 'UTC' })
@@ -698,6 +695,20 @@ async function fetchSettings() {
     selectedLanguage.value = authStore.profile.language
   }
 
+  // Fetch invoice history
+  if (authStore.profile?.restaurant_id) {
+    const { data: invData, error: invError } = await supabase
+      .from('subscription_invoices')
+      .select('id, period_start, period_end, total_amount, status, created_at')
+      .eq('restaurant_id', authStore.profile.restaurant_id)
+      .order('created_at', { ascending: false })
+      .limit(10)
+
+    if (!invError && invData) {
+      invoices.value = invData
+    }
+  }
+
   takeSnapshot()
   loading.value = false
 }
@@ -829,11 +840,6 @@ onMounted(async () => {
   if (!authStore.profile) await authStore.fetchProfile()
   await fetchSettings()
   startTimer()
-  if (route.query.upgraded === 'true') {
-    showUpgradedBanner.value = true
-    await fetchSettings()
-    window.history.replaceState({}, '', '/app/settings')
-  }
 })
 
 onUnmounted(() => {
@@ -1689,6 +1695,87 @@ onUnmounted(() => {
   display: flex;
   gap: 12px;
   flex-wrap: wrap;
+}
+
+.manual-billing-note {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  margin: 0;
+  padding: 10px 14px;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 8px;
+  width: 100%;
+  text-align: center;
+}
+
+.manual-billing-notice {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  padding: 8px 14px;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 8px;
+  white-space: nowrap;
+}
+
+.invoice-history {
+  margin-bottom: 20px;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.invoice-history-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  margin: 0;
+  padding: 10px 14px;
+  background: var(--color-bg-elevated);
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+.invoice-history-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--color-border-subtle);
+  font-size: 13px;
+}
+.invoice-history-row:last-child {
+  border-bottom: none;
+}
+.inv-period {
+  flex: 1;
+  color: var(--color-text-primary);
+}
+.inv-amount {
+  font-weight: 600;
+  color: var(--color-text-primary);
+  min-width: 70px;
+  text-align: right;
+}
+.inv-status {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 20px;
+  text-transform: capitalize;
+}
+.inv-status.pending {
+  background: rgba(250, 204, 21, 0.12);
+  color: #facc15;
+}
+.inv-status.paid {
+  background: rgba(74, 222, 128, 0.12);
+  color: #4ade80;
+}
+.inv-status.void {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--color-text-muted);
 }
 
 /* ── Alerts ── */
