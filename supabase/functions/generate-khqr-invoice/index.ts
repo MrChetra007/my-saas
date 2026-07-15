@@ -121,17 +121,43 @@ Deno.serve(async (req) => {
         .eq('id', existing[0].id)
     }
 
-    const { data: plan, error: planError } = await serviceClient
-      .from('plans')
-      .select('monthly_fee, transaction_fee_percent')
-      .eq('id', plan_id)
+    const { data: settings, error: settingsError } = await serviceClient
+      .from('platform_settings')
+      .select('app_config, bakong_account_id, merchant_name, merchant_city, currency')
+      .eq('id', true)
       .single()
 
-    if (planError || !plan) {
-      return new Response(JSON.stringify({ error: 'Plan not found' }), {
-        status: 400,
+    if (settingsError) {
+      return new Response(JSON.stringify({ error: 'Platform settings not found' }), {
+        status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
+    }
+
+    let monthlyFee: number
+    let txFeePercent = 0
+    const cfg = settings?.app_config || {}
+
+    if (plan_id === 'pro' && cfg.pro_price_manual) {
+      monthlyFee = Number(cfg.pro_price_manual)
+    } else if (plan_id === 'starter' && cfg.starter_price_manual) {
+      monthlyFee = Number(cfg.starter_price_manual)
+    } else {
+      const { data: plan, error: planError } = await serviceClient
+        .from('plans')
+        .select('monthly_fee, transaction_fee_percent')
+        .eq('id', plan_id)
+        .single()
+
+      if (planError || !plan) {
+        return new Response(JSON.stringify({ error: 'Plan not found' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+
+      monthlyFee = Number(plan.monthly_fee)
+      txFeePercent = Number(plan.transaction_fee_percent)
     }
 
     const { data: orderData } = await serviceClient
@@ -147,23 +173,8 @@ Deno.serve(async (req) => {
       return sum + Math.max(0, netAmount)
     }, 0)
 
-    const monthlyFee = Number(plan.monthly_fee)
-    const txFeePercent = Number(plan.transaction_fee_percent)
     const transactionFee = (orderVolume * txFeePercent) / 100
     const totalAmount = monthlyFee + transactionFee
-
-    const { data: settings, error: settingsError } = await serviceClient
-      .from('platform_settings')
-      .select('bakong_account_id, merchant_name, merchant_city, currency')
-      .eq('id', true)
-      .single()
-
-    if (settingsError) {
-      return new Response(JSON.stringify({ error: 'Platform settings not found' }), {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
-    }
 
     let khqrString = null
     let khqrMd5 = null
