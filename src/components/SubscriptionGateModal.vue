@@ -35,8 +35,11 @@
 
         <!-- Step 2: Show KHQR + upload proof -->
         <div v-else-if="step === 'invoice'" class="sg-body">
-          <div v-if="invoice" class="sg-invoice">
-            <template v-if="invoice.khqr_string">
+          <div v-if="invoiceLoading" class="sg-invoice">
+            <span class="sg-spinner" style="border-top-color:#f97316;border-color:rgba(249,115,22,0.25)" />
+          </div>
+          <div v-else-if="invoice" class="sg-invoice">
+            <template v-if="invoice.qr_image">
               <div class="sg-khqr-wrap">
                 <img :src="invoice.qr_image" alt="KHQR" class="sg-khqr-img" />
               </div>
@@ -53,10 +56,18 @@
           </div>
 
           <div class="sg-upload">
-            <label class="sg-upload-label">{{ $t('subscriptionGate.uploadProofLabel') }}</label>
-            <input type="file" accept="image/*" class="sg-upload-input" @change="onFileChange" />
-            <div v-if="selectedFile" class="sg-file-name">{{ selectedFile.name }}</div>
-          </div>
+  <label class="sg-upload-label">{{ $t('subscriptionGate.uploadProofLabel') }}</label>
+  <label class="sg-upload-dropzone" :class="{ 'sg-has-file': selectedFile }">
+    <input type="file" accept="image/*" class="sg-upload-input" @change="onFileChange" />
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+      <polyline points="17 8 12 3 7 8"/>
+      <line x1="12" y1="3" x2="12" y2="15"/>
+    </svg>
+    <span v-if="!selectedFile" class="sg-upload-placeholder">{{ $t('subscriptionGate.chooseFile') || 'Choose a screenshot to upload' }}</span>
+    <span v-else class="sg-file-name">{{ selectedFile.name }}</span>
+  </label>
+</div>
 
           <div v-if="errorMsg" class="sg-error">{{ errorMsg }}</div>
 
@@ -68,13 +79,15 @@
 
         <!-- Step 3: Submitted / rejected -->
         <div v-else-if="step === 'submitted'" class="sg-body">
-          <div class="sg-success-icon">
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="1.8" stroke-linecap="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-          </div>
-          <h3 class="sg-success-title">{{ $t('subscriptionGate.submittedTitle') }}</h3>
-          <p class="sg-success-desc">{{ $t('subscriptionGate.submittedDesc', { date: graceDate }) }}</p>
-        </div>
-
+  <div class="sg-success-icon">
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="1.8" stroke-linecap="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+  </div>
+  <h3 class="sg-success-title">{{ $t('subscriptionGate.submittedTitle') }}</h3>
+  <p class="sg-success-desc">{{ $t('subscriptionGate.submittedDesc', { date: graceDate }) }}</p>
+  <button class="sg-btn-primary" @click="closeModal">
+    {{ $t('common.done') || 'Done' }}
+  </button>
+</div>
         <div v-else-if="step === 'rejected'" class="sg-body">
           <div class="sg-rejected-icon">
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#e11d48" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
@@ -107,55 +120,88 @@ const authStore = useAuthStore()
 const { t } = useI18n()
 const { billingStatus, planName, planPrice, graceEndsAt } = useBillingStatus()
 
-const visible = computed(() => billingStatus.value === 'blocked')
+const visible = computed(() => billingStatus.value === 'blocked' && !dismissed.value)
+
 
 const step = ref('generate')
 const errorMsg = ref('')
 const generating = ref(false)
 const submitting = ref(false)
+const invoiceLoading = ref(false)
 const selectedFile = ref(null)
 const invoice = ref(null)
 const rejectedReason = ref('')
 const graceDate = ref('')
+const dismissed = ref(false)
+
+
+function closeModal() {
+  dismissed.value = true
+}
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+
+// Calls the edge function for the CURRENT open period, always returning a
+// fresh qr_image. The edge function's own dedup logic decides whether to
+// reuse an existing invoice row or create a new one, and always computes
+// qr_image on the fly since that field is never stored in the DB.
+async function fetchInvoiceViaFunction() {
+  const token = (await supabase.auth.getSession()).data.session?.access_token
+  const rid = authStore.profile?.restaurant_id
+  if (!rid) throw new Error('No restaurant ID')
+  const now = new Date()
+  const start = new Date(now.getFullYear(), now.getMonth(), 1)
+  const end = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+  const periodStart = start.toISOString().split('T')[0]
+  const periodEnd = end.toISOString().split('T')[0]
+  const rawPlan = authStore._restaurant?.plan || 'starter'
+  const planId = (rawPlan === 'expired' || rawPlan === 'trial') ? 'starter' : rawPlan
+
+  const res = await fetch(`${supabaseUrl}/functions/v1/generate-khqr-invoice`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      restaurant_id: rid,
+      plan_id: planId,
+      period_start: periodStart,
+      period_end: periodEnd,
+    }),
+  })
+  const data = await res.json()
+  if (!res.ok) throw new Error(data.error || 'Failed to load invoice')
+  return data.invoice
+}
 
 async function generateInvoice() {
   generating.value = true
   errorMsg.value = ''
   try {
-    const token = (await supabase.auth.getSession()).data.session?.access_token
-    const rid = authStore.profile?.restaurant_id
-    if (!rid) throw new Error('No restaurant ID')
-    const now = new Date()
-    const start = new Date(now.getFullYear(), now.getMonth(), 1)
-    const end = new Date(now.getFullYear(), now.getMonth() + 1, 0)
-    const periodStart = start.toISOString().split('T')[0]
-    const periodEnd = end.toISOString().split('T')[0]
-    const rawPlan = authStore._restaurant?.plan || 'starter'
-    const planId = (rawPlan === 'expired' || rawPlan === 'trial') ? 'starter' : rawPlan
-
-    const res = await fetch(`${supabaseUrl}/functions/v1/generate-khqr-invoice`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        restaurant_id: rid,
-        plan_id: planId,
-        period_start: periodStart,
-        period_end: periodEnd,
-      }),
-    })
-    const data = await res.json()
-    if (!res.ok) throw new Error(data.error || 'Failed to generate invoice')
-    invoice.value = data.invoice
+    invoice.value = await fetchInvoiceViaFunction()
     step.value = 'invoice'
   } catch (err) {
     errorMsg.value = err.message
   } finally {
     generating.value = false
+  }
+}
+
+// Loads an already-open invoice (pending / pending_review) for display,
+// always going through the edge function so qr_image gets computed —
+// never reads the subscription_invoices row directly for this purpose.
+async function loadOpenInvoice() {
+  invoiceLoading.value = true
+  errorMsg.value = ''
+  try {
+    invoice.value = await fetchInvoiceViaFunction()
+    step.value = invoice.value?.status === 'pending_review' ? 'submitted' : 'invoice'
+  } catch (err) {
+    errorMsg.value = err.message
+    step.value = 'generate'
+  } finally {
+    invoiceLoading.value = false
   }
 }
 
@@ -197,7 +243,6 @@ async function submitProof() {
     const data = await res.json()
     if (!res.ok) throw new Error(data.error || 'Failed to submit proof')
 
-    // Refresh restaurant data to pick up grace_period_ends_at
     if (authStore.refreshRestaurant) {
       await authStore.refreshRestaurant()
     }
@@ -223,9 +268,9 @@ function retry() {
 watch(() => billingStatus.value, (val) => {
   if (val === 'blocked') {
     const r = authStore._restaurant
-    // Check if there's a rejected invoice to show
     if (r?.plan === 'expired' || (r?.plan_expires_at && new Date(r.plan_expires_at) < new Date())) {
-      // Check for a rejected invoice
+      // Rejected-invoice lookup is read-only display info (reason text),
+      // no QR involved, so a direct table read is fine here.
       supabase
         .from('subscription_invoices')
         .select('*')
@@ -240,15 +285,14 @@ watch(() => billingStatus.value, (val) => {
           } else {
             supabase
               .from('subscription_invoices')
-              .select('*')
+              .select('id, status')
               .eq('restaurant_id', authStore.profile?.restaurant_id)
               .in('status', ['pending', 'pending_review'])
               .order('created_at', { ascending: false })
               .limit(1)
               .then(({ data: openInv }) => {
                 if (openInv && openInv.length > 0) {
-                  invoice.value = openInv[0]
-                  step.value = openInv[0].status === 'pending_review' ? 'submitted' : 'invoice'
+                  loadOpenInvoice()
                 } else {
                   step.value = 'generate'
                 }
@@ -261,10 +305,12 @@ watch(() => billingStatus.value, (val) => {
 
 onMounted(() => {
   if (visible.value) {
-    // Check latest invoice status
+    // Only check id/status here — never read khqr_string/qr fields
+    // directly, since qr_image is computed by the edge function and is
+    // never persisted to the DB.
     supabase
       .from('subscription_invoices')
-      .select('*')
+      .select('id, status, rejected_reason')
       .eq('restaurant_id', authStore.profile?.restaurant_id)
       .in('status', ['pending', 'pending_review', 'rejected'])
       .order('created_at', { ascending: false })
@@ -275,12 +321,8 @@ onMounted(() => {
           if (inv.status === 'rejected') {
             rejectedReason.value = inv.rejected_reason || ''
             step.value = 'rejected'
-          } else if (inv.status === 'pending_review') {
-            invoice.value = inv
-            step.value = 'submitted'
-          } else if (inv.status === 'pending') {
-            invoice.value = inv
-            step.value = 'invoice'
+          } else {
+            loadOpenInvoice()
           }
         }
       })
@@ -289,6 +331,59 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.sg-upload {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.sg-upload-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #3d3d3a;
+}
+.sg-upload-dropzone {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1.5px dashed #e0ddd6;
+  border-radius: 10px;
+  background: #fafaf9;
+  color: #a8a49e;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+.sg-upload-dropzone:hover {
+  border-color: #f97316;
+  background: #fff8f2;
+  color: #f97316;
+}
+.sg-upload-dropzone.sg-has-file {
+  border-style: solid;
+  border-color: #f97316;
+  background: #fff8f2;
+  color: #1a1917;
+}
+.sg-upload-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+.sg-upload-placeholder {
+  font-size: 13px;
+}
+.sg-file-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: #1a1917;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .sg-overlay {
   position: fixed;
   inset: 0;

@@ -37,7 +37,7 @@
             <!-- Price -->
             <div class="price-row">
               <div class="price-amount">
-                <span class="price-dollar">$</span>99<span class="price-mo">/mo</span>
+                <span class="price-dollar">$</span>{{ proPrice }}<span class="price-mo">/mo</span>
               </div>
               <div class="price-note">{{ $t('plans.cancelAnytime') }}</div>
             </div>
@@ -61,7 +61,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 const { t } = useI18n()
 import { supabase } from '@/lib/supabase'
@@ -90,6 +90,7 @@ const emit = defineEmits(['update:modelValue', 'checkout-error'])
 
 const loading = ref(false)
 const error = ref('')
+const proPrice = ref(99)
 
 const proFeatures = [
   {
@@ -118,6 +119,21 @@ const proFeatures = [
     desc: t('plans.featurePromotionsDesc'),
   },
 ]
+
+onMounted(async () => {
+  try {
+    const { data: settings } = await supabase
+      .from('platform_settings')
+      .select('app_config')
+      .eq('id', true)
+      .single()
+    if (settings?.app_config?.pro_price_ls) {
+      proPrice.value = settings.app_config.pro_price_ls
+    }
+  } catch (e) {
+    console.warn('Failed to load Pro pricing', e)
+  }
+})
 
 function close() {
   emit('update:modelValue', false)

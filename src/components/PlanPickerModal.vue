@@ -31,7 +31,7 @@
                 <div class="option-top">
                   <div class="option-name">{{ $t('plans.starter') }}</div>
                   <div class="option-price">
-                    <span class="price-dollar">$</span>49<span class="price-mo">/mo</span>
+                    <span class="price-dollar">$</span>{{ starterPrice }}<span class="price-mo">/mo</span>
                   </div>
                 </div>
 
@@ -65,7 +65,7 @@
                 <div class="option-top">
                   <div class="option-name option-name-pro">{{ $t('plans.pro') }}</div>
                   <div class="option-price option-price-pro">
-                    <span class="price-dollar">$</span>99<span class="price-mo">/mo</span>
+                    <span class="price-dollar">$</span>{{ proPrice }}<span class="price-mo">/mo</span>
                   </div>
                 </div>
 
@@ -116,7 +116,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 const { t } = useI18n()
 import { supabase } from '@/lib/supabase'
@@ -134,6 +134,24 @@ const emit = defineEmits(['update:modelValue', 'checkout-started', 'checkout-err
 const selectedPlan = ref('pro')
 const loading = ref(false)
 const billingError = ref('')
+const starterPrice = ref(49)
+const proPrice = ref(99)
+
+onMounted(async () => {
+  try {
+    const { data: settings } = await supabase
+      .from('platform_settings')
+      .select('app_config')
+      .eq('id', true)
+      .single()
+    if (settings?.app_config) {
+      if (settings.app_config.starter_price_ls) starterPrice.value = settings.app_config.starter_price_ls
+      if (settings.app_config.pro_price_ls) proPrice.value = settings.app_config.pro_price_ls
+    }
+  } catch (e) {
+    console.warn('Failed to load plan pricing', e)
+  }
+})
 
 function close() {
   emit('update:modelValue', false)
