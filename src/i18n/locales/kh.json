@@ -1461,6 +1461,21 @@
         "created": "Created"
       }
     },
+    "pendingApprovals": {
+      "title": "ការរង់ចាំអនុម័ត",
+      "empty": "មិនទាន់មានការរង់ចាំអនុម័តទេ",
+      "viewProof": "មើលភស្តុតាង",
+      "approve": "អនុម័ត",
+      "approving": "កំពុងអនុម័ត…",
+      "reject": "បដិសេធ",
+      "rejectPlaceholder": "មូលហេតុនៃការបដិសេធ…",
+      "cancel": "បោះបង់",
+      "confirmReject": "បញ្ជាក់ការបដិសេធ",
+      "justNow": "ទើបតែឥឡូវ",
+      "minAgo": "{n}នាទីមុន",
+      "hrAgo": "{n}ម៉ោងមុន",
+      "dayAgo": "{n}ថ្ងៃមុន"
+    },
     "settings": {
       "title": "Settings",
       "subtitle": "Manage your super admin account and app-wide configuration.",

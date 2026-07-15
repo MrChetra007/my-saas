@@ -32,7 +32,6 @@
           <button class="pap-proof-btn" @click="viewProof(inv)">
             {{ $t('superAdmin.pendingApprovals.viewProof') }}
           </button>
-          <img v-if="proofUrl === inv.id" :src="proofUrl" class="pap-proof-img" @click="proofUrl = null" />
         </div>
 
         <div class="pap-actions">
@@ -56,10 +55,31 @@
       </div>
     </div>
   </div>
+
+  <!-- ── Proof image lightbox ────────────────────────── -->
+  <Teleport to="body">
+    <Transition name="modal">
+      <div v-if="showProofModal" class="pl-backdrop" @click.self="closeProofModal" @keydown.escape="closeProofModal">
+        <div class="pl-modal">
+          <button class="pl-close" @click="closeProofModal">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+          <div class="pl-caption" v-if="activeProof">
+            <span class="pl-restaurant">{{ activeProof.restaurant_name }}</span>
+            <span class="pl-sep">·</span>
+            <span class="pl-plan">{{ activeProof.plan_id }} — ${{ activeProof.total_amount }}</span>
+          </div>
+          <div class="pl-image-wrap">
+            <img v-if="activeProofUrl" :src="activeProofUrl" class="pl-image" alt="Payment proof" />
+          </div>
+        </div>
+      </div>
+    </Transition>
+  </Teleport>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
 import { useI18n } from 'vue-i18n'
@@ -72,7 +92,9 @@ const emit = defineEmits(['approved', 'rejected'])
 const items = ref([])
 const loading = ref(true)
 const actioning = ref(null)
-const proofUrl = ref(null)
+const showProofModal = ref(false)
+const activeProof = ref(null)
+const activeProofUrl = ref(null)
 const rejectTarget = ref(null)
 const rejectReason = ref('')
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
@@ -103,19 +125,22 @@ async function fetchPending() {
 
 async function viewProof(inv) {
   if (!inv.proof_url) return
-  if (proofUrl.value === inv.id) {
-    proofUrl.value = null
-    return
-  }
-  const token = (await supabase.auth.getSession()).data.session?.access_token
   const { data } = await supabase.storage
     .from('payment-proofs')
     .createSignedUrl(inv.proof_url, 300)
   if (data?.signedUrl) {
-    proofUrl.value = inv.id
-    // open in new tab
-    window.open(data.signedUrl, '_blank')
+    activeProof.value = inv
+    activeProofUrl.value = data.signedUrl
+    showProofModal.value = true
   }
+}
+
+function closeProofModal() {
+  showProofModal.value = false
+}
+
+function onKeydown(e) {
+  if (e.key === 'Escape' && showProofModal.value) closeProofModal()
 }
 
 async function approve(inv) {
@@ -194,6 +219,11 @@ function timeAgo(dateStr) {
 
 onMounted(() => {
   fetchPending()
+  document.addEventListener('keydown', onKeydown)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('keydown', onKeydown)
 })
 </script>
 
@@ -317,13 +347,6 @@ onMounted(() => {
 .pap-proof-btn:hover {
   background: #fff7ed;
 }
-.pap-proof-img {
-  max-width: 100%;
-  max-height: 300px;
-  border-radius: 8px;
-  border: 1px solid #e8e6e1;
-  cursor: pointer;
-}
 .pap-actions {
   display: flex;
   gap: 8px;
@@ -383,5 +406,102 @@ onMounted(() => {
   display: flex;
   gap: 6px;
   justify-content: flex-end;
+}
+
+/* ── Proof lightbox ────────────────────────────── */
+.pl-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(5px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+.pl-modal {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  max-width: 90vw;
+  max-height: 90vh;
+}
+.pl-close {
+  position: absolute;
+  top: -40px;
+  right: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.14s;
+  z-index: 1;
+}
+.pl-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+.pl-caption {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 0 10px;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 13px;
+}
+.pl-restaurant {
+  font-weight: 600;
+}
+.pl-sep {
+  color: rgba(255, 255, 255, 0.35);
+}
+.pl-plan {
+  color: rgba(255, 255, 255, 0.7);
+}
+.pl-image-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.3);
+}
+.pl-image {
+  max-width: 85vw;
+  max-height: 78vh;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
+/* ── Modal transition ──────────────────────────── */
+.modal-enter-active {
+  transition: opacity 0.2s;
+}
+.modal-leave-active {
+  transition: opacity 0.18s;
+}
+.modal-enter-active .pl-modal {
+  transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.2s;
+}
+.modal-leave-active .pl-modal {
+  transition: transform 0.18s ease-in, opacity 0.18s;
+}
+.modal-enter-from,
+.modal-leave-to {
+  opacity: 0;
+}
+.modal-enter-from .pl-modal {
+  transform: scale(0.94) translateY(10px);
+  opacity: 0;
+}
+.modal-leave-to .pl-modal {
+  transform: scale(0.97);
+  opacity: 0;
 }
 </style>
