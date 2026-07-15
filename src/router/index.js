@@ -163,18 +163,19 @@ const router = createRouter({ history: createWebHistory(), routes })
 //               SubscriptionGateModal (grace period flow)
 // Trial:        falls back to trial_ends_at for both types on signup
 // ---------------------------------------------------------------------------
-function isTrialExpired(plan, trialEndsAt, billingType, planExpiresAt) {
+function isTrialExpired(plan, trialEndsAt, billingType, planExpiresAt, gracePeriodEndsAt) {
   // ── LemonSqueezy: webhook manages everything ──────
   if (billingType === 'lemonsqueezy') {
     if (['pro', 'starter'].includes(plan)) return false
     if (plan === 'expired') return true
   }
 
-  // ── Manual: plan expiry is handled by SubscriptionGateModal ────
-  // Only redirect if the user is on a trial that expired or has no plan
+  // ── Manual: grace period keeps access alive ────────
   if (billingType === 'manual') {
-    if (plan === 'expired') return true
-    // If they have a valid plan (pro/starter), do NOT redirect — let modal handle it
+    if (plan === 'expired') {
+      if (gracePeriodEndsAt && new Date(gracePeriodEndsAt) > new Date()) return false
+      return true
+    }
     if (['pro', 'starter'].includes(plan)) return false
   }
 
@@ -237,6 +238,7 @@ router.beforeEach(async (to) => {
           restaurant?.trial_ends_at,
           restaurant?.billing_type,
           restaurant?.plan_expires_at,
+          restaurant?.grace_period_ends_at,
         )
       )
         return '/trial-expired'
@@ -249,6 +251,7 @@ router.beforeEach(async (to) => {
           restaurant?.trial_ends_at,
           restaurant?.billing_type,
           restaurant?.plan_expires_at,
+          restaurant?.grace_period_ends_at,
         )
       )
         return '/app/dashboard'

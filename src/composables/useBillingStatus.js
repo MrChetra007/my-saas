@@ -15,19 +15,16 @@ export function useBillingStatus() {
     const billingType = r.billing_type || 'manual'
     const plan = r.plan || 'trial'
 
-    // Blocked: no active plan, no grace, trial expired (for manual billing this means plan fully expired)
-    if (plan === 'expired') return 'blocked'
-
-    // Manual billing: check grace period first
+    // Manual billing: grace period is granted after proof submission
     if (billingType === 'manual') {
       if (graceEnds && now < graceEnds) return 'grace'
-      if (planExpires && now >= planExpires) return 'blocked'
+      if (plan === 'expired' || (planExpires && now >= planExpires)) return 'blocked'
     }
 
-    // LemonSqueezy: trial check
+    // LemonSqueezy: webhook manages everything
     if (billingType === 'lemonsqueezy') {
       if (['pro', 'starter'].includes(plan)) return 'active'
-      if (trialEnds && now >= trialEnds) return 'blocked'
+      if (plan === 'expired' || (trialEnds && now >= trialEnds)) return 'blocked'
     }
 
     // Trial fallback

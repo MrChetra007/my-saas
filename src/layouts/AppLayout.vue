@@ -167,14 +167,14 @@
     <!-- ── Subscription Gate Modal (blocking overlay) ── -->
     <SubscriptionGateModal />
 
-    <!-- ── Grace period banner ─────────────────────── -->
-    <div v-if="graceBannerVisible" class="grace-banner">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="flex-shrink:0"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-      <span>{{ $t('layouts.graceBanner', { date: graceDate }) }}</span>
-    </div>
-
     <!-- ── Main area ───────────────────────────── -->
     <div class="main-area" :class="{ expanded: sidebarCollapsed }">
+      <!-- Grace period banner -->
+      <div v-if="graceBannerVisible" class="grace-banner">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="flex-shrink:0"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <span>{{ $t('layouts.graceBanner', { date: graceDate }) }}</span>
+      </div>
+
       <!-- Topbar -->
       <header class="topbar">
         <button class="mobile-menu-btn" @click="mobileOpen = !mobileOpen" :aria-label="$t('layouts.openMenu')">
@@ -856,11 +856,11 @@ onUnmounted(() => {
   align-items: center;
   gap: 8px;
   padding: 8px 20px;
-  background: #fff7ed;
-  border-bottom: 1px solid #fed7aa;
+  background: var(--color-accent-muted);
+  border-bottom: 1px solid var(--color-accent-border);
   font-size: 13px;
   font-weight: 500;
-  color: #c2410c;
+  color: var(--color-accent);
   flex-shrink: 0;
 }
 .page-content {
