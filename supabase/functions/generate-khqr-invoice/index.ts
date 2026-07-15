@@ -1,5 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { BakongKHQR, IndividualInfo, khqrData } from 'npm:bakong-khqr@1.0.20'
+import QRCode from 'npm:qrcode-svg@1.1.0'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -79,10 +80,36 @@ Deno.serve(async (req) => {
       .limit(1)
 
     if (existing && existing.length > 0 && existing[0].khqr_string) {
-      return new Response(JSON.stringify({ invoice: existing[0], deduped: true }), {
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
+      // qr_image is never stored in the DB (only the raw khqr_string is),
+      // so it has to be regenerated here every time we hand back an
+      // existing invoice — otherwise the frontend gets khqr_string but no
+      // qr_image and the <img> tag breaks again.
+      let dedupedQrImage = null
+      try {
+        const qrCode = new QRCode({
+          content: existing[0].khqr_string,
+          padding: 2,
+          width: 320,
+          height: 320,
+          color: '#000000',
+          background: '#ffffff',
+          ecl: 'M',
+        })
+        dedupedQrImage = `data:image/svg+xml;base64,${btoa(qrCode.svg())}`
+      } catch (err) {
+        console.error('Failed to re-render QR image for existing invoice:', err)
+      }
+
+      return new Response(
+        JSON.stringify({
+          invoice: { ...existing[0], qr_image: dedupedQrImage },
+          deduped: true,
+        }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        },
+      )
     }
 
     // If we found a stale invoice with no QR, mark it expired instead of
@@ -140,6 +167,7 @@ Deno.serve(async (req) => {
 
     let khqrString = null
     let khqrMd5 = null
+    let qrImage = null
     let khqrError = null
 
     if (settings.bakong_account_id) {
@@ -166,6 +194,23 @@ Deno.serve(async (req) => {
           const { qr, md5 } = response.data as { qr: string; md5: string }
           khqrString = qr || null
           khqrMd5 = md5 || null
+
+          // Render the KHQR payload string into an actual scannable image.
+          // khqr_string alone is just text data — it is NOT displayable
+          // as-is. This is the piece the frontend needs to show a QR code.
+          if (khqrString) {
+            const qrCode = new QRCode({
+              content: khqrString,
+              padding: 2,
+              width: 320,
+              height: 320,
+              color: '#000000',
+              background: '#ffffff',
+              ecl: 'M',
+            })
+            const svgString = qrCode.svg()
+            qrImage = `data:image/svg+xml;base64,${btoa(svgString)}`
+          }
         } else {
           khqrError = response?.status?.message || 'KHQR generation returned non-zero code'
         }
@@ -206,10 +251,13 @@ Deno.serve(async (req) => {
       })
     }
 
-    return new Response(JSON.stringify({ invoice, khqr_error: khqrError }), {
-      status: 200,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    })
+    return new Response(
+      JSON.stringify({ invoice: { ...invoice, qr_image: qrImage }, khqr_error: khqrError }),
+      {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      },
+    )
   } catch (err) {
     console.error('Unexpected error:', err)
     return new Response(JSON.stringify({ error: 'Internal server error' }), {

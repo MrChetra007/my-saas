@@ -122,14 +122,42 @@ export const useAuthStore = defineStore('auth', {
     },
 
     async _loadPlanPricing() {
-      if (!this._restaurant?.plan || this._restaurant.plan === 'trial' || this._restaurant.plan === 'expired') return
-      const { data: plan } = await supabase
-        .from('plans')
-        .select('monthly_fee')
-        .eq('id', this._restaurant.plan)
-        .maybeSingle()
-      if (plan) {
-        this._restaurant = { ...this._restaurant, _plan_pricing: plan.monthly_fee }
+      let starterPrice = 15
+      let proPrice = 25
+
+      try {
+        const { data: settings } = await supabase
+          .from('platform_settings')
+          .select('app_config')
+          .eq('id', true)
+          .single()
+        if (settings?.app_config) {
+          const cfg = settings.app_config
+          if (cfg.starter_price_manual) starterPrice = Number(cfg.starter_price_manual)
+          if (cfg.pro_price_manual) proPrice = Number(cfg.pro_price_manual)
+        } else {
+          const { data: starterPlan } = await supabase
+            .from('plans')
+            .select('monthly_fee')
+            .eq('id', 'starter')
+            .maybeSingle()
+          if (starterPlan?.monthly_fee) starterPrice = starterPlan.monthly_fee
+
+          const { data: proPlan } = await supabase
+            .from('plans')
+            .select('monthly_fee')
+            .eq('id', 'pro')
+            .maybeSingle()
+          if (proPlan?.monthly_fee) proPrice = proPlan.monthly_fee
+        }
+      } catch (e) {
+        console.warn('Failed to load pricing', e)
+      }
+
+      const plan = this._restaurant?.plan || 'trial'
+      this._restaurant = {
+        ...this._restaurant,
+        _plan_pricing: plan === 'pro' ? proPrice : starterPrice,
       }
     },
 

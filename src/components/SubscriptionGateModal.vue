@@ -38,7 +38,7 @@
           <div v-if="invoice" class="sg-invoice">
             <template v-if="invoice.khqr_string">
               <div class="sg-khqr-wrap">
-                <img :src="`data:image/svg+xml;utf8,${encodeURIComponent(invoice.khqr_string)}`" alt="KHQR" class="sg-khqr-img" />
+                <img :src="invoice.qr_image" alt="KHQR" class="sg-khqr-img" />
               </div>
               <div class="sg-amount">${{ invoice.total_amount }}</div>
               <div class="sg-khqr-hint">{{ $t('subscriptionGate.scanAndPay') }}</div>
