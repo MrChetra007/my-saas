@@ -1672,7 +1672,7 @@
       "yourName": "Your Name",
       "yourNamePlaceholder": "e.g. Amirah",
       "yourEmail": "Your Email",
-      "yourEmailPlaceholder": "you@example.com",
+      "yourEmailPlaceholder": "you{'@'}example.com",
       "message": "Message",
       "messagePlaceholder": "Tell us about your restaurant or ask anything...",
       "sendMessage": "Send Message",

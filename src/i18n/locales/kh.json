@@ -1742,7 +1742,7 @@
       "yourName": "ឈ្មោះរបស់អ្នក",
       "yourNamePlaceholder": "ឧ. Amirah",
       "yourEmail": "អ៊ីមែលរបស់អ្នក",
-      "yourEmailPlaceholder": "you@example.com",
+      "yourEmailPlaceholder": "you{'@'}example.com",
       "message": "សារ",
       "messagePlaceholder": "ប្រាប់យើងអំពីភោជនីយដ្ឋានរបស់អ្នក ឬសួរអ្វីក៏បាន...",
       "sendMessage": "ផ្ញើសារ",
