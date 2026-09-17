@@ -1485,5 +1485,208 @@
     "rejectedDesc": "The admin rejected your proof. Upload a new, clearer screenshot.",
     "retry": "Upload new proof",
     "footer": "Need help? Contact the restaurant platform admin."
+  },
+  "landing": {
+    "nav": {
+      "features": "Features",
+      "howItWorks": "How it works",
+      "pricing": "Pricing",
+      "about": "About",
+      "login": "Login",
+      "getStarted": "Get Started"
+    },
+    "hero": {
+      "badge": "No app download required",
+      "title": "Your restaurant,",
+      "titleEm": "fully digital.",
+      "tagline": "SCAN · ORDER · DONE",
+      "body": "QR ordering, live kitchen display, staff dashboards — all in one platform built for modern restaurants.",
+      "startFreeTrial": "Start free trial",
+      "seeHowItWorks": "See how it works",
+      "microcopy": "No setup fees. Cancel anytime."
+    },
+    "orderCard": {
+      "table": "Table {n}",
+      "live": "Live",
+      "total": "Total",
+      "placeOrder": "Place Order",
+      "poweredBy": "Powered by QRserve · SCAN · ORDER · DONE"
+    },
+    "strip": {
+      "label": "Trusted by restaurants across Southeast Asia"
+    },
+    "how": {
+      "label": "How it works",
+      "title": "Three steps to a smoother service",
+      "steps": [
+        { "num": "01", "title": "Scan", "body": "Customers scan the QR on their table — no app, no login, just a browser." },
+        { "num": "02", "title": "Order", "body": "They browse your menu and place orders. It hits the kitchen instantly." },
+        { "num": "03", "title": "Done", "body": "Kitchen prepares, marks ready, cashier closes the tab. End-to-end seamless." }
+      ]
+    },
+    "featuresQr": {
+      "label": "QR Ordering",
+      "title": "Orders without the wait",
+      "desc": "Each table gets a unique QR code. Customers scan, browse your full menu, and place orders directly — no app, no account, no friction.",
+      "points": [
+        "No app download needed",
+        "Works on any smartphone browser",
+        "Custom branding per restaurant",
+        "Toggle item availability in real-time"
+      ]
+    },
+    "featuresKds": {
+      "label": "Kitchen Display",
+      "title": "Real-time kitchen sync",
+      "desc": "Orders appear instantly on the kitchen screen. Accept, cook, mark ready — the whole team stays in sync without a single call or paper ticket.",
+      "points": [
+        "Instant order notifications",
+        "Audio ping on new orders",
+        "Accept, reject, or mark ready",
+        "Large-text view for busy kitchens"
+      ],
+      "cardTitle": "Kitchen Display",
+      "active": "{n} Active",
+      "accept": "Accept",
+      "markReady": "Mark Ready",
+      "done": "✓ Done"
+    },
+    "fullbleed": {
+      "eyebrow": "Kitchen Display System",
+      "headline1": "From order to plate,",
+      "headline2": "nothing gets lost."
+    },
+    "featuresAnalytics": {
+      "label": "Analytics",
+      "title": "Know your numbers",
+      "desc": "Revenue charts, top-selling items, order volume by hour — everything you need to make smarter decisions, all in one dashboard.",
+      "points": [
+        "Real-time revenue tracking",
+        "Top-selling items at a glance",
+        "Order volume by hour",
+        "Export reports anytime"
+      ],
+      "todaysRevenue": "Today's Revenue",
+      "live": "Live",
+      "delta": "↑ 18% vs yesterday",
+      "stats": {
+        "orders": "Orders today",
+        "avgOrder": "Avg. order",
+        "completion": "Completion"
+      }
+    },
+    "testimonials": {
+      "label": "Testimonials",
+      "title": "Loved by restaurants",
+      "list": [
+        {
+          "quote": "Qrder completely changed how our floor runs. Orders go straight to the kitchen and our staff can actually focus on guests instead of running paper tickets.",
+          "name": "Amirah Yusof",
+          "role": "Owner, Warung Amirah — KL",
+          "initials": "AY"
+        },
+        {
+          "quote": "Setup was unbelievably fast. We were live within an hour. The kitchen display alone saved us from so much miscommunication during peak hours.",
+          "name": "Benny Tan",
+          "role": "F&B Manager, Spice Garden — SG",
+          "initials": "BT"
+        }
+      ]
+    },
+    "pricing": {
+      "label": "Pricing",
+      "title": "Simple, honest pricing",
+      "subtitle": "14-day free trial on all plans. No credit card required.",
+      "recommended": "Recommended",
+      "starter": "Starter",
+      "pro": "Pro",
+      "perMonth": "/mo",
+      "starterDesc": "Perfect for small restaurants getting started.",
+      "proDesc": "For restaurants running their full operation digitally.",
+      "starterFeatures": [
+        "Up to 15 tables",
+        "Up to 3 staff accounts",
+        "Unlimited orders",
+        "QR code ordering",
+        "Kitchen, cashier & waiter views",
+        "Menu management"
+      ],
+      "proFeatures": [
+        "Unlimited tables",
+        "Up to 10 staff accounts",
+        "Unlimited orders",
+        "QR code ordering",
+        "All staff role views",
+        "Menu management",
+        "Analytics & charts",
+        "Promotions & discounts"
+      ],
+      "startFreeTrial": "Start free trial"
+    },
+    "faq": {
+      "label": "FAQ",
+      "title": "Common questions",
+      "list": [
+        {
+          "q": "Do customers need to download an app?",
+          "a": "No. The ordering page is a regular website that opens directly in the browser when a customer scans the QR code. No app store, no account, no friction."
+        },
+        {
+          "q": "How does the kitchen receive orders?",
+          "a": "Orders appear on the kitchen screen in real-time using Supabase Realtime. There's no polling or page refresh needed — it updates the moment a customer submits."
+        },
+        {
+          "q": "Can I use it on a tablet or phone?",
+          "a": "Yes. The kitchen and cashier views are optimized for mobile and tablet. The admin dashboard works great on desktop."
+        },
+        {
+          "q": "What happens when my trial ends?",
+          "a": "You'll see an upgrade prompt but your data is never deleted — it's all there when you subscribe."
+        },
+        {
+          "q": "Can I manage multiple locations?",
+          "a": "Multi-branch support is on the roadmap. For now each location needs its own account. Get in touch for custom arrangements."
+        },
+        {
+          "q": "Can I cancel anytime?",
+          "a": "Yes. Cancel from the Settings page at any time. No lock-in contracts, no cancellation fees."
+        }
+      ]
+    },
+    "cta": {
+      "title": "Ready to simplify service?",
+      "tagline": "SCAN · ORDER · DONE",
+      "body": "Start your 14-day free trial. Setup takes under 10 minutes.",
+      "createAccount": "Create your account",
+      "signInInstead": "Sign in instead",
+      "micro": "No credit card required · Cancel anytime"
+    },
+    "about": {
+      "label": "About & Contact",
+      "title": "The person behind QRserve",
+      "name": "Seth Sochetra",
+      "role": "Founder & Developer",
+      "bio": "Passionate about building tools that make restaurant operations effortless. Qrserve was created to bridge the gap between great food and seamless digital experiences — putting orders, kitchen flow, and menus all in one place.",
+      "madeWithPre": "Made with",
+      "madeWithPost": "for restaurants everywhere",
+      "yourName": "Your Name",
+      "yourNamePlaceholder": "e.g. Amirah",
+      "yourEmail": "Your Email",
+      "yourEmailPlaceholder": "you@example.com",
+      "message": "Message",
+      "messagePlaceholder": "Tell us about your restaurant or ask anything...",
+      "sendMessage": "Send Message",
+      "sending": "Sending…",
+      "success": "✓ Message sent! We'll get back to you soon.",
+      "error": "✗ Something went wrong. Please try again."
+    },
+    "footer": {
+      "terms": "Terms of Service",
+      "privacy": "Privacy Policy",
+      "refund": "Refund Policy",
+      "login": "Login",
+      "signup": "Sign up",
+      "rights": "© {year} QRserve. All rights reserved."
+    }
   }
 }

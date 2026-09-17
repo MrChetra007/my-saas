@@ -13,16 +13,26 @@
           <span class="logo-wordmark">QRserve</span>
         </div>
         <div class="nav-links">
-          <a href="#features" class="nav-link" @click.prevent="scrollTo('features')">Features</a>
-          <a href="#how-it-works" class="nav-link" @click.prevent="scrollTo('how-it-works')"
-            >How it works</a
-          >
-          <a href="#pricing" class="nav-link" @click.prevent="scrollTo('pricing')">Pricing</a>
-          <a href="#about" class="nav-link" @click.prevent="scrollTo('about')">About</a>
+          <a href="#features" class="nav-link" @click.prevent="scrollTo('features')">{{
+            t('landing.nav.features')
+          }}</a>
+          <a href="#how-it-works" class="nav-link" @click.prevent="scrollTo('how-it-works')">{{
+            t('landing.nav.howItWorks')
+          }}</a>
+          <a href="#pricing" class="nav-link" @click.prevent="scrollTo('pricing')">{{
+            t('landing.nav.pricing')
+          }}</a>
+          <a href="#about" class="nav-link" @click.prevent="scrollTo('about')">{{
+            t('landing.nav.about')
+          }}</a>
         </div>
         <div class="nav-actions">
-          <RouterLink to="/login" class="btn-ghost">Login</RouterLink>
-          <RouterLink to="/signup" class="btn-pill">Get Started</RouterLink>
+          <select class="lang-switcher" @change="switchLang" :value="currentLocale">
+            <option value="en">{{ t('language.english') }}</option>
+            <option value="kh">{{ t('language.khmer') }}</option>
+          </select>
+          <RouterLink to="/login" class="btn-ghost">{{ t('landing.nav.login') }}</RouterLink>
+          <RouterLink to="/signup" class="btn-pill">{{ t('landing.nav.getStarted') }}</RouterLink>
         </div>
         <button class="nav-mobile-btn" @click="mobileMenuOpen = !mobileMenuOpen">
           <svg
@@ -55,29 +65,37 @@
         </button>
       </div>
       <div class="mobile-menu" v-if="mobileMenuOpen">
+        <div class="mobile-lang">
+          <select class="lang-switcher" @change="switchLang" :value="currentLocale">
+            <option value="en">{{ t('language.english') }}</option>
+            <option value="kh">{{ t('language.khmer') }}</option>
+          </select>
+        </div>
         <a
           href="#features"
           class="mobile-link"
           @click="(scrollTo('features'), (mobileMenuOpen = false))"
-          >Features</a
+          >{{ t('landing.nav.features') }}</a
         >
         <a
           href="#how-it-works"
           class="mobile-link"
           @click="(scrollTo('how-it-works'), (mobileMenuOpen = false))"
-          >How it works</a
+          >{{ t('landing.nav.howItWorks') }}</a
         >
         <a
           href="#pricing"
           class="mobile-link"
           @click="(scrollTo('pricing'), (mobileMenuOpen = false))"
-          >Pricing</a
+          >{{ t('landing.nav.pricing') }}</a
         >
         <a href="#about" class="mobile-link" @click="(scrollTo('about'), (mobileMenuOpen = false))"
-          >About</a
+          >{{ t('landing.nav.about') }}</a
         >
-        <RouterLink to="/login" class="mobile-link">Login</RouterLink>
-        <RouterLink to="/signup" class="btn-pill mobile-cta">Get Started</RouterLink>
+        <RouterLink to="/login" class="mobile-link">{{ t('landing.nav.login') }}</RouterLink>
+        <RouterLink to="/signup" class="btn-pill mobile-cta">{{
+          t('landing.nav.getStarted')
+        }}</RouterLink>
       </div>
     </nav>
 
@@ -89,17 +107,14 @@
         <div class="hero-left animate-hero-left">
           <div class="badge">
             <span class="badge-dot" />
-            No app download required
+            {{ t('landing.hero.badge') }}
           </div>
-          <h1 class="hero-title">Your restaurant,<br /><em>fully digital.</em></h1>
-          <p class="hero-tagline">SCAN · ORDER · DONE</p>
-          <p class="hero-body">
-            QR ordering, live kitchen display, staff dashboards — all in one platform built for
-            modern restaurants.
-          </p>
+          <h1 class="hero-title">{{ t('landing.hero.title') }}<br /><em>{{ t('landing.hero.titleEm') }}</em></h1>
+          <p class="hero-tagline">{{ t('landing.hero.tagline') }}</p>
+          <p class="hero-body">{{ t('landing.hero.body') }}</p>
           <div class="hero-actions">
             <RouterLink to="/signup" class="btn-pill btn-lg">
-              Start free trial
+              {{ t('landing.hero.startFreeTrial') }}
               <svg
                 width="15"
                 height="15"
@@ -114,19 +129,19 @@
                 <polyline points="12 5 19 12 12 19" />
               </svg>
             </RouterLink>
-            <a href="#how-it-works" class="btn-ghost-lg" @click.prevent="scrollTo('how-it-works')"
-              >See how it works</a
-            >
+            <a href="#how-it-works" class="btn-ghost-lg" @click.prevent="scrollTo('how-it-works')">{{
+              t('landing.hero.seeHowItWorks')
+            }}</a>
           </div>
-          <p class="microcopy">No setup fees. Cancel anytime.</p>
+          <p class="microcopy">{{ t('landing.hero.microcopy') }}</p>
         </div>
 
         <!-- Right — Order card -->
         <div class="hero-right animate-hero-right">
           <div class="order-card">
             <div class="order-card-header">
-              <span class="order-table">Table 4</span>
-              <div class="order-live"><span class="live-dot" />Live</div>
+              <span class="order-table">{{ t('landing.orderCard.table', { n: 4 }) }}</span>
+              <div class="order-live"><span class="live-dot" />{{ t('landing.orderCard.live') }}</div>
             </div>
             <div class="order-items">
               <div class="order-item" v-for="item in orderItems" :key="item.name">
@@ -139,11 +154,11 @@
             </div>
             <div class="divider" />
             <div class="order-total">
-              <span>Total</span>
+              <span>{{ t('landing.orderCard.total') }}</span>
               <span class="total-amount">$34.50</span>
             </div>
             <button class="btn-place-order">
-              Place Order
+              {{ t('landing.orderCard.placeOrder') }}
               <svg
                 width="14"
                 height="14"
@@ -159,7 +174,7 @@
                 <path d="M16 10a4 4 0 01-8 0" />
               </svg>
             </button>
-            <p class="order-note">Powered by QRserve · SCAN · ORDER · DONE</p>
+            <p class="order-note">{{ t('landing.orderCard.poweredBy') }}</p>
           </div>
         </div>
       </div>
@@ -173,16 +188,18 @@
         <div class="photo-strip-img photo-strip-img--3" />
       </div>
       <div class="photo-strip-overlay">
-        <span class="photo-strip-label">Trusted by restaurants across Southeast Asia</span>
+        <span class="photo-strip-label">{{ t('landing.strip.label') }}</span>
       </div>
     </div>
 
     <!-- ── How It Works ───────────────────────────────── -->
     <section class="section" id="how-it-works">
       <div class="section-inner">
-        <span class="section-label reveal-fade" :ref="(el) => observeEl(el)">How it works</span>
+        <span class="section-label reveal-fade" :ref="(el) => observeEl(el)">{{
+            t('landing.how.label')
+          }}</span>
         <h2 class="section-title reveal-up" :ref="(el) => observeEl(el)">
-          Three steps to a smoother service
+          {{ t('landing.how.title') }}
         </h2>
         <div class="steps-grid">
           <div
@@ -206,16 +223,17 @@
       <div class="section-inner">
         <div class="feature-row">
           <div class="feature-text reveal-from-left" :ref="(el) => observeEl(el)">
-            <span class="section-label">QR Ordering</span>
-            <h2 class="section-title text-left">Orders without the wait</h2>
-            <p class="feature-desc">
-              Each table gets a unique QR code. Customers scan, browse your full menu, and place
-              orders directly — no app, no account, no friction.
-            </p>
+            <span class="section-label">{{ t('landing.featuresQr.label') }}</span>
+            <h2 class="section-title text-left">{{ t('landing.featuresQr.title') }}</h2>
+            <p class="feature-desc">{{ t('landing.featuresQr.desc') }}</p>
             <ul class="feature-list">
-              <li v-for="p in qrPoints" :key="p"><span class="check-icon">✓</span>{{ p }}</li>
+              <li v-for="p in tm('landing.featuresQr.points')" :key="p">
+                <span class="check-icon">✓</span>{{ p }}
+              </li>
             </ul>
-            <RouterLink to="/signup" class="btn-pill">Get Started →</RouterLink>
+            <RouterLink to="/signup" class="btn-pill"
+              >{{ t('landing.nav.getStarted') }} →</RouterLink
+            >
           </div>
           <div class="feature-mockup reveal-from-right" :ref="(el) => observeEl(el)">
             <!-- Real QR scan photo + phone mockup layered -->
@@ -336,8 +354,10 @@
     <div class="fullbleed-break reveal-fade" :ref="(el) => observeEl(el)">
       <div class="fullbleed-photo fullbleed-photo--kitchen" />
       <div class="fullbleed-content">
-        <span class="fullbleed-eyebrow">Kitchen Display System</span>
-        <p class="fullbleed-headline">From order to plate,<br />nothing gets lost.</p>
+        <span class="fullbleed-eyebrow">{{ t('landing.fullbleed.eyebrow') }}</span>
+        <p class="fullbleed-headline">
+          {{ t('landing.fullbleed.headline1') }}<br />{{ t('landing.fullbleed.headline2') }}
+        </p>
       </div>
     </div>
 
@@ -364,9 +384,9 @@
                     <path d="M21 15V2" />
                     <circle cx="18" cy="18" r="3" />
                   </svg>
-                  Kitchen Display
+                  {{ t('landing.featuresKds.cardTitle') }}
                 </span>
-                <span class="kd-count">4 Active</span>
+                <span class="kd-count">{{ t('landing.featuresKds.active', { n: 4 }) }}</span>
               </div>
               <div class="kd-body">
                 <div v-for="o in kitchenOrders" :key="o.table" class="kd-order" :class="o.status">
@@ -376,25 +396,32 @@
                   </div>
                   <p class="kd-items">{{ o.items }}</p>
                   <div>
-                    <button v-if="o.status === 'new'" class="kd-btn accept">Accept</button>
-                    <button v-if="o.status === 'cooking'" class="kd-btn ready">Mark Ready</button>
-                    <span v-if="o.status === 'done'" class="kd-done">✓ Done</span>
+                    <button v-if="o.status === 'new'" class="kd-btn accept">{{
+                      t('landing.featuresKds.accept')
+                    }}</button>
+                    <button v-if="o.status === 'cooking'" class="kd-btn ready">{{
+                      t('landing.featuresKds.markReady')
+                    }}</button>
+                    <span v-if="o.status === 'done'" class="kd-done">{{
+                      t('landing.featuresKds.done')
+                    }}</span>
                   </div>
                 </div>
               </div>
             </div>
           </div>
           <div class="feature-text reveal-from-right" :ref="(el) => observeEl(el)">
-            <span class="section-label">Kitchen Display</span>
-            <h2 class="section-title text-left">Real-time kitchen sync</h2>
-            <p class="feature-desc">
-              Orders appear instantly on the kitchen screen. Accept, cook, mark ready — the whole
-              team stays in sync without a single call or paper ticket.
-            </p>
+            <span class="section-label">{{ t('landing.featuresKds.label') }}</span>
+            <h2 class="section-title text-left">{{ t('landing.featuresKds.title') }}</h2>
+            <p class="feature-desc">{{ t('landing.featuresKds.desc') }}</p>
             <ul class="feature-list">
-              <li v-for="p in kitchenPoints" :key="p"><span class="check-icon">✓</span>{{ p }}</li>
+              <li v-for="p in tm('landing.featuresKds.points')" :key="p">
+                <span class="check-icon">✓</span>{{ p }}
+              </li>
             </ul>
-            <RouterLink to="/signup" class="btn-pill">Get Started →</RouterLink>
+            <RouterLink to="/signup" class="btn-pill"
+              >{{ t('landing.nav.getStarted') }} →</RouterLink
+            >
           </div>
         </div>
       </div>
@@ -405,18 +432,17 @@
       <div class="section-inner">
         <div class="feature-row">
           <div class="feature-text reveal-from-left" :ref="(el) => observeEl(el)">
-            <span class="section-label">Analytics</span>
-            <h2 class="section-title text-left">Know your numbers</h2>
-            <p class="feature-desc">
-              Revenue charts, top-selling items, order volume by hour — everything you need to make
-              smarter decisions, all in one dashboard.
-            </p>
+            <span class="section-label">{{ t('landing.featuresAnalytics.label') }}</span>
+            <h2 class="section-title text-left">{{ t('landing.featuresAnalytics.title') }}</h2>
+            <p class="feature-desc">{{ t('landing.featuresAnalytics.desc') }}</p>
             <ul class="feature-list">
-              <li v-for="p in analyticsPoints" :key="p">
+              <li v-for="p in tm('landing.featuresAnalytics.points')" :key="p">
                 <span class="check-icon">✓</span>{{ p }}
               </li>
             </ul>
-            <RouterLink to="/signup" class="btn-pill">Get Started →</RouterLink>
+            <RouterLink to="/signup" class="btn-pill"
+              >{{ t('landing.nav.getStarted') }} →</RouterLink
+            >
           </div>
           <div class="feature-mockup reveal-from-right" :ref="(el) => observeEl(el)">
             <div class="analytics-card">
@@ -435,12 +461,12 @@
                     <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
                     <polyline points="17 6 23 6 23 12" />
                   </svg>
-                  Today's Revenue
+                  {{ t('landing.featuresAnalytics.todaysRevenue') }}
                 </span>
-                <span class="live-badge">Live</span>
+                <span class="live-badge">{{ t('landing.featuresAnalytics.live') }}</span>
               </div>
               <div class="analytics-big">${{ displayRevenue }}</div>
-              <div class="analytics-delta">↑ 18% vs yesterday</div>
+              <div class="analytics-delta">{{ t('landing.featuresAnalytics.delta') }}</div>
               <div class="chart">
                 <div class="chart-bars">
                   <div
@@ -470,13 +496,17 @@
     <!-- ── Testimonials ───────────────────────────────── -->
     <section class="section">
       <div class="section-inner">
-        <span class="section-label reveal-fade" :ref="(el) => observeEl(el)">Testimonials</span>
-        <h2 class="section-title reveal-up" :ref="(el) => observeEl(el)">Loved by restaurants</h2>
+        <span class="section-label reveal-fade" :ref="(el) => observeEl(el)">{{
+            t('landing.testimonials.label')
+          }}</span>
+        <h2 class="section-title reveal-up" :ref="(el) => observeEl(el)">
+          {{ t('landing.testimonials.title') }}
+        </h2>
         <div class="testimonials-grid">
           <div
             class="t-card reveal-stagger"
-            v-for="(t, i) in testimonials"
-            :key="t.name"
+            v-for="(item, i) in tm('landing.testimonials.list')"
+            :key="item.name"
             :ref="(el) => observeEl(el)"
             :style="{ '--stagger-i': i }"
           >
@@ -495,12 +525,12 @@
                 />
               </svg>
             </div>
-            <p class="t-quote">"{{ t.quote }}"</p>
+            <p class="t-quote">"{{ item.quote }}"</p>
             <div class="t-author">
-              <div class="t-avatar">{{ t.initials }}</div>
+              <div class="t-avatar">{{ item.initials }}</div>
               <div>
-                <div class="t-name">{{ t.name }}</div>
-                <div class="t-role">{{ t.role }}</div>
+                <div class="t-name">{{ item.name }}</div>
+                <div class="t-role">{{ item.role }}</div>
               </div>
             </div>
           </div>
@@ -511,10 +541,14 @@
     <!-- ── Pricing ────────────────────────────────────── -->
     <section class="section section-elevated" id="pricing">
       <div class="section-inner">
-        <span class="section-label reveal-fade" :ref="(el) => observeEl(el)">Pricing</span>
-        <h2 class="section-title reveal-up" :ref="(el) => observeEl(el)">Simple, honest pricing</h2>
+        <span class="section-label reveal-fade" :ref="(el) => observeEl(el)">{{
+            t('landing.pricing.label')
+          }}</span>
+        <h2 class="section-title reveal-up" :ref="(el) => observeEl(el)">
+          {{ t('landing.pricing.title') }}
+        </h2>
         <p class="section-subtitle reveal-up" :ref="(el) => observeEl(el)">
-          14-day free trial on all plans. No credit card required.
+          {{ t('landing.pricing.subtitle') }}
         </p>
         <div class="pricing-grid">
           <div
@@ -526,23 +560,30 @@
             :class="{ featured: plan === 'pro' }"
           >
             <template v-if="plan === 'pro'">
-              <div class="pricing-badge">Recommended</div>
+              <div class="pricing-badge">{{ t('landing.pricing.recommended') }}</div>
             </template>
-            <div class="pricing-name">{{ plan === 'starter' ? 'Starter' : 'Pro' }}</div>
+            <div class="pricing-name">
+              {{ plan === 'starter' ? t('landing.pricing.starter') : t('landing.pricing.pro') }}
+            </div>
             <div class="pricing-price">
               <span class="price-dollar">$</span>
               <span class="price-num">{{ prices[plan] }}</span>
-              <span class="price-period">/mo</span>
+              <span class="price-period">{{ t('landing.pricing.perMonth') }}</span>
             </div>
             <p class="pricing-desc">
               {{
                 plan === 'starter'
-                  ? 'Perfect for small restaurants getting started.'
-                  : 'For restaurants running their full operation digitally.'
+                  ? t('landing.pricing.starterDesc')
+                  : t('landing.pricing.proDesc')
               }}
             </p>
             <ul class="pricing-features">
-              <li v-for="f in planFeatures[plan]" :key="f">
+              <li
+                v-for="f in tm(
+                  plan === 'starter' ? 'landing.pricing.starterFeatures' : 'landing.pricing.proFeatures'
+                )"
+                :key="f"
+              >
                 <svg
                   width="13"
                   height="13"
@@ -561,7 +602,7 @@
             <RouterLink
               to="/signup"
               :class="['pricing-btn', plan === 'starter' ? 'secondary' : 'primary']"
-              >Start free trial</RouterLink
+              >{{ t('landing.pricing.startFreeTrial') }}</RouterLink
             >
           </div>
         </div>
@@ -571,11 +612,15 @@
     <!-- ── FAQ ───────────────────────────────────────── -->
     <section class="section" id="faq">
       <div class="section-inner section-inner-narrow">
-        <span class="section-label reveal-fade" :ref="(el) => observeEl(el)">FAQ</span>
-        <h2 class="section-title reveal-up" :ref="(el) => observeEl(el)">Common questions</h2>
+        <span class="section-label reveal-fade" :ref="(el) => observeEl(el)">{{
+            t('landing.faq.label')
+          }}</span>
+        <h2 class="section-title reveal-up" :ref="(el) => observeEl(el)">
+          {{ t('landing.faq.title') }}
+        </h2>
         <div class="faq-list reveal-up" :ref="(el) => observeEl(el)">
           <div
-            v-for="(item, i) in faq"
+            v-for="(item, i) in tm('landing.faq.list')"
             :key="i"
             class="faq-item"
             :class="{ open: openFaq === i }"
@@ -625,12 +670,12 @@
           </div>
           <span class="cta-wordmark">Qrserve</span>
         </div>
-        <h2 class="cta-title">Ready to simplify service?</h2>
-        <p class="cta-tagline">SCAN · ORDER · DONE</p>
-        <p class="cta-body">Start your 14-day free trial. Setup takes under 10 minutes.</p>
+        <h2 class="cta-title">{{ t('landing.cta.title') }}</h2>
+        <p class="cta-tagline">{{ t('landing.cta.tagline') }}</p>
+        <p class="cta-body">{{ t('landing.cta.body') }}</p>
         <div class="cta-actions">
           <RouterLink to="/signup" class="btn-pill btn-lg">
-            Create your account
+            {{ t('landing.cta.createAccount') }}
             <svg
               width="15"
               height="15"
@@ -645,18 +690,20 @@
               <polyline points="12 5 19 12 12 19" />
             </svg>
           </RouterLink>
-          <RouterLink to="/login" class="btn-ghost-lg">Sign in instead</RouterLink>
+          <RouterLink to="/login" class="btn-ghost-lg">{{ t('landing.cta.signInInstead') }}</RouterLink>
         </div>
-        <p class="cta-micro">No credit card required · Cancel anytime</p>
+        <p class="cta-micro">{{ t('landing.cta.micro') }}</p>
       </div>
     </section>
 
     <!-- ── About & Contact ────────────────────────────── -->
     <section class="section about-section" id="about">
       <div class="section-inner">
-        <span class="section-label reveal-fade" :ref="(el) => observeEl(el)">About & Contact</span>
+        <span class="section-label reveal-fade" :ref="(el) => observeEl(el)">{{
+            t('landing.about.label')
+          }}</span>
         <h2 class="section-title reveal-up" :ref="(el) => observeEl(el)">
-          The person behind QRserve
+          {{ t('landing.about.title') }}
         </h2>
 
         <div class="about-card reveal-up" :ref="(el) => observeEl(el)">
@@ -666,13 +713,9 @@
               <div class="about-avatar-ring" />
             </div>
             <div class="about-info">
-              <div class="about-name">Seth Sochetra</div>
-              <div class="about-role">Founder &amp; Developer</div>
-              <p class="about-bio">
-                Passionate about building tools that make restaurant operations effortless. Qrserve
-                was created to bridge the gap between great food and seamless digital experiences —
-                putting orders, kitchen flow, and menus all in one place.
-              </p>
+              <div class="about-name">{{ t('landing.about.name') }}</div>
+              <div class="about-role">{{ t('landing.about.role') }}</div>
+              <p class="about-bio">{{ t('landing.about.bio') }}</p>
             </div>
           </div>
 
@@ -681,32 +724,32 @@
           <form class="about-contact-form" @submit.prevent="sendEmail">
             <div class="form-row">
               <div class="form-group">
-                <label class="form-label">Your Name</label>
+                <label class="form-label">{{ t('landing.about.yourName') }}</label>
                 <input
                   v-model="contactForm.name"
                   type="text"
                   class="form-input"
-                  placeholder="e.g. Amirah"
+                  :placeholder="t('landing.about.yourNamePlaceholder')"
                   required
                 />
               </div>
               <div class="form-group">
-                <label class="form-label">Your Email</label>
+                <label class="form-label">{{ t('landing.about.yourEmail') }}</label>
                 <input
                   v-model="contactForm.email"
                   type="email"
                   class="form-input"
-                  placeholder="you@example.com"
+                  :placeholder="t('landing.about.yourEmailPlaceholder')"
                   required
                 />
               </div>
             </div>
             <div class="form-group">
-              <label class="form-label">Message</label>
+              <label class="form-label">{{ t('landing.about.message') }}</label>
               <textarea
                 v-model="contactForm.message"
                 class="form-input form-textarea"
-                placeholder="Tell us about your restaurant or ask anything..."
+                :placeholder="t('landing.about.messagePlaceholder')"
                 rows="4"
                 required
               />
@@ -744,21 +787,25 @@
                   <line x1="22" y1="2" x2="11" y2="13" />
                   <polygon points="22 2 15 22 11 13 2 9 22 2" />
                 </svg>
-                {{ emailStatus === 'sending' ? 'Sending…' : 'Send Message' }}
+                {{ emailStatus === 'sending' ? t('landing.about.sending') : t('landing.about.sendMessage') }}
               </button>
               <transition name="fade-msg">
                 <span v-if="emailStatus === 'success'" class="form-status success"
-                  >✓ Message sent! We'll get back to you soon.</span
+                  >{{ t('landing.about.success') }}</span
                 >
                 <span v-else-if="emailStatus === 'error'" class="form-status error"
-                  >✗ Something went wrong. Please try again.</span
+                  >{{ t('landing.about.error') }}</span
                 >
               </transition>
             </div>
           </form>
         </div>
 
-        <p class="about-footer-note">Made with <span>♥</span> for restaurants everywhere</p>
+        <p class="about-footer-note">
+          {{ t('landing.about.madeWithPre') }}
+          <span>♥</span>
+          {{ t('landing.about.madeWithPost') }}
+        </p>
       </div>
     </section>
 
@@ -772,20 +819,28 @@
           <span class="footer-wordmark">QRserve</span>
         </div>
         <div class="footer-links">
-          <a href="#features" @click.prevent="scrollTo('features')" class="footer-link">Features</a>
-          <a href="#how-it-works" @click.prevent="scrollTo('how-it-works')" class="footer-link"
-            >How it works</a
-          >
-          <a href="#pricing" @click.prevent="scrollTo('pricing')" class="footer-link">Pricing</a>
-          <a href="#about" @click.prevent="scrollTo('about')" class="footer-link">About</a>
-          <RouterLink to="/terms" class="footer-link">Terms of Service</RouterLink>
-          <RouterLink to="/privacy" class="footer-link">Privacy Policy</RouterLink>
-          <RouterLink to="/refund" class="footer-link">Refund Policy</RouterLink>
-          <RouterLink to="/login" class="footer-link">Login</RouterLink>
-          <RouterLink to="/signup" class="footer-link">Sign up</RouterLink>
+          <a href="#features" @click.prevent="scrollTo('features')" class="footer-link">{{
+            t('landing.nav.features')
+          }}</a>
+          <a href="#how-it-works" @click.prevent="scrollTo('how-it-works')" class="footer-link">{{
+            t('landing.nav.howItWorks')
+          }}</a>
+          <a href="#pricing" @click.prevent="scrollTo('pricing')" class="footer-link">{{
+            t('landing.nav.pricing')
+          }}</a>
+          <a href="#about" @click.prevent="scrollTo('about')" class="footer-link">{{
+            t('landing.nav.about')
+          }}</a>
+          <RouterLink to="/terms" class="footer-link">{{ t('landing.footer.terms') }}</RouterLink>
+          <RouterLink to="/privacy" class="footer-link">{{
+            t('landing.footer.privacy')
+          }}</RouterLink>
+          <RouterLink to="/refund" class="footer-link">{{ t('landing.footer.refund') }}</RouterLink>
+          <RouterLink to="/login" class="footer-link">{{ t('landing.footer.login') }}</RouterLink>
+          <RouterLink to="/signup" class="footer-link">{{ t('landing.footer.signup') }}</RouterLink>
         </div>
         <div class="footer-copy">
-          © {{ new Date().getFullYear() }} QRserve. All rights reserved.
+          {{ t('landing.footer.rights', { year: new Date().getFullYear() }) }}
         </div>
       </div>
     </footer>
@@ -795,6 +850,16 @@
 <script setup>
 import { ref, onMounted, onUnmounted, reactive, computed } from 'vue'
 import { supabase } from '@/lib/supabase'
+import { useI18n } from 'vue-i18n'
+import { setLocale } from '@/i18n'
+
+const { t, tm } = useI18n()
+
+const currentLocale = computed(() => localStorage.getItem('locale') || 'en')
+
+function switchLang(e) {
+  setLocale(e.target.value)
+}
 
 const scrolled = ref(false)
 const mobileMenuOpen = ref(false)
@@ -802,26 +867,6 @@ const openFaq = ref(null)
 const parallaxY = ref(0)
 
 const prices = ref({ starter: 15, pro: 25 })
-const planFeatures = ref({
-  starter: [
-    'Up to 15 tables',
-    'Up to 3 staff accounts',
-    'Unlimited orders',
-    'QR code ordering',
-    'Kitchen, cashier & waiter views',
-    'Menu management',
-  ],
-  pro: [
-    'Unlimited tables',
-    'Up to 10 staff accounts',
-    'Unlimited orders',
-    'QR code ordering',
-    'All staff role views',
-    'Menu management',
-    'Analytics & charts',
-    'Promotions & discounts',
-  ],
-})
 
 // Counter animation state
 const revenueCounter = ref(0)
@@ -831,9 +876,15 @@ const countersStarted = ref(false)
 
 const displayRevenue = computed(() => revenueCounter.value.toLocaleString())
 const displayStats = computed(() => [
-  { value: ordersCounter.value.toString(), label: 'Orders today' },
-  { value: '$' + (ordersCounter.value > 0 ? (2841 / 142).toFixed(1) : '0.0'), label: 'Avg. order' },
-  { value: completionCounter.value + '%', label: 'Completion' },
+  {
+    value: ordersCounter.value.toString(),
+    label: t('landing.featuresAnalytics.stats.orders'),
+  },
+  {
+    value: '$' + (ordersCounter.value > 0 ? (2841 / 142).toFixed(1) : '0.0'),
+    label: t('landing.featuresAnalytics.stats.avgOrder'),
+  },
+  { value: completionCounter.value + '%', label: t('landing.featuresAnalytics.stats.completion') },
 ])
 
 function animateCounter(setter, target, duration = 1600) {
@@ -968,51 +1019,15 @@ const orderItems = [
   { qty: 1, name: 'Roti Canai', price: '$3.00' },
 ]
 
-const steps = [
-  {
-    num: '01',
-    title: 'Scan',
-    body: 'Customers scan the QR on their table — no app, no login, just a browser.',
-    icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="3" height="3"/><rect x="18" y="18" width="3" height="3"/></svg>`,
-  },
-  {
-    num: '02',
-    title: 'Order',
-    body: 'They browse your menu and place orders. It hits the kitchen instantly.',
-    icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>`,
-  },
-  {
-    num: '03',
-    title: 'Done',
-    body: 'Kitchen prepares, marks ready, cashier closes the tab. End-to-end seamless.',
-    icon: `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,
-  },
+const stepsIcons = [
+  `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="3" height="3"/><rect x="18" y="18" width="3" height="3"/></svg>`,
+  `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>`,
+  `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`,
 ]
 
-const qrPoints = [
-  'No app download needed',
-  'Works on any smartphone browser',
-  'Custom branding per restaurant',
-  'Toggle item availability in real-time',
-]
-const kitchenPoints = [
-  'Instant order notifications',
-  'Audio ping on new orders',
-  'Accept, reject, or mark ready',
-  'Large-text view for busy kitchens',
-]
-const analyticsPoints = [
-  'Real-time revenue tracking',
-  'Top-selling items at a glance',
-  'Order volume by hour',
-  'Export reports anytime',
-]
-
-const phoneItems = [
-  { name: 'Grilled Salmon', price: '$18.00' },
-  { name: 'Caesar Salad', price: '$11.00' },
-  { name: 'Sparkling Water', price: '$3.50' },
-]
+const steps = computed(() =>
+  tm('landing.how.steps').map((s, i) => ({ ...s, icon: stepsIcons[i] })),
+)
 
 const kitchenOrders = [
   { table: 'Table 2', time: '2 min', items: 'Beef Rendang × 1, Rice × 2', status: 'new' },
@@ -1022,50 +1037,6 @@ const kitchenOrders = [
 
 const chartBars = [32, 48, 41, 60, 55, 70, 65, 80, 75, 90, 85, 100]
 const chartLabels = ['9am', '11am', '1pm', '3pm', '5pm', '7pm']
-
-const testimonials = [
-  {
-    quote:
-      'Qrder completely changed how our floor runs. Orders go straight to the kitchen and our staff can actually focus on guests instead of running paper tickets.',
-    name: 'Amirah Yusof',
-    role: 'Owner, Warung Amirah — KL',
-    initials: 'AY',
-  },
-  {
-    quote:
-      'Setup was unbelievably fast. We were live within an hour. The kitchen display alone saved us from so much miscommunication during peak hours.',
-    name: 'Benny Tan',
-    role: 'F&B Manager, Spice Garden — SG',
-    initials: 'BT',
-  },
-]
-
-const faq = [
-  {
-    q: 'Do customers need to download an app?',
-    a: 'No. The ordering page is a regular website that opens directly in the browser when a customer scans the QR code. No app store, no account, no friction.',
-  },
-  {
-    q: 'How does the kitchen receive orders?',
-    a: "Orders appear on the kitchen screen in real-time using Supabase Realtime. There's no polling or page refresh needed — it updates the moment a customer submits.",
-  },
-  {
-    q: 'Can I use it on a tablet or phone?',
-    a: 'Yes. The kitchen and cashier views are optimized for mobile and tablet. The admin dashboard works great on desktop.',
-  },
-  {
-    q: 'What happens when my trial ends?',
-    a: "You'll see an upgrade prompt but your data is never deleted — it's all there when you subscribe.",
-  },
-  {
-    q: 'Can I manage multiple locations?',
-    a: 'Multi-branch support is on the roadmap. For now each location needs its own account. Get in touch for custom arrangements.',
-  },
-  {
-    q: 'Can I cancel anytime?',
-    a: 'Yes. Cancel from the Settings page at any time. No lock-in contracts, no cancellation fees.',
-  },
-]
 </script>
 
 <style scoped>
@@ -1489,6 +1460,27 @@ const faq = [
   align-items: center;
   gap: 10px;
 }
+.lang-switcher {
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-medium);
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--font-body);
+  padding: 5px 8px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: all 0.12s;
+  outline: none;
+}
+.lang-switcher:hover {
+  border-color: var(--color-accent-border);
+  color: var(--color-accent);
+}
+.lang-switcher option {
+  background: var(--color-bg-surface);
+  color: var(--color-text-primary);
+}
 
 /* ═══════════════════════════════════════════════════════
    BUTTONS
@@ -1567,9 +1559,14 @@ const faq = [
   display: flex;
   flex-direction: column;
   gap: 4px;
-  padding: 12px 0 20px;
+  padding: 12px 16px 20px;
   border-top: 1px solid var(--color-border-subtle);
   background: color-mix(in srgb, var(--color-bg-base) 97%, transparent);
+}
+.mobile-lang {
+  padding: 6px 0 10px;
+  border-bottom: 1px solid var(--color-border-subtle);
+  margin-bottom: 6px;
 }
 .mobile-link {
   font-size: 15px;
