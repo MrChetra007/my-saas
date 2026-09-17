@@ -386,7 +386,7 @@ async function handleReset() {
 }
 
 .brand-name {
-  font-family: var(--font-display, 'Fraunces', serif);
+  font-family: var(--font-display, var(--font-display, 'Fraunces', 'Noto Sans Khmer', serif));
   font-size: 18px;
   font-weight: 600;
   color: var(--text-primary, #f0ece5);
@@ -402,7 +402,7 @@ async function handleReset() {
 }
 
 .status-block h1 {
-  font-family: var(--font-display, 'Fraunces', serif);
+  font-family: var(--font-display, var(--font-display, 'Fraunces', 'Noto Sans Khmer', serif));
   font-size: 24px;
   font-weight: 700;
   color: var(--text-primary, #f0ece5);
@@ -410,7 +410,7 @@ async function handleReset() {
 }
 
 .status-block p {
-  font-family: var(--font-body, 'DM Sans', sans-serif);
+  font-family: var(--font-body, var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif));
   font-size: 14px;
   color: var(--text-secondary, #888);
   line-height: 1.5;
@@ -458,7 +458,7 @@ async function handleReset() {
 }
 
 .heading h1 {
-  font-family: var(--font-display, 'Fraunces', serif);
+  font-family: var(--font-display, var(--font-display, 'Fraunces', 'Noto Sans Khmer', serif));
   font-size: 28px;
   font-weight: 700;
   color: var(--text-primary, #f0ece5);
@@ -468,7 +468,7 @@ async function handleReset() {
 }
 
 .heading p {
-  font-family: var(--font-body, 'DM Sans', sans-serif);
+  font-family: var(--font-body, var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif));
   font-size: 14px;
   color: var(--text-secondary, #888888);
   line-height: 1.5;
@@ -486,7 +486,7 @@ async function handleReset() {
   border-radius: var(--radius, 10px);
   color: #ef4444;
   font-size: 13px;
-  font-family: var(--font-body, 'DM Sans', sans-serif);
+  font-family: var(--font-body, var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif));
   line-height: 1.4;
 }
 
@@ -512,7 +512,7 @@ async function handleReset() {
   font-size: 13px;
   font-weight: 500;
   color: var(--text-secondary, #888);
-  font-family: var(--font-body, 'DM Sans', sans-serif);
+  font-family: var(--font-body, var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif));
 }
 
 .field input {
@@ -521,7 +521,7 @@ async function handleReset() {
   background: var(--bg-card, #1e1e1e);
   border: 1px solid var(--border-strong, #2a2a2a);
   border-radius: var(--radius, 10px);
-  font-family: var(--font-body, 'DM Sans', sans-serif);
+  font-family: var(--font-body, var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif));
   font-size: 14px;
   color: var(--text-primary, #f0ece5);
   outline: none;
@@ -549,7 +549,7 @@ async function handleReset() {
 
 .mismatch-hint {
   font-size: 12px;
-  font-family: var(--font-body, 'DM Sans', sans-serif);
+  font-family: var(--font-body, var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif));
   color: #ef4444;
   opacity: 0.8;
 }
@@ -606,7 +606,7 @@ async function handleReset() {
 
 .strength-label {
   font-size: 11px;
-  font-family: var(--font-body, 'DM Sans', sans-serif);
+  font-family: var(--font-body, var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif));
   font-weight: 500;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -629,7 +629,7 @@ async function handleReset() {
   background: var(--accent, #c8733a);
   border: none;
   border-radius: var(--radius, 10px);
-  font-family: var(--font-body, 'DM Sans', sans-serif);
+  font-family: var(--font-body, var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif));
   font-size: 14px;
   font-weight: 600;
   color: #fff;
@@ -683,7 +683,7 @@ async function handleReset() {
   text-align: center;
   margin-top: 20px;
   font-size: 13px;
-  font-family: var(--font-body, 'DM Sans', sans-serif);
+  font-family: var(--font-body, var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif));
 }
 
 .back-cta a {

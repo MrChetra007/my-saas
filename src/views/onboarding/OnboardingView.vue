@@ -900,7 +900,7 @@ loadRestaurantData()
 .onboarding-root {
   min-height: 100vh;
   background: #111111;
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif);
   display: flex;
   align-items: flex-start;
   justify-content: center;
@@ -956,7 +956,7 @@ loadRestaurantData()
   color: #c8733a;
 }
 .logo-text {
-  font-family: 'Fraunces', serif;
+  font-family: var(--font-display, 'Fraunces', 'Noto Sans Khmer', serif);
   font-size: 18px;
   font-weight: 700;
   color: #ffffff;
@@ -1028,7 +1028,7 @@ loadRestaurantData()
   margin-bottom: 8px;
 }
 .step-title {
-  font-family: 'Fraunces', serif;
+  font-family: var(--font-display, 'Fraunces', 'Noto Sans Khmer', serif);
   font-size: 26px;
   font-weight: 700;
   color: #ffffff;
@@ -1094,7 +1094,7 @@ loadRestaurantData()
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
   font-size: 14px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif);
   color: #ffffff;
   outline: none;
   transition:
@@ -1364,7 +1364,7 @@ select.field-input option {
   background: rgba(255, 255, 255, 0.03);
   cursor: pointer;
   transition: all 0.15s;
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif);
 }
 .suggestion-chip:hover {
   border-color: rgba(200, 115, 58, 0.4);
@@ -1473,7 +1473,7 @@ select.field-input option {
   color: #c8733a;
   background: rgba(200, 115, 58, 0.06);
   cursor: pointer;
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif);
   transition: all 0.15s;
 }
 .btn-download:hover {
@@ -1491,7 +1491,7 @@ select.field-input option {
   border-radius: 10px;
   font-size: 14px;
   font-weight: 600;
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif);
   cursor: pointer;
   transition:
     background 0.15s,
@@ -1525,7 +1525,7 @@ select.field-input option {
   border-radius: 10px;
   font-size: 14px;
   font-weight: 500;
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif);
   cursor: pointer;
   transition: all 0.15s;
   white-space: nowrap;

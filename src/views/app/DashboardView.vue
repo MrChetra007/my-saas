@@ -662,7 +662,7 @@ onUnmounted(() => {
   padding: 28px 32px;
   max-width: 1200px;
   margin: 0 auto;
-  font-family: var(--font-body, 'DM Sans', sans-serif);
+  font-family: var(--font-body, var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif));
   color: var(--color-text-primary, #fff);
 }
 
@@ -680,7 +680,7 @@ onUnmounted(() => {
   letter-spacing: 0.01em;
 }
 .header-title {
-  font-family: var(--font-display, 'Fraunces', serif);
+  font-family: var(--font-display, var(--font-display, 'Fraunces', 'Noto Sans Khmer', serif));
   font-size: 2rem;
   font-weight: 800;
   color: var(--color-text-primary, #fff);
@@ -692,7 +692,7 @@ onUnmounted(() => {
   text-align: right;
 }
 .header-time {
-  font-family: var(--font-display, 'Fraunces', serif);
+  font-family: var(--font-display, var(--font-display, 'Fraunces', 'Noto Sans Khmer', serif));
   font-size: 1.7rem;
   font-weight: 700;
   color: var(--color-text-primary, #fff);
@@ -763,7 +763,7 @@ onUnmounted(() => {
   margin-bottom: 6px;
 }
 .stat-value {
-  font-family: var(--font-display, 'Fraunces', serif);
+  font-family: var(--font-display, var(--font-display, 'Fraunces', 'Noto Sans Khmer', serif));
   font-size: 1.65rem;
   font-weight: 700;
   color: var(--color-text-primary, #fff);
@@ -825,7 +825,7 @@ onUnmounted(() => {
   margin-bottom: 16px;
 }
 .panel-title {
-  font-family: var(--font-display, 'Fraunces', serif);
+  font-family: var(--font-display, var(--font-display, 'Fraunces', 'Noto Sans Khmer', serif));
   font-size: 1rem;
   font-weight: 700;
   color: var(--color-text-primary, #fff);
@@ -931,7 +931,7 @@ onUnmounted(() => {
   border-radius: 6px;
   font-size: 12px;
   font-weight: 500;
-  font-family: var(--font-body, 'DM Sans', sans-serif);
+  font-family: var(--font-body, var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif));
   color: var(--color-text-secondary, rgba(255, 255, 255, 0.55));
   cursor: pointer;
   text-decoration: none;

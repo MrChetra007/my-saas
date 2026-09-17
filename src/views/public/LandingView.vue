@@ -27,7 +27,7 @@
           }}</a>
         </div>
         <div class="nav-actions">
-          <select class="lang-switcher" @change="switchLang" :value="currentLocale">
+          <select class="lang-switcher" @change="switchLang" :value="locale">
             <option value="en">{{ t('language.english') }}</option>
             <option value="kh">{{ t('language.khmer') }}</option>
           </select>
@@ -66,7 +66,7 @@
       </div>
       <div class="mobile-menu" v-if="mobileMenuOpen">
         <div class="mobile-lang">
-          <select class="lang-switcher" @change="switchLang" :value="currentLocale">
+          <select class="lang-switcher" @change="switchLang" :value="locale">
             <option value="en">{{ t('language.english') }}</option>
             <option value="kh">{{ t('language.khmer') }}</option>
           </select>
@@ -853,9 +853,7 @@ import { supabase } from '@/lib/supabase'
 import { useI18n } from 'vue-i18n'
 import { setLocale } from '@/i18n'
 
-const { t, tm } = useI18n()
-
-const currentLocale = computed(() => localStorage.getItem('locale') || 'en')
+const { t, tm, locale } = useI18n()
 
 function switchLang(e) {
   setLocale(e.target.value)

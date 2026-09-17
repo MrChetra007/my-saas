@@ -572,7 +572,7 @@ onMounted(fetchPromotions)
   min-height: 100vh;
   background: #111111;
   padding: 32px 24px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif);
   color: #ffffff;
   -webkit-font-smoothing: antialiased;
   max-width: 1400px;
@@ -603,7 +603,7 @@ onMounted(fetchPromotions)
 }
 
 .page-title {
-  font-family: 'Fraunces', serif;
+  font-family: var(--font-display, 'Fraunces', 'Noto Sans Khmer', serif);
   font-size: 32px;
   font-weight: 700;
   color: #ffffff;
@@ -694,7 +694,7 @@ onMounted(fetchPromotions)
 }
 
 .stat-value {
-  font-family: 'Fraunces', serif;
+  font-family: var(--font-display, 'Fraunces', 'Noto Sans Khmer', serif);
   font-size: 24px;
   font-weight: 700;
   color: #ffffff;
@@ -752,7 +752,7 @@ onMounted(fetchPromotions)
 }
 
 .empty-title {
-  font-family: 'Fraunces', serif;
+  font-family: var(--font-display, 'Fraunces', 'Noto Sans Khmer', serif);
   font-size: 22px;
   font-weight: 700;
   color: #ffffff;
@@ -892,7 +892,7 @@ onMounted(fetchPromotions)
 }
 
 .promo-name {
-  font-family: 'Fraunces', serif;
+  font-family: var(--font-display, 'Fraunces', 'Noto Sans Khmer', serif);
   font-size: 18px;
   font-weight: 700;
   color: #ffffff;
@@ -980,7 +980,7 @@ onMounted(fetchPromotions)
 }
 
 .discount-pill {
-  font-family: 'Fraunces', serif;
+  font-family: var(--font-display, 'Fraunces', 'Noto Sans Khmer', serif);
   font-weight: 700;
   font-size: 20px;
   padding: 10px 16px;
@@ -1182,7 +1182,7 @@ onMounted(fetchPromotions)
 }
 
 .modal-header-content h2 {
-  font-family: 'Fraunces', serif;
+  font-family: var(--font-display, 'Fraunces', 'Noto Sans Khmer', serif);
   font-size: 24px;
   font-weight: 700;
   color: #ffffff;
@@ -1287,7 +1287,7 @@ input[type='time'] {
   color: #ffffff;
   padding: 12px 14px;
   font-size: 15px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif);
   outline: none;
   transition: all 0.2s ease;
   width: 100%;

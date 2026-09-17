@@ -826,7 +826,7 @@ async function confirmDelete() {
 <style scoped>
 /* ── Base ────────────────────────────────────────────────── */
 .menu-page {
-  font-family: var(--font-body, 'DM Sans', sans-serif);
+  font-family: var(--font-body, var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif));
   max-width: 1200px;
   display: flex;
   flex-direction: column;
@@ -842,7 +842,7 @@ async function confirmDelete() {
   flex-shrink: 0;
 }
 .page-title {
-  font-family: var(--font-display, 'Fraunces', serif);
+  font-family: var(--font-display, var(--font-display, 'Fraunces', 'Noto Sans Khmer', serif));
   font-size: 2rem;
   font-weight: 800;
   color: var(--color-text-primary, #fff);
@@ -859,7 +859,7 @@ async function confirmDelete() {
   border-radius: var(--radius-pill, 999px);
   font-size: 13.5px;
   font-weight: 600;
-  font-family: var(--font-body, 'DM Sans', sans-serif);
+  font-family: var(--font-body, var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif));
   cursor: pointer;
   transition:
     background 0.15s,
@@ -1001,7 +1001,7 @@ async function confirmDelete() {
   border-radius: 7px;
   font-size: 12.5px;
   font-weight: 600;
-  font-family: var(--font-body, 'DM Sans', sans-serif);
+  font-family: var(--font-body, var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif));
   color: var(--color-text-muted, rgba(255, 255, 255, 0.35));
   cursor: pointer;
   transition:
@@ -1042,7 +1042,7 @@ async function confirmDelete() {
   border: 1px solid var(--color-border-subtle, rgba(255, 255, 255, 0.07));
   border-radius: var(--radius-card, 10px);
   font-size: 14px;
-  font-family: var(--font-body, 'DM Sans', sans-serif);
+  font-family: var(--font-body, var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif));
   color: var(--color-text-primary, #fff);
   outline: none;
   transition: border-color 0.15s;
@@ -1183,7 +1183,7 @@ async function confirmDelete() {
   flex-wrap: wrap;
 }
 .item-name {
-  font-family: var(--font-display, 'Fraunces', serif);
+  font-family: var(--font-display, var(--font-display, 'Fraunces', 'Noto Sans Khmer', serif));
   font-size: 15px;
   font-weight: 700;
   color: var(--color-text-primary, #fff);
@@ -1309,7 +1309,7 @@ async function confirmDelete() {
   border-bottom: 1px solid var(--color-border-subtle, rgba(255, 255, 255, 0.07));
 }
 .modal-title {
-  font-family: var(--font-display, 'Fraunces', serif);
+  font-family: var(--font-display, var(--font-display, 'Fraunces', 'Noto Sans Khmer', serif));
   font-size: 18px;
   font-weight: 700;
   color: var(--color-text-primary, #fff);
@@ -1390,7 +1390,7 @@ async function confirmDelete() {
   border: 1px solid var(--color-border-medium, rgba(255, 255, 255, 0.12));
   border-radius: 8px;
   font-size: 14px;
-  font-family: var(--font-body, 'DM Sans', sans-serif);
+  font-family: var(--font-body, var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif));
   color: var(--color-text-primary, #fff);
   outline: none;
   transition:
@@ -1502,7 +1502,7 @@ async function confirmDelete() {
   background: var(--color-bg-elevated, #0e0e0e);
   cursor: pointer;
   transition: all 0.15s;
-  font-family: var(--font-body, 'DM Sans', sans-serif);
+  font-family: var(--font-body, var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif));
 }
 .avail-big.on {
   border-color: rgba(74, 222, 128, 0.35);
@@ -1524,7 +1524,7 @@ async function confirmDelete() {
   border-radius: 8px;
   font-size: 13.5px;
   font-weight: 600;
-  font-family: var(--font-body, 'DM Sans', sans-serif);
+  font-family: var(--font-body, var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif));
   cursor: pointer;
   transition: background 0.15s;
 }
@@ -1544,7 +1544,7 @@ async function confirmDelete() {
   border-radius: 8px;
   font-size: 13.5px;
   font-weight: 600;
-  font-family: var(--font-body, 'DM Sans', sans-serif);
+  font-family: var(--font-body, var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif));
   cursor: pointer;
   transition: all 0.15s;
 }
@@ -1561,7 +1561,7 @@ async function confirmDelete() {
   border-radius: 8px;
   font-size: 13.5px;
   font-weight: 600;
-  font-family: var(--font-body, 'DM Sans', sans-serif);
+  font-family: var(--font-body, var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif));
   cursor: pointer;
   transition: background 0.15s;
 }

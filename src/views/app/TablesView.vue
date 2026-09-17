@@ -567,7 +567,7 @@ async function doDelete() {
   font-size: 13px;
   font-weight: 700;
   color: var(--color-text-primary, #f0ece5);
-  font-family: var(--font-body, 'DM Sans', sans-serif);
+  font-family: var(--font-body, var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif));
   line-height: 1;
 }
 .limit-badge.limit-badge-warn .limit-count {
@@ -579,7 +579,7 @@ async function doDelete() {
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--color-accent, #c8733a);
-  font-family: var(--font-body, 'DM Sans', sans-serif);
+  font-family: var(--font-body, var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif));
 }
 
 /* At-limit warning banner */
@@ -595,7 +595,7 @@ async function doDelete() {
   font-size: 14px;
   color: var(--color-text-secondary, #888);
   line-height: 1.5;
-  font-family: var(--font-body, 'DM Sans', sans-serif);
+  font-family: var(--font-body, var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif));
 }
 .limit-banner strong {
   color: #f87171;

@@ -84,8 +84,10 @@ export const useAuthStore = defineStore('auth', {
 
       this.profile = data
 
-      // Apply user's language preference
-      if (data?.language) {
+      // Apply user's language preference (only when the visitor hasn't
+      // already picked a language locally this session — e.g. via the landing
+      // header — so their choice isn't clobbered on every profile fetch).
+      if (data?.language && !localStorage.getItem('locale')) {
         setLocale(data.language)
       }
 

@@ -460,7 +460,7 @@ function renderCharts() {
         grid: { display: false, drawBorder: false },
         ticks: {
           color: 'rgba(255,255,255,0.35)',
-          font: { size: 11, family: "'DM Sans', sans-serif" },
+          font: { size: 11, family: "var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif)" },
           maxRotation: 45,
         },
       },
@@ -468,7 +468,7 @@ function renderCharts() {
         grid: { color: 'rgba(255,255,255,0.07)', drawBorder: false },
         ticks: {
           color: 'rgba(255,255,255,0.35)',
-          font: { size: 11, family: "'DM Sans', sans-serif" },
+          font: { size: 11, family: "var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif)" },
           callback: (v) => formatCurrency(v),
         },
       },
@@ -636,7 +636,7 @@ function renderCharts() {
             grid: { display: false, drawBorder: false },
             ticks: {
               color: 'rgba(255,255,255,0.35)',
-              font: { size: 10, family: "'DM Sans', sans-serif" },
+              font: { size: 10, family: "var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif)" },
               maxTicksLimit: 12,
             },
           },
@@ -644,7 +644,7 @@ function renderCharts() {
             grid: { color: 'rgba(255,255,255,0.07)', drawBorder: false },
             ticks: {
               color: 'rgba(255,255,255,0.35)',
-              font: { size: 11, family: "'DM Sans', sans-serif" },
+              font: { size: 11, family: "var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif)" },
               stepSize: 1,
             },
           },
@@ -689,7 +689,7 @@ function formatCurrency(amount) {
   min-height: 100vh;
   background: #111111;
   padding: 32px 24px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif);
   color: #ffffff;
   -webkit-font-smoothing: antialiased;
 }
@@ -719,7 +719,7 @@ function formatCurrency(amount) {
 }
 
 .page-title {
-  font-family: 'Fraunces', serif;
+  font-family: var(--font-display, 'Fraunces', 'Noto Sans Khmer', serif);
   font-size: 32px;
   font-weight: 700;
   color: #ffffff;
@@ -753,7 +753,7 @@ function formatCurrency(amount) {
   border: none;
   cursor: pointer;
   transition: all 0.2s ease;
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif);
 }
 
 .range-btn:hover {
@@ -858,7 +858,7 @@ function formatCurrency(amount) {
 }
 
 .kpi-value {
-  font-family: 'Fraunces', serif;
+  font-family: var(--font-display, 'Fraunces', 'Noto Sans Khmer', serif);
   font-size: 28px;
   font-weight: 700;
   color: #ffffff;
@@ -942,7 +942,7 @@ function formatCurrency(amount) {
 }
 
 .chart-title {
-  font-family: 'Fraunces', serif;
+  font-family: var(--font-display, 'Fraunces', 'Noto Sans Khmer', serif);
   font-size: 18px;
   font-weight: 700;
   color: #ffffff;
@@ -1125,7 +1125,7 @@ function formatCurrency(amount) {
   font-weight: 700;
   color: #c8733a;
   flex-shrink: 0;
-  font-family: 'Fraunces', serif;
+  font-family: var(--font-display, 'Fraunces', 'Noto Sans Khmer', serif);
 }
 
 /* Peak Hours */
@@ -1169,7 +1169,7 @@ function formatCurrency(amount) {
 }
 
 .peak-value {
-  font-family: 'Fraunces', serif;
+  font-family: var(--font-display, 'Fraunces', 'Noto Sans Khmer', serif);
   font-size: 20px;
   font-weight: 700;
   color: #ffffff;

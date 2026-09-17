@@ -256,7 +256,7 @@ async function signOut() {
 }
 
 .brand-name {
-  font-family: 'Fraunces', serif;
+  font-family: var(--font-display, 'Fraunces', 'Noto Sans Khmer', serif);
   font-size: 18px;
   font-weight: 700;
   color: #ffffff;
@@ -431,7 +431,7 @@ async function signOut() {
 }
 
 .brand-text {
-  font-family: 'Fraunces', serif;
+  font-family: var(--font-display, 'Fraunces', 'Noto Sans Khmer', serif);
   font-size: 16px;
   font-weight: 700;
   color: #ffffff;

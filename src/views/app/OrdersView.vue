@@ -777,7 +777,7 @@ function downloadPdf() {
   <title>Receipt - #${order.id.slice(-6).toUpperCase()}</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'DM Sans', sans-serif; background: #fff; display: flex; justify-content: center; padding: 40px 20px; color: #111827; }
+    body { font-family: var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif); background: #fff; display: flex; justify-content: center; padding: 40px 20px; color: #111827; }
     .receipt { width: 320px; padding: 32px 28px; border: 1px dashed #d1d5db; border-radius: 8px; }
     .restaurant { font-size: 20px; font-weight: 700; text-align: center; margin-bottom: 6px; }
     .tagline { font-size: 12px; color: #6b7280; text-align: center; margin-bottom: 16px; }
@@ -1058,7 +1058,7 @@ onUnmounted(() => {
 <style scoped>
 /* ── Base ────────────────────────────────────────────────── */
 .orders-page {
-  font-family: var(--font-body, 'DM Sans', sans-serif);
+  font-family: var(--font-body, var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif));
   max-width: 1200px;
 }
 
@@ -1077,7 +1077,7 @@ onUnmounted(() => {
   margin-bottom: 4px;
 }
 .header-title {
-  font-family: var(--font-display, 'Fraunces', serif);
+  font-family: var(--font-display, var(--font-display, 'Fraunces', 'Noto Sans Khmer', serif));
   font-size: 2rem;
   font-weight: 800;
   color: var(--color-text-primary, #fff);
@@ -1095,7 +1095,7 @@ onUnmounted(() => {
   border-radius: var(--radius-pill, 999px);
   font-size: 13.5px;
   font-weight: 600;
-  font-family: var(--font-body, 'DM Sans', sans-serif);
+  font-family: var(--font-body, var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif));
   cursor: pointer;
   transition: background 0.15s;
   box-shadow: var(--shadow-glow, 0 8px 24px rgba(200, 115, 58, 0.3));
@@ -1121,7 +1121,7 @@ onUnmounted(() => {
   background: var(--color-bg-surface, #161616);
   font-size: 12.5px;
   font-weight: 500;
-  font-family: var(--font-body, 'DM Sans', sans-serif);
+  font-family: var(--font-body, var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif));
   color: var(--color-text-secondary, rgba(255, 255, 255, 0.55));
   cursor: pointer;
   transition: all 0.15s;
@@ -1378,7 +1378,7 @@ onUnmounted(() => {
   color: var(--color-text-muted, rgba(255, 255, 255, 0.35));
 }
 .total-amount {
-  font-family: var(--font-display, 'Fraunces', serif);
+  font-family: var(--font-display, var(--font-display, 'Fraunces', 'Noto Sans Khmer', serif));
   font-size: 16px;
   font-weight: 700;
   color: var(--color-text-primary, #fff);
@@ -1394,7 +1394,7 @@ onUnmounted(() => {
   border: none;
   font-size: 13px;
   font-weight: 600;
-  font-family: var(--font-body, 'DM Sans', sans-serif);
+  font-family: var(--font-body, var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif));
   cursor: pointer;
   transition: all 0.15s;
   display: flex;
@@ -1508,7 +1508,7 @@ onUnmounted(() => {
   background: var(--color-bg-elevated, #0e0e0e);
 }
 .modal-title {
-  font-family: var(--font-display, 'Fraunces', serif);
+  font-family: var(--font-display, var(--font-display, 'Fraunces', 'Noto Sans Khmer', serif));
   font-size: 18px;
   font-weight: 700;
   color: var(--color-text-primary, #fff);
@@ -1583,7 +1583,7 @@ onUnmounted(() => {
   border-radius: 10px;
   border: 1px dashed #d1d5db;
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.35);
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif);
 }
 .receipt-header {
   text-align: center;
@@ -1765,7 +1765,7 @@ onUnmounted(() => {
   border: 1px solid var(--color-border-medium, rgba(255, 255, 255, 0.12));
   border-radius: 8px;
   font-size: 14px;
-  font-family: var(--font-body, 'DM Sans', sans-serif);
+  font-family: var(--font-body, var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif));
   color: var(--color-text-primary, #fff);
   outline: none;
   transition: border-color 0.15s;
@@ -1927,7 +1927,7 @@ onUnmounted(() => {
   border-radius: 8px;
   font-size: 13.5px;
   font-weight: 600;
-  font-family: var(--font-body, 'DM Sans', sans-serif);
+  font-family: var(--font-body, var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif));
   cursor: pointer;
   transition: all 0.15s;
 }
@@ -1950,7 +1950,7 @@ onUnmounted(() => {
   border-radius: 8px;
   font-size: 13.5px;
   font-weight: 600;
-  font-family: var(--font-body, 'DM Sans', sans-serif);
+  font-family: var(--font-body, var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif));
   cursor: pointer;
   transition: background 0.15s;
 }
@@ -2004,7 +2004,7 @@ onUnmounted(() => {
   color: #4ade80;
   font-size: 12.5px;
   font-weight: 600;
-  font-family: var(--font-body, 'DM Sans', sans-serif);
+  font-family: var(--font-body, var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif));
   cursor: pointer;
   transition: all 0.2s ease;
 }

@@ -164,7 +164,7 @@ onMounted(async () => {
   padding: 24px;
   max-width: 800px;
   margin: 0 auto;
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif);
   color: #ffffff;
   min-height: 100vh;
   padding-bottom: 100px;
@@ -191,7 +191,7 @@ onMounted(async () => {
 }
 
 .page-title {
-  font-family: 'Fraunces', serif;
+  font-family: var(--font-display, 'Fraunces', 'Noto Sans Khmer', serif);
   font-size: 28px;
   font-weight: 700;
   color: #ffffff;
@@ -216,7 +216,7 @@ onMounted(async () => {
   background: #161616;
   border: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: 999px;
-  font-family: 'Fraunces', serif;
+  font-family: var(--font-display, 'Fraunces', 'Noto Sans Khmer', serif);
 }
 
 .stats-active {
@@ -243,7 +243,7 @@ onMounted(async () => {
   text-transform: uppercase;
   letter-spacing: 0.08em;
   margin-left: 6px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif);
   font-weight: 600;
 }
 
@@ -299,7 +299,7 @@ onMounted(async () => {
 }
 
 .empty-title {
-  font-family: 'Fraunces', serif;
+  font-family: var(--font-display, 'Fraunces', 'Noto Sans Khmer', serif);
   font-size: 20px;
   font-weight: 700;
   color: #ffffff;

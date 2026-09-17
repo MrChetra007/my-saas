@@ -342,7 +342,7 @@ async function handleSignup() {
   color: var(--accent, #c8733a);
 }
 .brand-name {
-  font-family: var(--font-display, 'Fraunces', serif);
+  font-family: var(--font-display, var(--font-display, 'Fraunces', 'Noto Sans Khmer', serif));
   font-size: 18px;
   font-weight: 600;
   color: var(--text-primary, #f0ece5);
@@ -354,7 +354,7 @@ async function handleSignup() {
   margin-bottom: 24px;
 }
 .heading h1 {
-  font-family: var(--font-display, 'Fraunces', serif);
+  font-family: var(--font-display, var(--font-display, 'Fraunces', 'Noto Sans Khmer', serif));
   font-size: 26px;
   font-weight: 700;
   color: var(--text-primary, #f0ece5);
@@ -365,7 +365,7 @@ async function handleSignup() {
 .heading p {
   font-size: 13px;
   color: var(--text-secondary, #888);
-  font-family: var(--font-body, 'DM Sans', sans-serif);
+  font-family: var(--font-body, var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif));
 }
 
 /* ── Banners ── */
@@ -377,7 +377,7 @@ async function handleSignup() {
   padding: 12px 14px;
   border-radius: var(--radius, 10px);
   font-size: 13px;
-  font-family: var(--font-body, 'DM Sans', sans-serif);
+  font-family: var(--font-body, var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif));
   line-height: 1.45;
 }
 .banner svg {
@@ -425,7 +425,7 @@ async function handleSignup() {
   font-size: 12px;
   font-weight: 500;
   color: var(--text-secondary, #888);
-  font-family: var(--font-body, 'DM Sans', sans-serif);
+  font-family: var(--font-body, var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif));
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
@@ -435,7 +435,7 @@ async function handleSignup() {
   background: var(--bg-card, #1e1e1e);
   border: 1px solid var(--border-strong, #2a2a2a);
   border-radius: var(--radius, 10px);
-  font-family: var(--font-body, 'DM Sans', sans-serif);
+  font-family: var(--font-body, var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif));
   font-size: 14px;
   color: var(--text-primary, #f0ece5);
   outline: none;
@@ -466,7 +466,7 @@ async function handleSignup() {
   gap: 5px;
   font-size: 11px;
   color: var(--text-subtle, #555);
-  font-family: var(--font-body, 'DM Sans', sans-serif);
+  font-family: var(--font-body, var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif));
   font-variant-numeric: tabular-nums;
 }
 
@@ -519,7 +519,7 @@ async function handleSignup() {
 }
 .strength-label {
   font-size: 11px;
-  font-family: var(--font-body, 'DM Sans', sans-serif);
+  font-family: var(--font-body, var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif));
   font-weight: 500;
   white-space: nowrap;
 }
@@ -562,7 +562,7 @@ async function handleSignup() {
   background: var(--accent, #c8733a);
   border: none;
   border-radius: var(--radius, 10px);
-  font-family: var(--font-body, 'DM Sans', sans-serif);
+  font-family: var(--font-body, var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif));
   font-size: 14px;
   font-weight: 600;
   color: #fff;
@@ -617,7 +617,7 @@ async function handleSignup() {
 }
 .divider span {
   font-size: 11px;
-  font-family: var(--font-body, 'DM Sans', sans-serif);
+  font-family: var(--font-body, var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif));
   color: var(--text-subtle, #555);
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -627,7 +627,7 @@ async function handleSignup() {
 .signin-cta {
   text-align: center;
   font-size: 13px;
-  font-family: var(--font-body, 'DM Sans', sans-serif);
+  font-family: var(--font-body, var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif));
   color: var(--text-secondary, #888);
 }
 .signin-cta a {

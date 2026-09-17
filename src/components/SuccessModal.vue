@@ -236,7 +236,7 @@ async function copy(text, index) {
 
 /* ── Text ── */
 .success-title {
-  font-family: var(--font-display, 'Fraunces', serif);
+  font-family: var(--font-display, var(--font-display, 'Fraunces', 'Noto Sans Khmer', serif));
   font-size: 22px;
   font-weight: 700;
   color: var(--color-text-primary, #fff);
@@ -348,7 +348,7 @@ async function copy(text, index) {
   border-radius: 10px;
   font-size: 14px;
   font-weight: 600;
-  font-family: var(--font-body, 'DM Sans', sans-serif);
+  font-family: var(--font-body, var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif));
   cursor: pointer;
   margin-top: 4px;
   transition: background 0.15s;

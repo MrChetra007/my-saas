@@ -16,7 +16,7 @@
      Swap font names here to change typography site-wide.
      → font-display  (headlines / titles)
      → font-body     (paragraphs, UI text)               */
-  --font-display: 'Fraunces', Georgia, serif;
+  --font-display: 'Fraunces', 'Noto Sans Khmer', Georgia, serif;
   --font-body: 'DM Sans', 'Noto Sans Khmer', sans-serif;
 
   /* ── Accent (brand color) ─────────────────────────────────

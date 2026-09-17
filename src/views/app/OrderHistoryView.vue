@@ -457,7 +457,7 @@ function resetFilters() {
   min-height: 100vh;
   background: #111111;
   padding: 32px 24px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif);
   color: #ffffff;
   -webkit-font-smoothing: antialiased;
   max-width: 1400px;
@@ -487,7 +487,7 @@ function resetFilters() {
 }
 
 .page-title {
-  font-family: 'Fraunces', serif;
+  font-family: var(--font-display, 'Fraunces', 'Noto Sans Khmer', serif);
   font-size: 32px;
   font-weight: 700;
   color: #ffffff;
@@ -517,7 +517,7 @@ function resetFilters() {
 }
 
 .stat-value {
-  font-family: 'Fraunces', serif;
+  font-family: var(--font-display, 'Fraunces', 'Noto Sans Khmer', serif);
   font-size: 20px;
   font-weight: 700;
   color: #c8733a;
@@ -596,7 +596,7 @@ function resetFilters() {
   border-radius: 10px;
   font-size: 14px;
   color: #ffffff;
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif);
   transition: all 0.2s ease;
 }
 
@@ -612,7 +612,7 @@ function resetFilters() {
 
 .filter-input.date {
   padding-left: 12px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif);
 }
 
 /* Filters Footer */
@@ -758,7 +758,7 @@ function resetFilters() {
 }
 
 .empty-title {
-  font-family: 'Fraunces', serif;
+  font-family: var(--font-display, 'Fraunces', 'Noto Sans Khmer', serif);
   font-size: 20px;
   font-weight: 700;
   color: #ffffff;
@@ -885,7 +885,7 @@ function resetFilters() {
 
 /* Order Meta */
 .order-total {
-  font-family: 'Fraunces', serif;
+  font-family: var(--font-display, 'Fraunces', 'Noto Sans Khmer', serif);
   font-size: 18px;
   font-weight: 700;
   color: #c8733a;
@@ -974,7 +974,7 @@ function resetFilters() {
   font-size: 14px;
   font-weight: 600;
   color: rgba(255, 255, 255, 0.85);
-  font-family: 'Fraunces', serif;
+  font-family: var(--font-display, 'Fraunces', 'Noto Sans Khmer', serif);
 }
 
 /* Details Meta */
@@ -1083,7 +1083,7 @@ function resetFilters() {
   font-size: 14px;
   font-weight: 600;
   color: rgba(255, 255, 255, 0.85);
-  font-family: 'Fraunces', serif;
+  font-family: var(--font-display, 'Fraunces', 'Noto Sans Khmer', serif);
 }
 
 .total-final {
@@ -1105,7 +1105,7 @@ function resetFilters() {
 }
 
 .final-value {
-  font-family: 'Fraunces', serif;
+  font-family: var(--font-display, 'Fraunces', 'Noto Sans Khmer', serif);
   font-size: 20px;
   font-weight: 700;
   color: #c8733a;

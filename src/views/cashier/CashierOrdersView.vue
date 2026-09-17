@@ -583,7 +583,7 @@ function downloadPdf() {
     @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: 'DM Sans', sans-serif;
+      font-family: var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif);
       background: #fff;
       display: flex;
       justify-content: center;
@@ -1176,7 +1176,7 @@ onUnmounted(() => {
   border-radius: 10px;
   border: 1px dashed #d1d5db;
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif);
 }
 .receipt-header {
   text-align: center;

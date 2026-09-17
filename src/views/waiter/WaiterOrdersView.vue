@@ -212,7 +212,7 @@ onUnmounted(() => {
   padding: 24px;
   max-width: 720px;
   margin: 0 auto;
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif);
   color: #ffffff;
   min-height: 100vh;
   padding-bottom: 100px;
@@ -239,7 +239,7 @@ onUnmounted(() => {
 }
 
 .page-title {
-  font-family: 'Fraunces', serif;
+  font-family: var(--font-display, 'Fraunces', 'Noto Sans Khmer', serif);
   font-size: 28px;
   font-weight: 700;
   color: #ffffff;
@@ -322,7 +322,7 @@ onUnmounted(() => {
 }
 
 .empty-title {
-  font-family: 'Fraunces', serif;
+  font-family: var(--font-display, 'Fraunces', 'Noto Sans Khmer', serif);
   font-size: 20px;
   font-weight: 700;
   color: #ffffff;
@@ -575,7 +575,7 @@ onUnmounted(() => {
 }
 
 .item-price {
-  font-family: 'Fraunces', serif;
+  font-family: var(--font-display, 'Fraunces', 'Noto Sans Khmer', serif);
   font-size: 14px;
   font-weight: 600;
   color: rgba(255, 255, 255, 0.55);
@@ -632,7 +632,7 @@ onUnmounted(() => {
 }
 
 .total-value {
-  font-family: 'Fraunces', serif;
+  font-family: var(--font-display, 'Fraunces', 'Noto Sans Khmer', serif);
   font-size: 20px;
   font-weight: 700;
   color: #c8733a;

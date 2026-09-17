@@ -1166,7 +1166,7 @@ async function placeOrder() {
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.4);
   backdrop-filter: blur(12px);
   pointer-events: none;
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif);
 }
 .toast--success {
   background: rgba(74, 222, 128, 0.18);
@@ -1205,7 +1205,7 @@ async function placeOrder() {
 .order-page {
   min-height: 100vh;
   background: #111111;
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif);
   max-width: 100%;
   margin: 0 auto;
   position: relative;
@@ -1246,7 +1246,7 @@ async function placeOrder() {
   margin-bottom: 8px;
 }
 .not-found-title {
-  font-family: 'Fraunces', serif;
+  font-family: var(--font-display, 'Fraunces', 'Noto Sans Khmer', serif);
   font-size: 24px;
   font-weight: 700;
   color: #ffffff;
@@ -1305,7 +1305,7 @@ async function placeOrder() {
   color: rgba(255, 255, 255, 0.3);
 }
 .restaurant-title {
-  font-family: 'Fraunces', serif;
+  font-family: var(--font-display, 'Fraunces', 'Noto Sans Khmer', serif);
   font-size: 24px;
   font-weight: 700;
   color: #ffffff;
@@ -1358,7 +1358,7 @@ async function placeOrder() {
   border-radius: 999px;
   backdrop-filter: blur(8px);
   animation: flame-pulse 2s ease-in-out infinite;
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif);
   pointer-events: none;
   z-index: 30;
 }
@@ -1444,7 +1444,7 @@ async function placeOrder() {
   border-radius: 999px;
   backdrop-filter: blur(8px);
   animation: hint-pulse 3s ease-in-out infinite;
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif);
   pointer-events: none;
   z-index: 30;
 }
@@ -1540,7 +1540,7 @@ async function placeOrder() {
   border-radius: 999px;
   cursor: pointer;
   transition: all 0.2s ease;
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif);
   flex-shrink: 0;
 }
 .cat-tab:hover {
@@ -1567,7 +1567,7 @@ async function placeOrder() {
   padding-top: 28px;
 }
 .cat-title {
-  font-family: 'Fraunces', serif;
+  font-family: var(--font-display, 'Fraunces', 'Noto Sans Khmer', serif);
   font-size: 20px;
   font-weight: 700;
   color: #ffffff;
@@ -1832,7 +1832,7 @@ async function placeOrder() {
   object-fit: cover;
 }
 .restaurant-name-sm {
-  font-family: 'Fraunces', serif;
+  font-family: var(--font-display, 'Fraunces', 'Noto Sans Khmer', serif);
   font-size: 20px;
   font-weight: 700;
   color: #ffffff;
@@ -1896,7 +1896,7 @@ async function placeOrder() {
   color: #dc2626;
 }
 .status-title {
-  font-family: 'Fraunces', serif;
+  font-family: var(--font-display, 'Fraunces', 'Noto Sans Khmer', serif);
   font-size: 24px;
   font-weight: 700;
   color: #ffffff;
@@ -2049,7 +2049,7 @@ async function placeOrder() {
   border-radius: 12px;
   font-size: 15px;
   font-weight: 600;
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif);
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -2166,7 +2166,7 @@ async function placeOrder() {
   gap: 16px;
 }
 .item-modal-name {
-  font-family: 'Fraunces', serif;
+  font-family: var(--font-display, 'Fraunces', 'Noto Sans Khmer', serif);
   font-size: 24px;
   font-weight: 700;
   color: #ffffff;
@@ -2210,7 +2210,7 @@ async function placeOrder() {
   flex-shrink: 0;
 }
 .modal-title {
-  font-family: 'Fraunces', serif;
+  font-family: var(--font-display, 'Fraunces', 'Noto Sans Khmer', serif);
   font-size: 22px;
   font-weight: 700;
   color: #ffffff;
@@ -2322,7 +2322,7 @@ async function placeOrder() {
   padding: 0 20px;
   font-size: 14px;
   font-weight: 700;
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif);
   cursor: pointer;
   white-space: nowrap;
   transition: all 0.2s ease;
@@ -2467,7 +2467,7 @@ async function placeOrder() {
   border-radius: 12px;
   font-size: 16px;
   font-weight: 700;
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif);
   cursor: pointer;
   transition: all 0.2s ease;
   box-shadow: 0 4px 12px rgba(200, 115, 58, 0.3);
@@ -2549,7 +2549,7 @@ async function placeOrder() {
   border-radius: 12px;
   font-size: 15px;
   font-weight: 700;
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif);
   cursor: pointer;
   transition: all 0.2s ease;
   box-shadow: 0 4px 12px rgba(200, 115, 58, 0.3);
@@ -2580,7 +2580,7 @@ async function placeOrder() {
   border: 1.5px solid rgba(255, 255, 255, 0.12);
   border-radius: 10px;
   font-size: 15px;
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif);
   color: #ffffff;
   background: #0e0e0e;
   outline: none;

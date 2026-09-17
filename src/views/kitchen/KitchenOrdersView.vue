@@ -353,7 +353,7 @@ onUnmounted(() => {
 }
 
 .kitchen-page {
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif);
   background: #111;
   min-height: 100vh;
   color: #f0ece5;
@@ -422,7 +422,7 @@ onUnmounted(() => {
   gap: 14px;
 }
 .kitchen-title {
-  font-family: 'Fraunces', serif;
+  font-family: var(--font-display, 'Fraunces', 'Noto Sans Khmer', serif);
   font-size: 24px;
   font-weight: 700;
   color: #f5f0e8;
@@ -508,7 +508,7 @@ onUnmounted(() => {
   color: #555;
   background: transparent;
   cursor: pointer;
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif);
   transition: all 0.15s;
 }
 .tab-btn:hover {
@@ -699,7 +699,7 @@ onUnmounted(() => {
   color: #888;
   font-size: 13px;
   font-weight: 600;
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif);
   cursor: pointer;
   transition: all 0.15s;
 }
@@ -722,7 +722,7 @@ onUnmounted(() => {
   border-radius: 8px;
   font-size: 14px;
   font-weight: 700;
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif);
   cursor: pointer;
   transition: background 0.15s;
 }
@@ -743,7 +743,7 @@ onUnmounted(() => {
   border-radius: 8px;
   font-size: 14px;
   font-weight: 700;
-  font-family: 'DM Sans', sans-serif;
+  font-family: var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif);
   cursor: pointer;
   transition: all 0.15s;
 }
