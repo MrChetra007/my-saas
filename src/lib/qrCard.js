@@ -16,7 +16,8 @@ const DEFAULT_STYLE = {
 
 const TEMPLATE_STYLES = {
   1: { headlineColor: '#5B4636', tableColor: '#4F6B52', footerColor: '#8A7560' },
-  // 2: { headlineColor: '#...', tableColor: '#...', footerColor: '#...' },
+  2: { headlineColor: '#ffffff', tableColor: '#ffffff', footerColor: '#ffffff' },
+  3: { headlineColor: '#ffffff', tableColor: '#ffffff', footerColor: '#ffffff' },
 }
 
 export const QR_TEMPLATES = Object.entries(modules)
