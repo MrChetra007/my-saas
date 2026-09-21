@@ -14,7 +14,9 @@
           >
           <span class="limit-plan">{{ planLabel }}</span>
         </div>
-        <button class="btn-add" @click="openAddTable" :disabled="isAtLimit">{{ $t('tables.addTable') }}</button>
+        <button class="btn-add" @click="openAddTable" :disabled="isAtLimit">
+          {{ $t('tables.addTable') }}
+        </button>
       </div>
     </div>
 
@@ -25,8 +27,13 @@
     >
       <span class="limit-banner-icon">⚠</span>
       <div>
-        <strong>{{ $t('tables.tableLimitReached') }}</strong> — {{ $t('tables.limitReachedYour') }} {{ planLabel }} {{ $t('tables.limitReachedAllows') }} {{ tableLimit }} {{ $t('tables.limitReachedTables') }}
-        <RouterLink to="/app/settings" class="upgrade-link">{{ $t('tables.upgradeToPro') }}</RouterLink> {{ $t('tables.forUnlimitedTables') }}
+        <strong>{{ $t('tables.tableLimitReached') }}</strong> — {{ $t('tables.limitReachedYour') }}
+        {{ planLabel }} {{ $t('tables.limitReachedAllows') }} {{ tableLimit }}
+        {{ $t('tables.limitReachedTables') }}
+        <RouterLink to="/app/settings" class="upgrade-link">{{
+          $t('tables.upgradeToPro')
+        }}</RouterLink>
+        {{ $t('tables.forUnlimitedTables') }}
       </div>
     </div>
 
@@ -73,10 +80,18 @@
           <div class="table-name-row">
             <span class="table-name">{{ table.name }}</span>
             <div class="table-actions">
-              <button class="action-btn edit" @click="openEditTable(table)" :title="$t('tables.renameTable')">
+              <button
+                class="action-btn edit"
+                @click="openEditTable(table)"
+                :title="$t('tables.renameTable')"
+              >
                 ✎
               </button>
-              <button class="action-btn delete" @click="confirmDelete(table)" :title="$t('tables.deleteTable')">
+              <button
+                class="action-btn delete"
+                @click="confirmDelete(table)"
+                :title="$t('tables.deleteTable')"
+              >
                 ✕
               </button>
             </div>
@@ -92,7 +107,9 @@
             >
               {{ table.is_active ? $t('tables.active') : $t('tables.inactive') }}
             </button>
-            <button class="btn-download" @click="downloadQr(table)">{{ $t('tables.downloadQr') }}</button>
+            <button class="btn-download" @click="openDesignModal(table)">
+              {{ $t('tables.downloadQr') }}
+            </button>
           </div>
         </div>
       </div>
@@ -158,20 +175,28 @@
           </div>
 
           <div class="modal-footer">
-            <button class="btn-ghost" @click="tableModal.open = false">{{ $t('common.cancel') }}</button>
+            <button class="btn-ghost" @click="tableModal.open = false">
+              {{ $t('common.cancel') }}
+            </button>
             <button
               class="btn-primary"
               :disabled="tableModal.saving || !tableModal.name.trim()"
               @click="saveTable"
             >
-              {{ tableModal.saving ? $t('common.saving') : tableModal.editing ? $t('tables.update') : $t('tables.createTable') }}
+              {{
+                tableModal.saving
+                  ? $t('common.saving')
+                  : tableModal.editing
+                    ? $t('tables.update')
+                    : $t('tables.createTable')
+              }}
             </button>
           </div>
         </div>
       </div>
     </Teleport>
 
-    <!-- QR Enlarge Modal -->
+    <!-- QR Enlarge Modal (plain QR) -->
     <Teleport to="body">
       <div v-if="qrModal.open" class="modal-backdrop" @click.self="qrModal.open = false">
         <div class="modal modal-qr">
@@ -187,8 +212,15 @@
             </p>
           </div>
           <div class="modal-footer">
-            <button class="btn-ghost" @click="qrModal.open = false">{{ $t('common.close') }}</button>
-            <button class="btn-primary" @click="downloadQr(qrModal.table)">{{ $t('tables.downloadPng') }}</button>
+            <button class="btn-ghost" @click="qrModal.open = false">
+              {{ $t('common.close') }}
+            </button>
+            <button class="btn-outline" @click="downloadQr(qrModal.table)">
+              {{ $t('tables.downloadPng') }}
+            </button>
+            <button class="btn-primary" @click="switchToDesign(qrModal.table)">
+              {{ $t('tables.withDesign', 'With design') }}
+            </button>
           </div>
         </div>
       </div>
@@ -204,12 +236,15 @@
           </div>
           <div class="modal-body">
             <p class="delete-warning">
-              {{ $t('tables.deleteWarning') }} <strong>{{ deleteModal.table?.name }}</strong>.<br />
+              {{ $t('tables.deleteWarning') }} <strong>{{ deleteModal.table?.name }}</strong
+              >.<br />
               {{ $t('tables.deleteWarningDetail') }}
             </p>
           </div>
           <div class="modal-footer">
-            <button class="btn-ghost" @click="deleteModal.open = false">{{ $t('common.cancel') }}</button>
+            <button class="btn-ghost" @click="deleteModal.open = false">
+              {{ $t('common.cancel') }}
+            </button>
             <button class="btn-danger" :disabled="deleteModal.saving" @click="doDelete">
               {{ deleteModal.saving ? $t('menu.deleting') : $t('tables.deleteTable') }}
             </button>
@@ -217,6 +252,14 @@
         </div>
       </div>
     </Teleport>
+
+    <!-- Design picker (template + header + table label) -->
+    <QrCardModal
+      :open="designModal.open"
+      :table="designModal.table"
+      :order-url="designModal.table ? fullOrderUrl(designModal.table.id) : ''"
+      @close="designModal.open = false"
+    />
   </div>
 </template>
 
@@ -226,6 +269,7 @@ import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
 import { useI18n } from 'vue-i18n'
 import QRCode from 'qrcode'
+import QrCardModal from '@/components/QrCardModal.vue'
 
 const authStore = useAuthStore()
 const { t } = useI18n()
@@ -317,6 +361,7 @@ const tableModal = ref({
 
 const qrModal = ref({ open: false, table: null })
 const deleteModal = ref({ open: false, table: null, saving: false })
+const designModal = ref({ open: false, table: null })
 
 const previewQr = ref('')
 
@@ -385,7 +430,7 @@ onMounted(async () => {
 
   // Run plan fetch in parallel with table load (per auth reference pattern)
   await Promise.all([fetchPlan(), loadTables()])
-  subscribeRealtime() // ← add this
+  subscribeRealtime()
 })
 
 async function loadTables() {
@@ -476,6 +521,17 @@ function openQrModal(table) {
   qrModal.value = { open: true, table }
 }
 
+function openDesignModal(table) {
+  if (!table || !restaurantSlug.value) return
+  designModal.value = { open: true, table }
+}
+
+function switchToDesign(table) {
+  qrModal.value.open = false
+  openDesignModal(table)
+}
+
+// Plain QR (no design) — still used by the enlarge modal and "download all"
 function downloadQr(table) {
   if (!table?._qr) return
   const a = document.createElement('a')
