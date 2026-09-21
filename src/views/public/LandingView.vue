@@ -493,51 +493,6 @@
       </div>
     </section>
 
-    <!-- ── Testimonials ───────────────────────────────── -->
-    <section class="section">
-      <div class="section-inner">
-        <span class="section-label reveal-fade" :ref="(el) => observeEl(el)">{{
-            t('landing.testimonials.label')
-          }}</span>
-        <h2 class="section-title reveal-up" :ref="(el) => observeEl(el)">
-          {{ t('landing.testimonials.title') }}
-        </h2>
-        <div class="testimonials-grid">
-          <div
-            class="t-card reveal-stagger"
-            v-for="(item, i) in tm('landing.testimonials.list')"
-            :key="item.name"
-            :ref="(el) => observeEl(el)"
-            :style="{ '--stagger-i': i }"
-          >
-            <div class="t-stars">
-              <svg
-                v-for="n in 5"
-                :key="n"
-                width="15"
-                height="15"
-                viewBox="0 0 24 24"
-                fill="var(--color-accent)"
-                stroke="none"
-              >
-                <polygon
-                  points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"
-                />
-              </svg>
-            </div>
-            <p class="t-quote">"{{ item.quote }}"</p>
-            <div class="t-author">
-              <div class="t-avatar">{{ item.initials }}</div>
-              <div>
-                <div class="t-name">{{ item.name }}</div>
-                <div class="t-role">{{ item.role }}</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
     <!-- ── Pricing ────────────────────────────────────── -->
     <section class="section section-elevated" id="pricing">
       <div class="section-inner">
@@ -808,7 +763,7 @@
         </p>
       </div>
     </section>
-
+    <!-- Removed "Loved by restaurants" and "Made with ♥" sections as requested. -->
     <!-- ── Footer ─────────────────────────────────────── -->
     <footer class="footer">
       <div class="footer-inner">
