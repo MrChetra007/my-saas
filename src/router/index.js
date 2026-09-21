@@ -4,6 +4,8 @@ import { useAuthStore } from '@/stores/auth'
 
 export function roleHome(role) {
   switch (role) {
+    case 'admin':
+      return '/app/dashboard'
     case 'kitchen':
       return '/kitchen'
     case 'cashier':
@@ -11,7 +13,7 @@ export function roleHome(role) {
     case 'waiter':
       return '/waiter'
     default:
-      return '/app/dashboard'
+      return '/login'
   }
 }
 
@@ -186,25 +188,38 @@ function isTrialExpired(plan, trialEndsAt, billingType, planExpiresAt, gracePeri
 
 router.beforeEach(async (to) => {
   // Forward Supabase ?code= to reset-password
+  // Handle OAuth callback: keep code only for reset-password route
   if (to.query.code && to.path !== '/reset-password') {
     return { path: '/reset-password', query: { code: to.query.code } }
   }
 
-  if (to.meta.public) return true
+const authStore = useAuthStore()
 
-  const authStore = useAuthStore()
+// Forward Supabase ?code= to reset-password
+// Handle OAuth callback: keep code only for reset-password route
+// Remove duplicate redundant logic
 
-  // ── Use in-memory session if already loaded ─────────
-  if (!authStore.user) {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
-    if (!session) return '/login'
-    authStore.user = session.user
+if (to.meta.public) {
+  if (!authStore.user) return true
+  if (to.path === '/' || to.path === '/login' || to.path === '/signup') {
+    const role = authStore.profile?.role
+    return roleHome(role)
   }
+  return true
+}
 
-  if (!authStore.profile) await authStore.fetchProfile()
-  if (!authStore.profile) return to.name !== 'onboarding' ? '/onboarding' : true
+// Load session if not already loaded
+if (!authStore.user) {
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) return '/login'
+  authStore.user = session.user
+}
+
+if (authStore.user && to.path === '/') {
+  const role = authStore.profile?.role
+  return roleHome(role)
+}
+
 
   // ── Super Admin: bypass everything ──────────────
   if (authStore.isSuperAdmin) {

@@ -20,7 +20,7 @@ export const useAuthStore = defineStore('auth', {
     isKitchen: (state) => state.profile?.role === 'kitchen',
     isCashier: (state) => state.profile?.role === 'cashier',
     isWaiter: (state) => state.profile?.role === 'waiter',
-    isSuperAdmin: (state) => state.profile?.is_super_admin === true, // 👈 new
+    isSuperAdmin: (state) => state.profile?.is_super_admin === true,
   },
 
   actions: {
@@ -66,16 +66,25 @@ export const useAuthStore = defineStore('auth', {
 
       console.log('AuthStore: fetchProfile start for', this.user.id)
 
-      const { data, error } = await Promise.race([
-        supabase
-          .from('users')
-          .select('*, is_super_admin') // 👈 explicit select (or keep * if your RLS allows)
-          .eq('id', this.user.id)
-          .maybeSingle(),
-        new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('fetchProfile timed out')), 10000),
-        ),
-      ])
+let data, error
+        try {
+          const result = await supabase
+            .from('users')
+            .select('*, is_super_admin')
+            .eq('id', this.user.id)
+            .maybeSingle()
+          data = result.data
+          error = result.error
+        } catch (e) {
+          console.error('fetchProfile unexpected error:', e)
+          error = e
+        }
+      // fallback: if error, sign out and return
+      if (error) {
+        console.error('fetchProfile error:', error)
+        await this.signOut()
+        return
+      }
 
       if (error) {
         console.error('fetchProfile error:', error)
