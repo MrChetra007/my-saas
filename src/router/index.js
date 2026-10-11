@@ -193,33 +193,32 @@ router.beforeEach(async (to) => {
     return { path: '/reset-password', query: { code: to.query.code } }
   }
 
-const authStore = useAuthStore()
+  const authStore = useAuthStore()
 
-// Forward Supabase ?code= to reset-password
-// Handle OAuth callback: keep code only for reset-password route
-// Remove duplicate redundant logic
+  if (to.meta.public) {
+    if (!authStore.user) return true
+    if (to.path === '/' || to.path === '/login' || to.path === '/signup') {
+      const role = authStore.profile?.role
+      if (role) return roleHome(role)
+    }
+    return true
+  }
 
-if (to.meta.public) {
-  if (!authStore.user) return true
-  if (to.path === '/' || to.path === '/login' || to.path === '/signup') {
+  // Load session if not already loaded
+  if (!authStore.user) {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) return '/login'
+    authStore.user = session.user
+  }
+
+  // Ensure the profile is loaded before role checks (init may not have run yet)
+  if (!authStore.profile) await authStore.fetchProfile()
+  if (!authStore.profile) return to.name !== 'onboarding' ? '/onboarding' : true
+
+  if (authStore.user && to.path === '/') {
     const role = authStore.profile?.role
     return roleHome(role)
   }
-  return true
-}
-
-// Load session if not already loaded
-if (!authStore.user) {
-  const { data: { session } } = await supabase.auth.getSession()
-  if (!session) return '/login'
-  authStore.user = session.user
-}
-
-if (authStore.user && to.path === '/') {
-  const role = authStore.profile?.role
-  return roleHome(role)
-}
-
 
   // ── Super Admin: bypass everything ──────────────
   if (authStore.isSuperAdmin) {
@@ -230,7 +229,8 @@ if (authStore.user && to.path === '/') {
   // ── Block super-admin routes from normal users ───
   if (to.meta.superAdminOnly) return '/login'
 
-  const role = authStore.profile.role
+  const role = authStore.profile?.role
+  if (!role) return '/login'
 
   // Block wrong roles from wrong paths
   if (to.meta.roles && !to.meta.roles.includes(role)) return roleHome(role)
