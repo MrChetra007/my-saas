@@ -3,7 +3,13 @@
     <div v-if="open" class="qc-backdrop" @click.self="emit('close')">
       <div class="qc-modal">
         <div class="qc-header">
-          <h2 class="qc-title">{{ $t('tables.chooseDesign', 'Choose a design') }}</h2>
+          <h2 class="qc-title">
+            {{
+              isBatch
+                ? $t('tables.chooseDesignAll', 'Choose a design for all tables')
+                : $t('tables.chooseDesign', 'Choose a design')
+            }}
+          </h2>
           <button class="qc-close" @click="emit('close')">×</button>
         </div>
 
@@ -59,10 +65,21 @@
             }}</label>
             <input id="qc-headline" v-model="headline" class="qc-input" maxlength="40" />
 
-            <label class="qc-label" for="qc-table">{{
-              $t('tables.tableLabel', 'Table label')
-            }}</label>
-            <input id="qc-table" v-model="tableLabel" class="qc-input" maxlength="30" />
+            <template v-if="!isBatch">
+              <label class="qc-label" for="qc-table">{{
+                $t('tables.tableLabel', 'Table label')
+              }}</label>
+              <input id="qc-table" v-model="tableLabel" class="qc-input" maxlength="30" />
+            </template>
+            <p v-else class="qc-batch-hint">
+              {{
+                $t(
+                  'tables.batchLabelHint',
+                  'Each card uses its own table name. {count} cards will be downloaded.',
+                  { count: targets.length },
+                )
+              }}
+            </p>
 
             <label class="qc-label" for="qc-footer">{{
               $t('tables.footerText', 'Footer text')
@@ -75,10 +92,18 @@
           <button class="qc-btn-ghost" @click="emit('close')">{{ $t('common.close') }}</button>
           <button
             class="qc-btn-primary"
-            :disabled="busy || QR_TEMPLATES.length === 0"
+            :disabled="busy || QR_TEMPLATES.length === 0 || targets.length === 0"
             @click="download"
           >
-            {{ busy ? $t('common.saving') : $t('tables.downloadPng') }}
+            {{
+              busy
+                ? $t('common.saving')
+                : isBatch
+                  ? $t('tables.downloadAllDesigns', 'Download all ({count})', {
+                      count: targets.length,
+                    })
+                  : $t('tables.downloadPng')
+            }}
           </button>
         </div>
       </div>
@@ -93,7 +118,9 @@ import { QR_TEMPLATES, DEFAULT_HEADLINE, renderQrCard, downloadBlob } from '@/li
 const props = defineProps({
   open: { type: Boolean, default: false },
   table: { type: Object, default: null },
+  tables: { type: Array, default: null },
   orderUrl: { type: String, default: '' },
+  urlFor: { type: Function, default: null },
 })
 const emit = defineEmits(['close'])
 
@@ -107,6 +134,20 @@ const busy = ref(false)
 
 const selectedTemplate = computed(
   () => QR_TEMPLATES.find((t) => t.id === selectedId.value) || QR_TEMPLATES[0],
+)
+
+// Batch mode: download a designed card for every table at once
+const isBatch = computed(() => Array.isArray(props.tables) && props.tables.length > 0)
+const targets = computed(() => (isBatch.value ? props.tables : props.table ? [props.table] : []))
+const previewTable = computed(() => targets.value[0] || null)
+
+function urlForTarget(target) {
+  return isBatch.value ? props.urlFor?.(target.id) || '' : props.orderUrl
+}
+
+const previewOrderUrl = computed(() => (previewTable.value ? urlForTarget(previewTable.value) : ''))
+const previewLabel = computed(() =>
+  isBatch.value ? previewTable.value?.name || '' : tableLabel.value,
 )
 
 // reset fields each time the modal opens for a table
@@ -136,23 +177,23 @@ function setPreview(url) {
 watch(
   () => [
     props.open,
-    props.orderUrl,
+    previewOrderUrl.value,
+    previewLabel.value,
     selectedId.value,
     headline.value,
-    tableLabel.value,
     footer.value,
   ],
   () => {
     clearTimeout(timer)
-    if (!props.open || !props.orderUrl || !selectedTemplate.value) return
+    if (!props.open || !previewOrderUrl.value || !selectedTemplate.value) return
     timer = setTimeout(async () => {
       const my = ++token
       try {
         const blob = await renderQrCard({
           template: selectedTemplate.value,
-          qrUrl: props.orderUrl,
+          qrUrl: previewOrderUrl.value,
           headline: headline.value,
-          tableLabel: tableLabel.value,
+          tableLabel: previewLabel.value,
           footer: footer.value,
           scale: 1,
         })
@@ -179,19 +220,25 @@ onBeforeUnmount(() => {
 })
 
 async function download() {
-  if (!selectedTemplate.value) return
+  if (!selectedTemplate.value || !targets.value.length) return
   busy.value = true
   try {
-    const blob = await renderQrCard({
-      template: selectedTemplate.value,
-      qrUrl: props.orderUrl,
-      headline: headline.value,
-      tableLabel: tableLabel.value,
-      footer: footer.value,
-      scale: 2, // 2160px wide for print
-    })
-    const safe = (tableLabel.value || 'table').trim().toLowerCase().replace(/\s+/g, '-')
-    downloadBlob(blob, `${safe}-design-${selectedTemplate.value.id}.png`)
+    for (const t of targets.value) {
+      const url = urlForTarget(t)
+      if (!url) continue
+      const label = isBatch.value ? t.name || '' : tableLabel.value
+      const blob = await renderQrCard({
+        template: selectedTemplate.value,
+        qrUrl: url,
+        headline: headline.value,
+        tableLabel: label,
+        footer: footer.value,
+        scale: 2, // 2160px wide for print
+      })
+      const safe = (label || 'table').trim().toLowerCase().replace(/\s+/g, '-')
+      downloadBlob(blob, `${safe}-design-${selectedTemplate.value.id}.png`)
+      if (isBatch.value) await new Promise((r) => setTimeout(r, 250))
+    }
   } catch (e) {
     console.error('QR download failed', e)
   } finally {
@@ -360,6 +407,12 @@ async function download() {
   border-radius: 8px;
   color: var(--color-text-primary);
   font-size: 15px;
+}
+.qc-batch-hint {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--color-text-muted);
+  margin: 10px 0 2px;
 }
 .qc-input:focus {
   outline: none;

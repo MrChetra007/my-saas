@@ -124,7 +124,9 @@
           <div class="print-subtitle">{{ $t('tables.printAllDescription') }}</div>
         </div>
       </div>
-      <button class="btn-outline" @click="downloadAllQrs">{{ $t('tables.downloadSheet') }}</button>
+      <button class="btn-outline" @click="openBatchDesign">
+        {{ $t('tables.downloadSheet') }}
+      </button>
     </div>
 
     <!-- Add/Edit Table Modal -->
@@ -257,7 +259,9 @@
     <QrCardModal
       :open="designModal.open"
       :table="designModal.table"
+      :tables="designModal.tables"
       :order-url="designModal.table ? fullOrderUrl(designModal.table.id) : ''"
+      :url-for="fullOrderUrl"
       @close="designModal.open = false"
     />
   </div>
@@ -361,7 +365,7 @@ const tableModal = ref({
 
 const qrModal = ref({ open: false, table: null })
 const deleteModal = ref({ open: false, table: null, saving: false })
-const designModal = ref({ open: false, table: null })
+const designModal = ref({ open: false, table: null, tables: null })
 
 const previewQr = ref('')
 
@@ -523,7 +527,12 @@ function openQrModal(table) {
 
 function openDesignModal(table) {
   if (!table || !restaurantSlug.value) return
-  designModal.value = { open: true, table }
+  designModal.value = { open: true, table, tables: null }
+}
+
+function openBatchDesign() {
+  if (!restaurantSlug.value || tables.value.length === 0) return
+  designModal.value = { open: true, table: null, tables: tables.value }
 }
 
 function switchToDesign(table) {
@@ -531,22 +540,13 @@ function switchToDesign(table) {
   openDesignModal(table)
 }
 
-// Plain QR (no design) — still used by the enlarge modal and "download all"
+// Plain QR (no design) — still used by the enlarge modal
 function downloadQr(table) {
   if (!table?._qr) return
   const a = document.createElement('a')
   a.download = `${table.name.toLowerCase().replace(/\s+/g, '-')}-qr.png`
   a.href = table._qr
   a.click()
-}
-
-async function downloadAllQrs() {
-  for (const t of tables.value) {
-    if (t._qr) {
-      downloadQr(t)
-      await new Promise((r) => setTimeout(r, 180))
-    }
-  }
 }
 
 function confirmDelete(table) {
