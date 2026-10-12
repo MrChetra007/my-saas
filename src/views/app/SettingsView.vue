@@ -25,7 +25,8 @@
       <div v-if="showUpgradedBanner" class="upgrade-banner">
         <PartyPopper :size="22" class="banner-icon" />
         <div>
-          <strong>{{ $t('settings.welcomeUpgraded', { plan: planDisplayName }) }}</strong><br />
+          <strong>{{ $t('settings.welcomeUpgraded', { plan: planDisplayName }) }}</strong
+          ><br />
           {{ $t('settings.welcomeUpgraded', { plan: planDisplayName }) }}
         </div>
         <button class="banner-close" @click="showUpgradedBanner = false">
@@ -62,7 +63,13 @@
                 />
                 <Loader2 v-if="uploadingLogo" :size="14" class="spin" />
                 <Upload v-else :size="14" />
-                {{ uploadingLogo ? $t('settings.uploading') : (form.logoUrl ? $t('settings.replaceLogo') : $t('settings.uploadLogo')) }}
+                {{
+                  uploadingLogo
+                    ? $t('settings.uploading')
+                    : form.logoUrl
+                      ? $t('settings.replaceLogo')
+                      : $t('settings.uploadLogo')
+                }}
               </label>
               <button v-if="form.logoUrl" class="btn-remove" @click="removeLogo">
                 <Trash2 :size="13" /> {{ $t('settings.removeLogo') }}
@@ -74,7 +81,9 @@
           <!-- Fields -->
           <div class="form-grid">
             <div class="form-group">
-              <label class="form-label">{{ $t('settings.restaurantName') }} <span class="required">*</span></label>
+              <label class="form-label"
+                >{{ $t('settings.restaurantName') }} <span class="required">*</span></label
+              >
               <input
                 v-model="form.name"
                 class="form-input"
@@ -98,7 +107,9 @@
                     :placeholder="$t('settings.slugName')"
                     @input="markDirty"
                   />
-                  <span v-if="slugChanged" class="slug-changed-badge">{{ $t('settings.slugChanged') }}</span>
+                  <span v-if="slugChanged" class="slug-changed-badge">{{
+                    $t('settings.slugChanged')
+                  }}</span>
                 </div>
               </div>
               <div class="slug-full-preview">
@@ -251,7 +262,9 @@
           <div v-if="isOnTrial" class="trial-card">
             <div class="trial-header">
               <span class="trial-title"><Timer :size="14" /> {{ $t('settings.trialPeriod') }}</span>
-              <span class="trial-expires">{{ $t('settings.ends') }} {{ formatDate(restaurant.trial_ends_at) }}</span>
+              <span class="trial-expires"
+                >{{ $t('settings.ends') }} {{ formatDate(restaurant.trial_ends_at) }}</span
+              >
             </div>
             <div class="trial-timer">
               <div class="timer-block">
@@ -385,10 +398,12 @@
             </p>
             <div class="impact-list">
               <div class="impact-item">
-                <span class="impact-icon impact-danger">✕</span>{{ $t('settings.slugImpact.qrStop') }}
+                <span class="impact-icon impact-danger">✕</span
+                >{{ $t('settings.slugImpact.qrStop') }}
               </div>
               <div class="impact-item">
-                <span class="impact-icon impact-danger">✕</span>{{ $t('settings.slugImpact.qrReprint') }}
+                <span class="impact-icon impact-danger">✕</span
+                >{{ $t('settings.slugImpact.qrReprint') }}
               </div>
               <div class="impact-item">
                 <span class="impact-icon impact-ok">✓</span>{{ $t('settings.slugImpact.newQr') }}
@@ -399,8 +414,12 @@
             </div>
           </div>
           <div class="modal-footer">
-            <button class="btn-ghost" @click="slugConfirmModal = false">{{ $t('settings.cancel') }}</button>
-            <button class="btn-danger" @click="confirmAndSave">{{ $t('settings.yesChangeSlug') }}</button>
+            <button class="btn-ghost" @click="slugConfirmModal = false">
+              {{ $t('settings.cancel') }}
+            </button>
+            <button class="btn-danger" @click="confirmAndSave">
+              {{ $t('settings.yesChangeSlug') }}
+            </button>
           </div>
         </div>
       </div>
@@ -567,10 +586,14 @@ function startTimer() {
 }
 
 // ── Plan computed ──────────────────────────────────
-const isProPlan = computed(() => restaurant.value.plan === 'pro')
-const isStarterPlan = computed(() => restaurant.value.plan === 'starter')
+// Prefer the auth store's restaurant plan so an upgrade reflects immediately
+// (the store is refreshed after a payment confirms); fall back to the locally
+// fetched row.
+const currentPlan = computed(() => authStore._restaurant?.plan || restaurant.value.plan)
+const isProPlan = computed(() => currentPlan.value === 'pro')
+const isStarterPlan = computed(() => currentPlan.value === 'starter')
 const isOnTrial = computed(() => {
-  if (restaurant.value.plan !== 'trial') return false
+  if (currentPlan.value !== 'trial') return false
   if (!restaurant.value.trial_ends_at) return false
   return new Date(restaurant.value.trial_ends_at) > now.value
 })
@@ -597,8 +620,7 @@ const planStatus = computed(() => {
   return 'expired'
 })
 const planDisplayName = computed(
-  () =>
-    t(`settings.planStatus.${restaurant.value.plan}`) || t('settings.planStatus.expired'),
+  () => t(`settings.planStatus.${currentPlan.value}`) || t('settings.planStatus.expired'),
 )
 const planMeta = computed(() => {
   if (isProPlan.value) return t('settings.planMeta.pro')

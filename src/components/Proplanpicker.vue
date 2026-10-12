@@ -69,6 +69,8 @@
               </div>
             </div>
 
+            <SupportContact compact />
+
             <button class="btn-cancel" @click="close">{{ $t('plans.maybeLater') }}</button>
           </div>
 
@@ -168,6 +170,7 @@ import { useI18n } from 'vue-i18n'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
 import { X, Crown, Activity, Tag, Users, BarChart2, Infinity } from 'lucide-vue-next'
+import SupportContact from '@/components/SupportContact.vue'
 
 const { t } = useI18n()
 const authStore = useAuthStore()

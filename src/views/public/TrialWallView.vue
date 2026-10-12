@@ -142,6 +142,8 @@
             <LogOut :size="13" /> {{ $t('trialWall.signOut') }}
           </button>
         </div>
+
+        <SupportContact />
       </div>
 
       <p class="secure-note"><Lock :size="11" /> Bakong KHQR Secure Payment</p>
@@ -263,6 +265,7 @@ import { useRouter } from 'vue-router'
 import { supabase } from '@/lib/supabase'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '@/stores/auth'
+import SupportContact from '@/components/SupportContact.vue'
 
 import {
   TimerOff,

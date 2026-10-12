@@ -225,6 +225,13 @@
     "pending": "pending",
     "user": "User"
   },
+  "support": {
+    "title": "Need help with payment?",
+    "desc": "If you ran into a problem paying, contact us directly and we'll help you sort it out.",
+    "call": "Call",
+    "facebook": "Facebook",
+    "telegram": "Telegram"
+  },
   "language": {
     "select": "Language",
     "english": "English",
@@ -1528,9 +1535,21 @@
       "label": "How it works",
       "title": "Three steps to a smoother service",
       "steps": [
-        { "num": "01", "title": "Scan", "body": "Customers scan the QR on their table — no app, no login, just a browser." },
-        { "num": "02", "title": "Order", "body": "They browse your menu and place orders. It hits the kitchen instantly." },
-        { "num": "03", "title": "Done", "body": "Kitchen prepares, marks ready, cashier closes the tab. End-to-end seamless." }
+        {
+          "num": "01",
+          "title": "Scan",
+          "body": "Customers scan the QR on their table — no app, no login, just a browser."
+        },
+        {
+          "num": "02",
+          "title": "Order",
+          "body": "They browse your menu and place orders. It hits the kitchen instantly."
+        },
+        {
+          "num": "03",
+          "title": "Done",
+          "body": "Kitchen prepares, marks ready, cashier closes the tab. End-to-end seamless."
+        }
       ]
     },
     "featuresQr": {

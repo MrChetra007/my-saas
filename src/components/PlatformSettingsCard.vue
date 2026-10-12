@@ -97,6 +97,36 @@
           Paste this URL as your store's Webhook URL in the KHQR.dev dashboard.
         </div>
       </div>
+
+      <!-- Support contacts (shown on the trial wall + paywalls) -->
+      <div class="form-group">
+        <label class="form-label">
+          Support contacts <span class="badge-info">shown when payments fail</span>
+        </label>
+        <input
+          v-model="form.support_phone"
+          class="form-input"
+          type="text"
+          placeholder="Phone (e.g. +855 12 345 678)"
+        />
+        <input
+          v-model="form.support_facebook"
+          class="form-input"
+          type="text"
+          placeholder="Facebook page (e.g. facebook.com/yourpage)"
+          style="margin-top: 8px"
+        />
+        <input
+          v-model="form.support_telegram"
+          class="form-input"
+          type="text"
+          placeholder="Telegram (e.g. @yourhandle)"
+          style="margin-top: 8px"
+        />
+        <div class="form-hint">
+          Shown on the trial wall and payment modals so customers can reach you if a payment fails.
+        </div>
+      </div>
     </div>
 
     <div class="panel-footer">
@@ -128,6 +158,9 @@ const form = ref({
   bakong_account_id: '',
   merchant_name: 'QRserve',
   merchant_city: 'Phnom Penh',
+  support_phone: '',
+  support_facebook: '',
+  support_telegram: '',
 })
 const savedBakongId = ref('')
 const copied = ref(false)
@@ -154,6 +187,9 @@ async function saveSettings() {
       bakong_account_id: form.value.bakong_account_id.trim() || null,
       merchant_name: form.value.merchant_name.trim() || 'QRserve',
       merchant_city: form.value.merchant_city.trim() || 'Phnom Penh',
+      support_phone: form.value.support_phone.trim() || null,
+      support_facebook: form.value.support_facebook.trim() || null,
+      support_telegram: form.value.support_telegram.trim() || null,
       updated_by: authStore.user?.id,
       updated_at: new Date().toISOString(),
     }
@@ -175,7 +211,9 @@ async function saveSettings() {
 async function loadSettings() {
   const { data, error } = await supabase
     .from('platform_settings')
-    .select('bakong_account_id, merchant_name, merchant_city')
+    .select(
+      'bakong_account_id, merchant_name, merchant_city, support_phone, support_facebook, support_telegram',
+    )
     .eq('id', true)
     .single()
 
@@ -183,6 +221,9 @@ async function loadSettings() {
     form.value.bakong_account_id = data.bakong_account_id || ''
     form.value.merchant_name = data.merchant_name || 'QRserve'
     form.value.merchant_city = data.merchant_city || 'Phnom Penh'
+    form.value.support_phone = data.support_phone || ''
+    form.value.support_facebook = data.support_facebook || ''
+    form.value.support_telegram = data.support_telegram || ''
     savedBakongId.value = data.bakong_account_id || ''
   }
 }

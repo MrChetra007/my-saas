@@ -18,9 +18,33 @@
             <rect x="23" y="5" width="4" height="4" rx="0.5" fill="white" />
             <rect x="2" y="20" width="10" height="10" rx="2" stroke="white" stroke-width="2" />
             <rect x="5" y="23" width="4" height="4" rx="0.5" fill="white" />
-            <line x1="22" y1="21" x2="22" y2="30" stroke="white" stroke-width="2" stroke-linecap="round" />
-            <line x1="26" y1="21" x2="26" y2="30" stroke="white" stroke-width="2" stroke-linecap="round" />
-            <line x1="30" y1="21" x2="30" y2="30" stroke="white" stroke-width="2" stroke-linecap="round" />
+            <line
+              x1="22"
+              y1="21"
+              x2="22"
+              y2="30"
+              stroke="white"
+              stroke-width="2"
+              stroke-linecap="round"
+            />
+            <line
+              x1="26"
+              y1="21"
+              x2="26"
+              y2="30"
+              stroke="white"
+              stroke-width="2"
+              stroke-linecap="round"
+            />
+            <line
+              x1="30"
+              y1="21"
+              x2="30"
+              y2="30"
+              stroke="white"
+              stroke-width="2"
+              stroke-linecap="round"
+            />
             <path
               d="M22 21 Q22 25 26 27 Q30 25 30 21"
               stroke="white"
@@ -61,7 +85,12 @@
         >
           <span class="nav-icon"><Activity :size="16" /></span>
           <span class="nav-label" v-show="!sidebarCollapsed">{{ $t('nav.analytics') }}</span>
-          <Crown v-if="!canAccessAnalytics" :size="12" class="pro-icon" v-show="!sidebarCollapsed" />
+          <Crown
+            v-if="!canAccessAnalytics"
+            :size="12"
+            class="pro-icon"
+            v-show="!sidebarCollapsed"
+          />
           <span class="nav-tooltip" v-show="sidebarCollapsed">
             {{ canAccessAnalytics ? $t('nav.analytics') : $t('nav.proFeature') }}
           </span>
@@ -73,7 +102,9 @@
           <span class="nav-icon"><ClipboardList :size="16" /></span>
           <span class="nav-label" v-show="!sidebarCollapsed">{{ $t('nav.orders') }}</span>
           <span class="nav-tooltip" v-show="sidebarCollapsed">{{ $t('nav.orders') }}</span>
-          <span class="nav-badge" v-if="pendingCount > 0" v-show="!sidebarCollapsed">{{ pendingCount }}</span>
+          <span class="nav-badge" v-if="pendingCount > 0" v-show="!sidebarCollapsed">{{
+            pendingCount
+          }}</span>
           <span class="nav-badge-dot" v-if="pendingCount > 0" v-show="sidebarCollapsed" />
         </RouterLink>
 
@@ -91,7 +122,8 @@
             class="nav-badge nav-badge--cooking"
             v-if="cookingCount > 0"
             v-show="!sidebarCollapsed"
-          >{{ cookingCount }}</span>
+            >{{ cookingCount }}</span
+          >
           <span
             class="nav-badge-dot nav-badge-dot--cooking"
             v-if="cookingCount > 0"
@@ -122,11 +154,18 @@
         <div
           class="nav-item"
           :class="canAccessPromotions ? 'nav-unlocked' : 'nav-pro'"
-          @click="canAccessPromotions ? $router.push('/app/promotions') : openProPicker('Promotions')"
+          @click="
+            canAccessPromotions ? $router.push('/app/promotions') : openProPicker('Promotions')
+          "
         >
           <span class="nav-icon"><Tag :size="16" /></span>
           <span class="nav-label" v-show="!sidebarCollapsed">{{ $t('nav.promotions') }}</span>
-          <Crown v-if="!canAccessPromotions" :size="12" class="pro-icon" v-show="!sidebarCollapsed" />
+          <Crown
+            v-if="!canAccessPromotions"
+            :size="12"
+            class="pro-icon"
+            v-show="!sidebarCollapsed"
+          />
           <span class="nav-tooltip" v-show="sidebarCollapsed">
             {{ canAccessPromotions ? $t('nav.promotions') : $t('nav.proFeature') }}
           </span>
@@ -171,13 +210,29 @@
     <div class="main-area" :class="{ expanded: sidebarCollapsed }">
       <!-- Grace period banner -->
       <div v-if="graceBannerVisible" class="grace-banner">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="flex-shrink:0"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          style="flex-shrink: 0"
+        >
+          <circle cx="12" cy="12" r="10" />
+          <polyline points="12 6 12 12 16 14" />
+        </svg>
         <span>{{ $t('layouts.graceBanner', { date: graceDate }) }}</span>
       </div>
 
       <!-- Topbar -->
       <header class="topbar">
-        <button class="mobile-menu-btn" @click="mobileOpen = !mobileOpen" :aria-label="$t('layouts.openMenu')">
+        <button
+          class="mobile-menu-btn"
+          @click="mobileOpen = !mobileOpen"
+          :aria-label="$t('layouts.openMenu')"
+        >
           <Menu :size="18" />
         </button>
         <div class="topbar-title">
@@ -243,7 +298,7 @@ const mobileOpen = ref(false)
 const pendingCount = ref(0)
 const cookingCount = ref(0)
 const restaurantName = ref('')
-const restaurantPlan = ref('trial')
+const restaurantPlan = computed(() => authStore._restaurant?.plan || 'trial')
 const restaurantLogoUrl = ref('')
 
 const showProPicker = ref(false)
@@ -321,7 +376,6 @@ async function loadRestaurant() {
     .single()
   if (data) {
     restaurantName.value = data.name
-    restaurantPlan.value = data.plan
     restaurantLogoUrl.value = data.logo_url || ''
   }
 }

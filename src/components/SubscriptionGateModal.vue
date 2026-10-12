@@ -5,7 +5,19 @@
         <!-- Header -->
         <div class="sg-header">
           <div class="sg-header-icon">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <svg
+              width="28"
+              height="28"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.8"
+              stroke-linecap="round"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
           </div>
           <h2 class="sg-title">{{ $t('subscriptionGate.title') }}</h2>
           <p class="sg-sub">{{ $t('subscriptionGate.subtitle') }}</p>
@@ -21,7 +33,7 @@
             </div>
             <div class="sg-summary-row">
               <span>{{ $t('subscriptionGate.monthlyFee') }}</span>
-              <span class="sg-badge" style="color:#1a1917">${{ planPrice }}/mo</span>
+              <span class="sg-badge" style="color: #1a1917">${{ planPrice }}/mo</span>
             </div>
             <div class="sg-summary-row" v-if="errorMsg">
               <span class="sg-error" v-html="errorMsg" />
@@ -29,14 +41,19 @@
           </div>
           <button class="sg-btn-primary" :disabled="generating" @click="generateInvoice">
             <span v-if="generating" class="sg-spinner" />
-            {{ generating ? $t('subscriptionGate.generating') : $t('subscriptionGate.generateAndPay') }}
+            {{
+              generating ? $t('subscriptionGate.generating') : $t('subscriptionGate.generateAndPay')
+            }}
           </button>
         </div>
 
         <!-- Step 2: Show KHQR QR image + polling -->
         <div v-else-if="step === 'invoice'" class="sg-body">
           <div v-if="invoiceLoading" class="sg-invoice">
-            <span class="sg-spinner" style="border-top-color:#f97316;border-color:rgba(249,115,22,0.25)" />
+            <span
+              class="sg-spinner"
+              style="border-top-color: #f97316; border-color: rgba(249, 115, 22, 0.25)"
+            />
           </div>
           <div v-else-if="invoice" class="sg-invoice">
             <!-- KHQR.dev QR image (served from api.khqr.dev, no token needed) -->
@@ -49,26 +66,63 @@
                 @error="qrImageError = true"
               />
               <div v-else-if="qrImageError" class="sg-qr-fallback">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#a8a49e" stroke-width="1.5"><path d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"/><circle cx="12" cy="12" r="10"/></svg>
+                <svg
+                  width="32"
+                  height="32"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#a8a49e"
+                  stroke-width="1.5"
+                >
+                  <path d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+                  <circle cx="12" cy="12" r="10" />
+                </svg>
                 <span>QR unavailable</span>
               </div>
-              <span v-else class="sg-spinner" style="border-top-color:#f97316;border-color:rgba(249,115,22,0.25)" />
+              <span
+                v-else
+                class="sg-spinner"
+                style="border-top-color: #f97316; border-color: rgba(249, 115, 22, 0.25)"
+              />
             </div>
 
             <div class="sg-amount">${{ invoice.total_amount }}</div>
             <div class="sg-khqr-hint">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm0-6v-4m0-4h.01"/></svg>
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path
+                  d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm0-6v-4m0-4h.01"
+                />
+              </svg>
               {{ $t('subscriptionGate.scanAndPay') }}
             </div>
 
             <!-- Countdown timer (KHQR.dev QR expires in 10 min) -->
             <div v-if="countdown > 0" class="sg-countdown">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <circle cx="12" cy="12" r="10" />
+                <polyline points="12 6 12 12 16 14" />
+              </svg>
               {{ $t('subscriptionGate.expiresIn') || 'Expires in' }} {{ countdownLabel }}
             </div>
             <div v-else-if="countdown === 0" class="sg-expired-hint">
               {{ $t('subscriptionGate.qrExpired') || 'QR expired' }}
-              <button class="sg-link-btn" @click="regenerate">{{ $t('subscriptionGate.generateNew') || 'Generate new' }}</button>
+              <button class="sg-link-btn" @click="regenerate">
+                {{ $t('subscriptionGate.generateNew') || 'Generate new' }}
+              </button>
             </div>
 
             <!-- Waiting for payment indicator -->
@@ -88,7 +142,18 @@
             rel="noopener"
             class="sg-btn-secondary"
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+              <polyline points="15 3 21 3 21 9" />
+              <line x1="10" y1="14" x2="21" y2="3" />
+            </svg>
             {{ $t('subscriptionGate.openCheckout') || 'Open full checkout page' }}
           </a>
         </div>
@@ -96,10 +161,28 @@
         <!-- Step 3: Payment confirmed (webhook received) -->
         <div v-else-if="step === 'paid'" class="sg-body">
           <div class="sg-success-icon">
-            <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="1.8" stroke-linecap="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            <svg
+              width="56"
+              height="56"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#15803d"
+              stroke-width="1.8"
+              stroke-linecap="round"
+            >
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+              <polyline points="22 4 12 14.01 9 11.01" />
+            </svg>
           </div>
-          <h3 class="sg-success-title">{{ $t('subscriptionGate.paidTitle') || 'Payment confirmed!' }}</h3>
-          <p class="sg-success-desc">{{ $t('subscriptionGate.paidDesc') || 'Your subscription has been renewed. Enjoy QRserve!' }}</p>
+          <h3 class="sg-success-title">
+            {{ $t('subscriptionGate.paidTitle') || 'Payment confirmed!' }}
+          </h3>
+          <p class="sg-success-desc">
+            {{
+              $t('subscriptionGate.paidDesc') ||
+              'Your subscription has been renewed. Enjoy QRserve!'
+            }}
+          </p>
           <button class="sg-btn-primary" @click="closeModal">
             {{ $t('common.done') || 'Done' }}
           </button>
@@ -108,14 +191,29 @@
         <!-- Step 4: Submitted proof (old manual flow, kept for backwards compat) -->
         <div v-else-if="step === 'submitted'" class="sg-body">
           <div class="sg-success-icon">
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="1.8" stroke-linecap="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            <svg
+              width="48"
+              height="48"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#15803d"
+              stroke-width="1.8"
+              stroke-linecap="round"
+            >
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+              <polyline points="22 4 12 14.01 9 11.01" />
+            </svg>
           </div>
           <h3 class="sg-success-title">{{ $t('subscriptionGate.submittedTitle') }}</h3>
-          <p class="sg-success-desc">{{ $t('subscriptionGate.submittedDesc', { date: graceDate }) }}</p>
+          <p class="sg-success-desc">
+            {{ $t('subscriptionGate.submittedDesc', { date: graceDate }) }}
+          </p>
           <button class="sg-btn-primary" @click="closeModal">
             {{ $t('common.done') || 'Done' }}
           </button>
         </div>
+
+        <SupportContact compact />
 
         <!-- Footer -->
         <div class="sg-footer">
@@ -132,6 +230,7 @@ import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
 import { useI18n } from 'vue-i18n'
 import { useBillingStatus } from '@/composables/useBillingStatus'
+import SupportContact from '@/components/SupportContact.vue'
 
 const authStore = useAuthStore()
 const { t } = useI18n()
@@ -215,7 +314,9 @@ async function startPolling(invoiceId) {
         }
         step.value = 'paid'
         // Dismiss after short delay so user sees the success screen
-        setTimeout(() => { dismissed.value = true }, 4000)
+        setTimeout(() => {
+          dismissed.value = true
+        }, 4000)
       }
     } catch (err) {
       console.warn('Poll error:', err)
@@ -241,7 +342,7 @@ async function callKhqrPayment(forceNew = false) {
   const periodStart = start.toISOString().split('T')[0]
   const periodEnd = end.toISOString().split('T')[0]
   const rawPlan = authStore._restaurant?.plan || 'starter'
-  const planId = (rawPlan === 'expired' || rawPlan === 'trial') ? 'starter' : rawPlan
+  const planId = rawPlan === 'expired' || rawPlan === 'trial' ? 'starter' : rawPlan
 
   const res = await fetch(`${supabaseUrl}/functions/v1/khqr-payment`, {
     method: 'POST',
@@ -316,30 +417,33 @@ async function regenerate() {
   await generateInvoice(true)
 }
 
-watch(() => billingStatus.value, (val) => {
-  if (val === 'active' || val === 'grace') {
-    stopPolling()
-    stopCountdown()
-  }
-  if (val === 'blocked') {
-    dismissed.value = false
-    // Check for existing open invoice
-    supabase
-      .from('subscription_invoices')
-      .select('id, status')
-      .eq('restaurant_id', authStore.profile?.restaurant_id)
-      .in('status', ['pending', 'pending_review'])
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .then(({ data }) => {
-        if (data && data.length > 0) {
-          loadOpenInvoice()
-        } else {
-          step.value = 'generate'
-        }
-      })
-  }
-})
+watch(
+  () => billingStatus.value,
+  (val) => {
+    if (val === 'active' || val === 'grace') {
+      stopPolling()
+      stopCountdown()
+    }
+    if (val === 'blocked') {
+      dismissed.value = false
+      // Check for existing open invoice
+      supabase
+        .from('subscription_invoices')
+        .select('id, status')
+        .eq('restaurant_id', authStore.profile?.restaurant_id)
+        .in('status', ['pending', 'pending_review'])
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .then(({ data }) => {
+          if (data && data.length > 0) {
+            loadOpenInvoice()
+          } else {
+            step.value = 'generate'
+          }
+        })
+    }
+  },
+)
 
 onMounted(() => {
   if (visible.value) {
@@ -368,7 +472,7 @@ onUnmounted(() => {
 .sg-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.55);
+  background: rgba(0, 0, 0, 0.55);
   backdrop-filter: blur(4px);
   z-index: 9999;
   display: flex;
@@ -383,12 +487,18 @@ onUnmounted(() => {
   max-width: 420px;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
   animation: sgIn 0.25s ease;
 }
 @keyframes sgIn {
-  from { opacity: 0; transform: scale(0.95) translateY(10px); }
-  to { opacity: 1; transform: scale(1) translateY(0); }
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
 .sg-header {
   text-align: center;
@@ -468,8 +578,13 @@ onUnmounted(() => {
   width: 100%;
   text-decoration: none;
 }
-.sg-btn-primary:hover:not(:disabled) { background: #ea6c10; }
-.sg-btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+.sg-btn-primary:hover:not(:disabled) {
+  background: #ea6c10;
+}
+.sg-btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
 .sg-btn-secondary {
   display: flex;
   align-items: center;
@@ -485,9 +600,14 @@ onUnmounted(() => {
   color: #3d3d3a;
   text-decoration: none;
   cursor: pointer;
-  transition: border-color 0.15s, color 0.15s;
+  transition:
+    border-color 0.15s,
+    color 0.15s;
 }
-.sg-btn-secondary:hover { border-color: #f97316; color: #f97316; }
+.sg-btn-secondary:hover {
+  border-color: #f97316;
+  color: #f97316;
+}
 .sg-link-btn {
   background: none;
   border: none;
@@ -501,7 +621,7 @@ onUnmounted(() => {
 .sg-spinner {
   width: 16px;
   height: 16px;
-  border: 2px solid rgba(255,255,255,0.3);
+  border: 2px solid rgba(255, 255, 255, 0.3);
   border-top-color: #fff;
   border-radius: 50%;
   animation: sgSpin 0.6s linear infinite;
@@ -511,13 +631,17 @@ onUnmounted(() => {
   display: inline-block;
   width: 12px;
   height: 12px;
-  border: 2px solid rgba(249,115,22,0.25);
+  border: 2px solid rgba(249, 115, 22, 0.25);
   border-top-color: #f97316;
   border-radius: 50%;
   animation: sgSpin 0.6s linear infinite;
   flex-shrink: 0;
 }
-@keyframes sgSpin { to { transform: rotate(360deg); } }
+@keyframes sgSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 .sg-error {
   font-size: 12.5px;
   color: #e11d48;
@@ -598,8 +722,13 @@ onUnmounted(() => {
   animation: sgFade 1.5s ease-in-out infinite;
 }
 @keyframes sgFade {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 .sg-success-icon,
 .sg-rejected-icon {
