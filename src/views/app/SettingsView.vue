@@ -365,6 +365,31 @@
         </div>
       </div>
 
+      <!-- Install App -->
+      <div class="section-card">
+        <div class="section-header">
+          <div class="section-header-left">
+            <Download :size="18" class="section-icon" />
+            <div>
+              <h2 class="section-title">{{ $t('pwa.settingsTitle') }}</h2>
+              <p class="section-desc">{{ $t('pwa.settingsDesc') }}</p>
+            </div>
+          </div>
+        </div>
+        <div class="section-body">
+          <div v-if="pwaInstalled" class="pwa-status">
+            <CheckCircle2 :size="16" /> {{ $t('pwa.installed') }}
+          </div>
+          <button v-else-if="pwaCanInstall" class="btn-save" @click="pwaPromptInstall">
+            <Download :size="15" /> {{ $t('pwa.install') }}
+          </button>
+          <p v-else-if="pwaIsIOS" class="pwa-ios-hint">
+            <Share2 :size="14" /> {{ $t('pwa.iosDesc') }}
+          </p>
+          <p v-else class="pwa-ios-hint"><Download :size="14" /> {{ $t('pwa.hintFallback') }}</p>
+        </div>
+      </div>
+
       <!-- Alerts -->
       <div v-if="saveError" class="alert error"><AlertCircle :size="14" /> {{ saveError }}</div>
       <div v-if="saveSuccess" class="alert success">
@@ -433,8 +458,16 @@ import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
 import { setLocale } from '@/i18n'
 import { useI18n } from 'vue-i18n'
+import { usePWAInstall } from '@/composables/usePWAInstall'
 
 const { t } = useI18n()
+
+const {
+  canInstall: pwaCanInstall,
+  isInstalled: pwaInstalled,
+  isIOS: pwaIsIOS,
+  promptInstall: pwaPromptInstall,
+} = usePWAInstall()
 
 // LemonSqueezy billing is disabled — flip to true to re-enable checkout/portal UI
 const LEMONSQUEEZY_ENABLED = false
@@ -460,6 +493,8 @@ import {
   CheckCircle2,
   Timer,
   RotateCcw,
+  Download,
+  Share2,
 } from 'lucide-vue-next'
 
 const LockIcon = Lock
@@ -1108,6 +1143,24 @@ onUnmounted(() => {
 }
 .section-body {
   padding: 24px;
+}
+
+/* ── Install App ── */
+.pwa-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #4ade80;
+}
+.pwa-ios-hint {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 13px;
+  color: var(--color-text-secondary);
 }
 
 /* ── Logo ── */

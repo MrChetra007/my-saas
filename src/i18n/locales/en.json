@@ -232,6 +232,18 @@
     "facebook": "Facebook",
     "telegram": "Telegram"
   },
+  "pwa": {
+    "title": "Install QRserve",
+    "desc": "Add QRserve to your home screen for one-tap access and offline support.",
+    "install": "Install app",
+    "later": "Not now",
+    "iosTitle": "Add to Home Screen",
+    "iosDesc": "Tap the Share button, then choose \"Add to Home Screen\".",
+    "settingsTitle": "Install app",
+    "settingsDesc": "Install QRserve on this device for quick access from your home screen.",
+    "installed": "App installed",
+    "hintFallback": "Open this site in Chrome, Edge or Safari, then use the browser menu → \"Install app\" (or \"Add to Home Screen\")."
+  },
   "language": {
     "select": "Language",
     "english": "English",

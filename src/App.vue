@@ -2,6 +2,7 @@
 import { onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { setAuthReady } from '@/router'
+import InstallPwaBanner from '@/components/InstallPwaBanner.vue'
 
 const authStore = useAuthStore()
 
@@ -19,4 +20,5 @@ onMounted(async () => {
 
 <template>
   <RouterView />
+  <InstallPwaBanner />
 </template>
