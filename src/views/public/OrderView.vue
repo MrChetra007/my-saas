@@ -151,10 +151,15 @@
                 {{
                   autoPromo.type === 'percentage'
                     ? $t('orderView.promoFlameOff', { value: autoPromo.value })
-                    : $t('orderView.promoFlameFixedOff', { symbol: currencySymbol, value: autoPromo.value })
+                    : $t('orderView.promoFlameFixedOff', {
+                        symbol: currencySymbol,
+                        value: autoPromo.value,
+                      })
                 }}
               </span>
-              <span class="flame-timer">{{ promoCountdown || $t('orderView.promoFlameExpired') }}</span>
+              <span class="flame-timer">{{
+                promoCountdown || $t('orderView.promoFlameExpired')
+              }}</span>
             </div>
           </div>
         </Transition>
@@ -178,7 +183,11 @@
               <strong>{{ autoPromo.name }}</strong>
             </template>
             <template #discount>
-              {{ autoPromo.type === 'percentage' ? autoPromo.value + '% off' : currencySymbol + autoPromo.value + ' off' }}
+              {{
+                autoPromo.type === 'percentage'
+                  ? autoPromo.value + '% off'
+                  : currencySymbol + autoPromo.value + ' off'
+              }}
             </template>
           </i18n-t>
         </div>
@@ -228,7 +237,9 @@
                 <div class="item-info">
                   <div class="item-name-row">
                     <span class="item-name">{{ item.name }}</span>
-                    <span v-if="!item.is_available" class="sold-out-tag">{{ $t('orderView.soldOut') }}</span>
+                    <span v-if="!item.is_available" class="sold-out-tag">{{
+                      $t('orderView.soldOut')
+                    }}</span>
                   </div>
                   <div v-if="item.description" class="item-desc">{{ item.description }}</div>
                   <div class="item-price">
@@ -282,7 +293,9 @@
                 <div class="item-info">
                   <div class="item-name-row">
                     <span class="item-name">{{ item.name }}</span>
-                    <span v-if="!item.is_available" class="sold-out-tag">{{ $t('orderView.soldOut') }}</span>
+                    <span v-if="!item.is_available" class="sold-out-tag">{{
+                      $t('orderView.soldOut')
+                    }}</span>
                   </div>
                   <div v-if="item.description" class="item-desc">{{ item.description }}</div>
                   <div class="item-price">
@@ -358,9 +371,25 @@
             <div class="item-modal-price">
               {{ currencySymbol }}{{ Number(itemModal.item?.price).toFixed(2) }}
             </div>
+            <div v-for="grp in optionGroups" :key="grp.field" class="opt-group">
+              <div class="field-label">{{ $t('orderView.' + grp.labelKey) }}</div>
+              <div class="opt-chips">
+                <button
+                  v-for="o in grp.options"
+                  :key="o.value"
+                  type="button"
+                  class="opt-chip"
+                  :class="{ active: itemModal[grp.field] === o.value }"
+                  @click="toggleOption(grp.field, o.value)"
+                >
+                  {{ $t('orderView.' + o.key) }}
+                </button>
+              </div>
+            </div>
             <div class="field-group">
               <label class="field-label">
-                {{ $t('orderView.specialInstructions') }} <span class="optional">{{ $t('common.optional') }}</span>
+                {{ $t('orderView.specialInstructions') }}
+                <span class="optional">{{ $t('common.optional') }}</span>
               </label>
               <textarea
                 v-model="itemModal.notes"
@@ -413,7 +442,8 @@
 
             <div class="field-group" style="margin-top: 16px">
               <label class="field-label">
-                {{ $t('orderView.orderNotes') }} <span class="optional">{{ $t('common.optional') }}</span>
+                {{ $t('orderView.orderNotes') }}
+                <span class="optional">{{ $t('common.optional') }}</span>
               </label>
               <textarea
                 v-model="orderNotes"
@@ -432,7 +462,11 @@
                 </template>
                 <template #discount>
                   <span class="auto-promo-value">
-                    {{ autoPromo.type === 'percentage' ? autoPromo.value + '% off' : currencySymbol + autoPromo.value + ' off' }}
+                    {{
+                      autoPromo.type === 'percentage'
+                        ? autoPromo.value + '% off'
+                        : currencySymbol + autoPromo.value + ' off'
+                    }}
                   </span>
                 </template>
               </i18n-t>
@@ -467,7 +501,16 @@
               <div class="applied-info">
                 <span class="applied-code">{{ appliedPromoCode }}</span>
                 <span class="applied-desc">
-                  {{ $t('orderView.appliedPromoDesc', { discount: appliedPromo.type === 'percentage' ? appliedPromo.value + '% off' : currencySymbol + appliedPromo.value + ' off', symbol: currencySymbol, amount: discountAmount.toFixed(2) }) }}
+                  {{
+                    $t('orderView.appliedPromoDesc', {
+                      discount:
+                        appliedPromo.type === 'percentage'
+                          ? appliedPromo.value + '% off'
+                          : currencySymbol + appliedPromo.value + ' off',
+                      symbol: currencySymbol,
+                      amount: discountAmount.toFixed(2),
+                    })
+                  }}
                 </span>
               </div>
               <button class="remove-promo-btn" @click="removePromoCode"><X :size="13" /></button>
@@ -700,8 +743,7 @@ const statusTitle = computed(() => {
   return t('orderView.statusTitle.complete')
 })
 const statusDesc = computed(() => {
-  if (orderStatus.value === 'pending')
-    return t('orderView.statusDesc.pending')
+  if (orderStatus.value === 'pending') return t('orderView.statusDesc.pending')
   if (orderStatus.value === 'cooking') return t('orderView.statusDesc.cooking')
   if (orderStatus.value === 'ready') return t('orderView.statusDesc.ready')
   if (orderStatus.value === 'rejected') return t('orderView.statusDesc.rejected')
@@ -827,8 +869,9 @@ async function checkPromotion() {
 
   if (data.is_auto) {
     codePromoHint.value = null
-      if (!autoPromo.value || autoPromo.value.id !== data.id) {
-        if (autoPromo.value !== null) showToast(t('orderView.toast.promoNowActive', { name: data.name }), 'info')
+    if (!autoPromo.value || autoPromo.value.id !== data.id) {
+      if (autoPromo.value !== null)
+        showToast(t('orderView.toast.promoNowActive', { name: data.name }), 'info')
       autoPromo.value = data
     }
   } else {
@@ -889,10 +932,77 @@ function cartCount(itemId) {
   return cart.value.filter((l) => l.itemId === itemId).reduce((n, l) => n + l.qty, 0)
 }
 
-const itemModal = ref({ open: false, item: null, qty: 1, notes: '' })
+const itemModal = ref({
+  open: false,
+  item: null,
+  qty: 1,
+  notes: '',
+  temperature: '',
+  size: '',
+  sugar: '',
+  ice: '',
+})
+
+const TEMPERATURES = [
+  { value: 'hot', key: 'temperatureHot' },
+  { value: 'iced', key: 'temperatureIced' },
+]
+const SIZES = [
+  { value: 'small', key: 'sizeSmall' },
+  { value: 'regular', key: 'sizeRegular' },
+  { value: 'large', key: 'sizeLarge' },
+]
+const SUGAR_LEVELS = [
+  { value: '0', key: 'sugar0' },
+  { value: '25', key: 'sugar25' },
+  { value: '50', key: 'sugar50' },
+  { value: '75', key: 'sugar75' },
+  { value: '100', key: 'sugar100' },
+]
+const ICE_LEVELS = [
+  { value: 'none', key: 'iceNone' },
+  { value: 'less', key: 'iceLess' },
+  { value: 'normal', key: 'iceNormal' },
+]
+const optionGroups = [
+  { field: 'temperature', labelKey: 'optTemperature', options: TEMPERATURES },
+  { field: 'size', labelKey: 'optSize', options: SIZES },
+  { field: 'sugar', labelKey: 'optSugar', options: SUGAR_LEVELS },
+  { field: 'ice', labelKey: 'optIce', options: ICE_LEVELS },
+]
+
+function toggleOption(field, value) {
+  itemModal.value[field] = itemModal.value[field] === value ? '' : value
+}
+
+function optLabel(list, value) {
+  const found = list.find((o) => o.value === value)
+  return found ? t(`orderView.${found.key}`) : ''
+}
+
+function composeItemNotes(m) {
+  const parts = [
+    optLabel(TEMPERATURES, m.temperature),
+    optLabel(SIZES, m.size),
+    m.sugar !== '' ? t('orderView.sugarNote', { value: m.sugar }) : '',
+    optLabel(ICE_LEVELS, m.ice),
+  ].filter(Boolean)
+  const opts = parts.join(' · ')
+  const free = (m.notes || '').trim()
+  return [opts, free].filter(Boolean).join(' — ')
+}
 
 function openItemModal(item) {
-  itemModal.value = { open: true, item, qty: 1, notes: '' }
+  itemModal.value = {
+    open: true,
+    item,
+    qty: 1,
+    notes: '',
+    temperature: '',
+    size: '',
+    sugar: '',
+    ice: '',
+  }
 }
 
 function addToCart(item) {
@@ -911,7 +1021,8 @@ function addToCart(item) {
 }
 
 function confirmAddToCart() {
-  const { item, qty, notes } = itemModal.value
+  const { item, qty } = itemModal.value
+  const notes = composeItemNotes(itemModal.value)
   const existing = cart.value.find((l) => l.itemId === item.id && l.notes === notes)
   if (existing) existing.qty += qty
   else cart.value.push({ itemId: item.id, name: item.name, price: Number(item.price), qty, notes })
@@ -2594,6 +2705,40 @@ async function placeOrder() {
   resize: vertical;
   min-height: 80px;
   line-height: 1.5;
+}
+
+/* ── Item options ─────────────────────────────────────────────────────────── */
+.opt-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.opt-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.opt-chip {
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
+  background: #0e0e0e;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 13.5px;
+  font-weight: 600;
+  font-family: var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif);
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+.opt-chip:hover {
+  border-color: rgba(200, 115, 58, 0.5);
+  color: #ffffff;
+}
+.opt-chip.active {
+  background: #c8733a;
+  border-color: #c8733a;
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(200, 115, 58, 0.3);
 }
 
 @keyframes float-card {
