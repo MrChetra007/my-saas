@@ -2,6 +2,8 @@ import { defineStore } from 'pinia'
 import { supabase } from '@/lib/supabase'
 import { setLocale } from '@/i18n'
 
+let _initPromise = null
+
 export const useAuthStore = defineStore('auth', {
   state: () => ({
     user: null,
@@ -24,74 +26,76 @@ export const useAuthStore = defineStore('auth', {
   },
 
   actions: {
-    async init() {
-      console.log('AuthStore: init start')
-      this.loading = true
+    async init(force = false) {
+      if (_initPromise && !force) return _initPromise
 
-      try {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession()
+      _initPromise = (async () => {
+        this.loading = true
 
-        console.log('AuthStore: getSession resolved', !!session)
+        try {
+          const {
+            data: { session },
+          } = await supabase.auth.getSession()
 
-        if (session?.user) {
-          this.user = session.user
-          await this.fetchProfile()
-        }
-      } catch (err) {
-        console.error('AuthStore: init error', err)
-      } finally {
-        this.loading = false
-        console.log('AuthStore: init end')
-      }
-
-      supabase.auth.onAuthStateChange(async (event, session) => {
-        console.log('AuthStore: onAuthStateChange', event, !!session)
-        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
           if (session?.user) {
             this.user = session.user
-            this.fetchProfile().catch((err) => console.error('Background fetchProfile error:', err))
+            await this.fetchProfile()
+          } else {
+            this.user = null
+            this.profile = null
+            this._restaurant = null
           }
+        } catch (err) {
+          console.error('AuthStore: init error', err)
+        } finally {
+          this.loading = false
         }
-        if (event === 'SIGNED_OUT') {
-          this.user = null
-          this.profile = null
-        }
-      })
+      })()
+
+      // Set up auth state change listener once
+      if (!this._authListenerAttached) {
+        this._authListenerAttached = true
+        supabase.auth.onAuthStateChange(async (event, session) => {
+          if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+            if (session?.user) {
+              this.user = session.user
+              this.fetchProfile().catch((err) => console.error('Background fetchProfile error:', err))
+            }
+          }
+          if (event === 'SIGNED_OUT') {
+            this.user = null
+            this.profile = null
+            this._restaurant = null
+            _initPromise = null
+          }
+        })
+      }
+
+      return _initPromise
     },
 
     async fetchProfile() {
       if (!this.user) return
 
-      console.log('AuthStore: fetchProfile start for', this.user.id)
+      let data = null
+      try {
+        const result = await supabase
+          .from('users')
+          .select('*, is_super_admin')
+          .eq('id', this.user.id)
+          .maybeSingle()
 
-let data, error
-        try {
-          const result = await supabase
-            .from('users')
-            .select('*, is_super_admin')
-            .eq('id', this.user.id)
-            .maybeSingle()
-          data = result.data
-          error = result.error
-        } catch (e) {
-          console.error('fetchProfile unexpected error:', e)
-          error = e
+        if (result.error) {
+          console.error('fetchProfile error:', result.error)
+          return
         }
-      // fallback: if error, sign out and return
-      if (error) {
-        console.error('fetchProfile error:', error)
-        await this.signOut()
+
+        data = result.data
+        this.profile = data
+      } catch (e) {
+        console.error('fetchProfile unexpected error:', e)
         return
       }
-
-      if (error) {
-        console.error('fetchProfile error:', error)
-        return
-      }
-
-      this.profile = data
 
       // Apply user's language preference (only when the visitor hasn't
       // already picked a language locally this session — e.g. via the landing

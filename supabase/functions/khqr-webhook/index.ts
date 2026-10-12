@@ -136,7 +136,7 @@ Deno.serve(async (req) => {
   // ── 7. Find invoice by khqrdev_md5 ────────────────────────────────────────
   const { data: invoice, error: invError } = await serviceClient
     .from('subscription_invoices')
-    .select('id, restaurant_id, plan_id, period_end, status')
+    .select('id, restaurant_id, plan_id, period_end, status, total_amount')
     .eq('khqrdev_md5', md5)
     .single()
 
@@ -147,6 +147,38 @@ Deno.serve(async (req) => {
       status: 200,
       headers: { 'Content-Type': 'application/json' },
     })
+  }
+
+  // ── 7b. Server-side amount verification ──────────────────────────────────
+  const { data: plan } = await serviceClient
+    .from('plans')
+    .select('monthly_fee')
+    .eq('id', invoice.plan_id)
+    .single()
+
+  const expectedFee = plan?.monthly_fee != null ? Number(plan.monthly_fee) : 25
+  const invoiceAmount = Number(invoice.total_amount)
+
+  // Verify that invoice was not billed below official plan fee (unless sandbox_mode is active)
+  const isSandbox = Boolean(settings?.app_config?.sandbox_mode)
+  if (!isSandbox && invoiceAmount < expectedFee) {
+    console.error(`Fraud/Underbilling alert: invoice total_amount (${invoiceAmount}) < plan monthly_fee (${expectedFee})`)
+    return new Response(JSON.stringify({ ok: false, reason: 'amount_mismatch' }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+
+  // Also verify amount from webhook payload if provided by KHQR.dev
+  if (data.amount !== undefined) {
+    const paidAmount = Number(data.amount)
+    if (paidAmount < invoiceAmount) {
+      console.error(`Underpayment alert: paid amount (${paidAmount}) < invoice amount (${invoiceAmount})`)
+      return new Response(JSON.stringify({ ok: false, reason: 'underpaid' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      })
+    }
   }
 
   // ── 8. Idempotency: never downgrade a paid invoice ───────────────────────

@@ -3,11 +3,14 @@ import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { supabase } from '@/lib/supabase'
 import { useI18n } from 'vue-i18n'
+import { useAuthStore } from '@/stores/auth'
+import { roleHome } from '@/router'
 import AuthLayout from '@/layouts/AuthLayout.vue'
 
 const router = useRouter()
 const route = useRoute()
 const { t } = useI18n()
+const authStore = useAuthStore()
 
 // ── Login state ──
 const email = ref('')
@@ -47,22 +50,20 @@ async function handleLogin() {
     return
   }
 
-  const { data: profile } = await supabase
-    .from('users')
-    .select('role, restaurant_id')
-    .eq('id', data.user.id)
-    .single()
+  // Sync auth store immediately
+  authStore.user = data.user
+  await authStore.fetchProfile()
 
-  if (!profile) {
+  if (!authStore.profile) {
     error.value = t('auth.login.errorProfileNotFound')
     loading.value = false
     return
   }
 
-  if (profile.role === 'kitchen') {
-    router.push('/app/kitchen')
-  } else if (profile.role === 'cashier' || profile.role === 'waiter') {
-    router.push('/app/orders')
+  if (authStore.isSuperAdmin) {
+    router.push('/super-admin/dashboard')
+  } else if (authStore.profile?.role) {
+    router.push(roleHome(authStore.profile.role))
   } else {
     router.push('/app/dashboard')
   }

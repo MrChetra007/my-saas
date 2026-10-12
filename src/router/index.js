@@ -203,37 +203,29 @@ router.beforeEach(async (to) => {
 
   const authStore = useAuthStore()
 
-  // Wait for the initial auth init to complete before any guard logic.
-  // This prevents the race where the guard runs before App.vue onMounted
-  // has finished awaiting authStore.init(), which would leave authStore.user
-  // as null even for an authenticated session.
-  if (authReadyPromise) await authReadyPromise
+  // Always ensure auth session and profile are loaded before running guard logic
+  await authStore.init()
 
+  // If user is logged in and visits public landing or auth pages, redirect to their home
+  if (authStore.user && (to.path === '/' || to.path === '/login' || to.path === '/signup')) {
+    if (authStore.isSuperAdmin) return '/super-admin/dashboard'
+    const role = authStore.profile?.role
+    if (role) return roleHome(role)
+  }
+
+  // Public routes (landing, terms, privacy, order menu) are allowed for guests
   if (to.meta.public) {
-    if (!authStore.user) return true
-    if (to.path === '/' || to.path === '/login' || to.path === '/signup') {
-      const role = authStore.profile?.role
-      if (authStore.isSuperAdmin) return '/super-admin/dashboard'
-      if (role) return roleHome(role)
-    }
     return true
   }
 
-  // Load session if not already loaded
+  // Authenticated routes require session
   if (!authStore.user) {
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) return '/login'
-    authStore.user = session.user
+    return '/login'
   }
 
-  // Ensure the profile is loaded before role checks (init may not have run yet)
+  // Ensure the profile is loaded before role checks
   if (!authStore.profile) await authStore.fetchProfile()
   if (!authStore.profile) return to.name !== 'onboarding' ? '/onboarding' : true
-
-  if (authStore.user && to.path === '/') {
-    const role = authStore.profile?.role
-    return roleHome(role)
-  }
 
   // ── Super Admin: bypass everything ──────────────
   if (authStore.isSuperAdmin) {

@@ -20,8 +20,8 @@
             </p>
           </div>
 
-          <!-- ── Features ── -->
-          <div class="picker-body">
+          <!-- ── Body: Step 1: Feature Overview + Initiate KHQR ── -->
+          <div v-if="step === 'plan'" class="picker-body">
             <ul class="feature-list">
               <li v-for="f in proFeatures" :key="f.label" class="feature-item">
                 <div class="feature-icon-wrap">
@@ -42,17 +42,97 @@
               <div class="price-note">{{ $t('plans.cancelAnytime') }}</div>
             </div>
 
-            <!-- Error -->
-            <div v-if="error" class="alert-error"><AlertCircle :size="14" /> {{ error }}</div>
+            <!-- Error message if any -->
+            <div v-if="errorMsg" class="alert-error">
+              <span>{{ errorMsg }}</span>
+            </div>
 
-            <!-- Actions -->
-            <button class="btn-upgrade" @click="goToCheckout" :disabled="loading">
-              <Loader2 v-if="loading" :size="16" class="spin" />
-              <template v-else> <Zap :size="16" /> {{ $t('settings.upgradeToPro') }} </template>
+            <!-- Upgrade with KHQR button -->
+            <button class="btn-upgrade" :disabled="generating" @click="generateProKhqr">
+              <span v-if="generating" class="spin-icon" />
+              <Crown v-else :size="18" />
+              <span>{{ generating ? 'Generating KHQR…' : `Upgrade with KHQR ($${proPrice}/mo)` }}</span>
             </button>
-            <button class="btn-cancel" @click="close">{{ $t('plans.maybeLater') }}</button>
 
-            <p class="secure-note"><Lock :size="12" /> {{ $t('trialWall.secureNote') }}</p>
+            <!-- KHQR billing info fallback -->
+            <div class="khqr-upgrade-info">
+              <div class="khqr-upgrade-icon"><Crown :size="18" /></div>
+              <div class="khqr-upgrade-text">
+                <div class="khqr-upgrade-title">Fast & Secure Bakong Payment</div>
+                <div class="khqr-upgrade-desc">
+                  Scan instantly with ABA, ACLEDA, Sathapana or any Bakong banking app.
+                </div>
+              </div>
+            </div>
+
+            <button class="btn-cancel" @click="close">{{ $t('plans.maybeLater') }}</button>
+          </div>
+
+          <!-- ── Body: Step 2: Show KHQR Code + Polling ── -->
+          <div v-else-if="step === 'invoice'" class="picker-body">
+            <div class="invoice-section">
+              <div class="qr-container">
+                <img
+                  v-if="qrImageUrl"
+                  :src="qrImageUrl"
+                  alt="KHQR"
+                  class="qr-image"
+                  @error="qrImageError = true"
+                />
+                <div v-else-if="qrImageError" class="qr-error-box">
+                  <span>QR code unavailable</span>
+                </div>
+                <span v-else class="spin-icon large" />
+              </div>
+
+              <div class="invoice-amount">${{ proPrice }}</div>
+              <p class="invoice-hint">Scan with any Bakong-supported banking app</p>
+
+              <!-- Countdown timer (KHQR.dev 10 min expiry) -->
+              <div v-if="countdown > 0" class="countdown-badge">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                </svg>
+                <span>Expires in {{ countdownLabel }}</span>
+              </div>
+              <div v-else class="countdown-expired">
+                <span>QR expired</span>
+                <button class="link-btn" @click="generateProKhqr(true)">Generate new QR</button>
+              </div>
+
+              <!-- Polling status -->
+              <div v-if="polling" class="polling-row">
+                <span class="spin-icon sm" />
+                <span>Waiting for payment confirmation…</span>
+              </div>
+
+              <!-- Secondary checkout link -->
+              <a
+                v-if="checkoutUrl"
+                :href="checkoutUrl"
+                target="_blank"
+                rel="noopener"
+                class="btn-secondary-link"
+              >
+                Open checkout page
+              </a>
+
+              <button class="btn-cancel" @click="step = 'plan'">Back</button>
+            </div>
+          </div>
+
+          <!-- ── Body: Step 3: Success Confirmation ── -->
+          <div v-else-if="step === 'paid'" class="picker-body">
+            <div class="success-section">
+              <div class="success-icon-wrap">
+                <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+                </svg>
+              </div>
+              <h3 class="success-title">Payment Confirmed!</h3>
+              <p class="success-desc">Your restaurant has been successfully upgraded to the Pro plan.</p>
+              <button class="btn-upgrade" @click="close">Awesome</button>
+            </div>
           </div>
         </div>
       </div>
@@ -61,36 +141,43 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
-const { t } = useI18n()
 import { supabase } from '@/lib/supabase'
+import { useAuthStore } from '@/stores/auth'
 import {
   X,
   Crown,
-  Zap,
-  Lock,
-  Loader2,
-  AlertCircle,
   Activity,
   Tag,
   Users,
   BarChart2,
   Infinity,
-  ShieldCheck,
-  Utensils,
 } from 'lucide-vue-next'
+
+const { t } = useI18n()
+const authStore = useAuthStore()
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
   featureName: { type: String, default: '' },
 })
 
-const emit = defineEmits(['update:modelValue', 'checkout-error'])
+const emit = defineEmits(['update:modelValue'])
 
-const loading = ref(false)
-const error = ref('')
-const proPrice = ref(99)
+const proPrice = ref(25)
+const step = ref('plan') // 'plan' | 'invoice' | 'paid'
+const generating = ref(false)
+const errorMsg = ref('')
+
+const qrImageUrl = ref('')
+const qrImageError = ref(false)
+const checkoutUrl = ref('')
+const countdown = ref(-1)
+let countdownTimer = null
+
+const polling = ref(false)
+let pollTimer = null
 
 const proFeatures = [
   {
@@ -120,55 +207,186 @@ const proFeatures = [
   },
 ]
 
+const countdownLabel = computed(() => {
+  if (countdown.value <= 0) return '0:00'
+  const m = Math.floor(countdown.value / 60)
+  const s = countdown.value % 60
+  return `${m}:${s.toString().padStart(2, '0')}`
+})
+
 onMounted(async () => {
   try {
-    const { data: settings } = await supabase
-      .from('platform_settings')
-      .select('app_config')
-      .eq('id', true)
-      .single()
-    if (settings?.app_config?.pro_price_ls) {
-      proPrice.value = settings.app_config.pro_price_ls
-    }
+    const { data: plan } = await supabase
+      .from('plans')
+      .select('monthly_fee')
+      .eq('id', 'pro')
+      .maybeSingle()
+    if (plan?.monthly_fee) proPrice.value = plan.monthly_fee
   } catch (e) {
     console.warn('Failed to load Pro pricing', e)
   }
 })
 
-function close() {
-  emit('update:modelValue', false)
+onUnmounted(() => {
+  stopCountdown()
+  stopPolling()
+})
+
+function startCountdown(seconds = 600) {
+  countdown.value = seconds
+  stopCountdown()
+  countdownTimer = setInterval(() => {
+    countdown.value--
+    if (countdown.value <= 0) {
+      countdown.value = 0
+      stopCountdown()
+      stopPolling()
+    }
+  }, 1000)
 }
 
-async function goToCheckout() {
-  error.value = ''
-  loading.value = true
-  try {
-    const { data, err } = await supabase.functions.invoke('create-checkout-session', {
-      body: { plan: 'pro' },
-    })
-    if (err) throw err
-    if (data?.url) {
-      window.location.href = data.url
-    } else {
-      throw new Error('No checkout URL returned.')
-    }
-  } catch (e) {
-    console.error('[ProPlanPicker] Checkout error:', e)
-    error.value = t('trialWall.checkoutError')
-    emit('checkout-error', error.value)
-    loading.value = false
+function stopCountdown() {
+  if (countdownTimer) {
+    clearInterval(countdownTimer)
+    countdownTimer = null
   }
+}
+
+function startPolling(invoiceId) {
+  polling.value = true
+  stopPolling()
+  pollTimer = setInterval(async () => {
+    try {
+      const { data } = await supabase
+        .from('subscription_invoices')
+        .select('status')
+        .eq('id', invoiceId)
+        .single()
+
+      if (data?.status === 'paid') {
+        stopPolling()
+        stopCountdown()
+        if (authStore.refreshRestaurant) {
+          await authStore.refreshRestaurant()
+        }
+        step.value = 'paid'
+      }
+    } catch (err) {
+      console.warn('Pro polling error:', err)
+    }
+  }, 4000)
+}
+
+function stopPolling() {
+  if (pollTimer) {
+    clearInterval(pollTimer)
+    pollTimer = null
+  }
+  polling.value = false
+}
+
+async function generateProKhqr(forceNew = false) {
+  generating.value = true
+  errorMsg.value = ''
+
+  try {
+    const token = (await supabase.auth.getSession()).data.session?.access_token
+    const rid = authStore.profile?.restaurant_id
+    if (!rid) throw new Error('No restaurant found for current user')
+
+    const now = new Date()
+    const start = new Date(now.getFullYear(), now.getMonth(), 1)
+    const end = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+    const periodStart = start.toISOString().split('T')[0]
+    const periodEnd = end.toISOString().split('T')[0]
+
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+    const res = await fetch(`${supabaseUrl}/functions/v1/khqr-payment`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        restaurant_id: rid,
+        plan_id: 'pro',
+        period_start: periodStart,
+        period_end: periodEnd,
+        force_new: forceNew,
+      }),
+    })
+
+    const data = await res.json()
+    if (!res.ok) {
+      if (data.error?.includes('token not configured')) {
+        throw new Error('KHQR payments are being set up. Please contact platform admin to upgrade.')
+      }
+      throw new Error(data.error || 'Failed to generate KHQR invoice')
+    }
+
+    // Unify display amount with server invoice amount (single source of truth)
+    if (data.invoice?.total_amount != null) {
+      proPrice.value = Number(data.invoice.total_amount)
+    } else if (data.amount != null) {
+      proPrice.value = Number(data.amount)
+    }
+
+    qrImageUrl.value = data.qr_image_url || ''
+    checkoutUrl.value = data.checkout_url || ''
+    qrImageError.value = false
+    step.value = 'invoice'
+
+    const seconds = data.remaining_seconds != null ? data.remaining_seconds : 600
+    startCountdown(seconds)
+
+    const invId = data.invoice?.id || data.invoice_id
+    if (invId) {
+      startPolling(invId)
+    }
+  } catch (err) {
+    errorMsg.value = err.message || 'Unable to generate KHQR code. Please contact admin.'
+  } finally {
+    generating.value = false
+  }
+}
+
+function close() {
+  stopCountdown()
+  stopPolling()
+  step.value = 'plan'
+  errorMsg.value = ''
+  emit('update:modelValue', false)
 }
 </script>
 
 <style scoped>
-.spin {
-  animation: spin 0.9s linear infinite;
+/* ── Spinner ── */
+.spin-icon {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  display: inline-block;
 }
+
+.spin-icon.sm {
+  width: 14px;
+  height: 14px;
+  border-color: rgba(200, 115, 58, 0.25);
+  border-top-color: var(--color-accent);
+}
+
+.spin-icon.large {
+  width: 32px;
+  height: 32px;
+  border-color: rgba(200, 115, 58, 0.25);
+  border-top-color: var(--color-accent);
+}
+
 @keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+  to { transform: rotate(360deg); }
 }
 
 /* ── Backdrop ── */
@@ -189,7 +407,7 @@ async function goToCheckout() {
   background: var(--color-bg-surface);
   border-radius: 24px;
   width: 100%;
-  max-width: 400px;
+  max-width: 420px;
   max-height: calc(100vh - 24px);
   border: 1px solid var(--color-border-subtle);
   box-shadow: 0 32px 80px rgba(0, 0, 0, 0.6);
@@ -380,6 +598,49 @@ async function goToCheckout() {
   text-align: right;
 }
 
+/* ── KHQR Upgrade Box ── */
+.khqr-upgrade-info {
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 14px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 14px;
+  text-align: left;
+}
+
+.khqr-upgrade-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  background: var(--color-accent);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.khqr-upgrade-text {
+  flex: 1;
+}
+
+.khqr-upgrade-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin-bottom: 2px;
+}
+
+.khqr-upgrade-desc {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+}
+
 /* ── Error ── */
 .alert-error {
   display: flex;
@@ -410,7 +671,7 @@ async function goToCheckout() {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 
 .btn-upgrade:hover:not(:disabled) {
@@ -419,7 +680,7 @@ async function goToCheckout() {
 }
 
 .btn-upgrade:disabled {
-  opacity: 0.5;
+  opacity: 0.6;
   cursor: not-allowed;
   transform: none;
 }
@@ -435,7 +696,6 @@ async function goToCheckout() {
   font-weight: 500;
   cursor: pointer;
   transition: all 0.14s;
-  margin-bottom: 14px;
 }
 
 .btn-cancel:hover {
@@ -443,18 +703,123 @@ async function goToCheckout() {
   color: var(--color-text-secondary);
 }
 
-/* ── Secure note ── */
-.secure-note {
+/* ── Invoice Section ── */
+.invoice-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 8px 0;
+}
+
+.qr-container {
+  width: 220px;
+  height: 220px;
+  background: white;
+  border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  border: 2px solid var(--color-border-subtle);
+  margin-bottom: 14px;
+  padding: 10px;
+}
+
+.qr-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.qr-error-box {
   font-size: 12px;
   color: var(--color-text-muted);
 }
 
-.secure-note svg {
+.invoice-amount {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--color-text-primary);
+  margin-bottom: 4px;
+}
+
+.invoice-hint {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  margin: 0 0 12px;
+}
+
+.countdown-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 20px;
+  font-size: 12px;
   color: var(--color-accent);
+  margin-bottom: 12px;
+}
+
+.countdown-expired {
+  font-size: 12px;
+  color: #f87171;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.link-btn {
+  background: none;
+  border: none;
+  color: var(--color-accent);
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+  font-size: 12px;
+}
+
+.polling-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+  margin-bottom: 16px;
+}
+
+.btn-secondary-link {
+  display: block;
+  font-size: 13px;
+  color: var(--color-accent);
+  text-decoration: underline;
+  margin-bottom: 14px;
+}
+
+/* ── Success Section ── */
+.success-section {
+  text-align: center;
+  padding: 20px 10px;
+}
+
+.success-icon-wrap {
+  margin-bottom: 16px;
+}
+
+.success-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--color-text-primary);
+  margin-bottom: 8px;
+}
+
+.success-desc {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+  margin-bottom: 20px;
 }
 
 /* ── Transition ── */
@@ -485,88 +850,5 @@ async function goToCheckout() {
 .modal-leave-to .modal-pro-picker {
   transform: scale(0.97);
   opacity: 0;
-}
-
-/* ── Small screen adjustments ── */
-@media (max-width: 380px) {
-  .modal-backdrop {
-    padding: 8px;
-  }
-
-  .picker-header {
-    padding: 24px 16px 16px;
-  }
-
-  .header-icon {
-    width: 48px;
-    height: 48px;
-  }
-
-  .header-icon :deep(svg) {
-    width: 22px;
-    height: 22px;
-  }
-
-  .picker-title {
-    font-size: 22px;
-  }
-
-  .picker-subtitle {
-    font-size: 13px;
-  }
-
-  .picker-body {
-    padding: 16px;
-  }
-
-  .feature-item {
-    gap: 10px;
-  }
-
-  .feature-icon-wrap {
-    width: 28px;
-    height: 28px;
-  }
-
-  .feature-icon-wrap :deep(svg) {
-    width: 14px;
-    height: 14px;
-  }
-
-  .price-amount {
-    font-size: 28px;
-  }
-
-  .btn-upgrade {
-    padding: 12px;
-    font-size: 15px;
-  }
-
-  .btn-cancel {
-    padding: 10px;
-    font-size: 14px;
-  }
-}
-
-/* ── Height-based adjustments ── */
-@media (max-height: 600px) {
-  .picker-header {
-    padding: 20px 16px 16px;
-  }
-
-  .header-icon {
-    width: 44px;
-    height: 44px;
-    margin-bottom: 8px;
-  }
-
-  .feature-list {
-    gap: 8px;
-  }
-
-  .price-row {
-    padding: 10px 14px;
-    margin-bottom: 12px;
-  }
 }
 </style>

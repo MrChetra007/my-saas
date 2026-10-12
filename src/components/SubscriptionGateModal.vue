@@ -231,7 +231,7 @@ function stopPolling() {
   polling.value = false
 }
 
-async function callKhqrPayment() {
+async function callKhqrPayment(forceNew = false) {
   const token = (await supabase.auth.getSession()).data.session?.access_token
   const rid = authStore.profile?.restaurant_id
   if (!rid) throw new Error('No restaurant ID')
@@ -254,6 +254,7 @@ async function callKhqrPayment() {
       plan_id: planId,
       period_start: periodStart,
       period_end: periodEnd,
+      force_new: forceNew,
     }),
   })
   const data = await res.json()
@@ -261,11 +262,11 @@ async function callKhqrPayment() {
   return data
 }
 
-async function generateInvoice() {
+async function generateInvoice(forceNew = false) {
   generating.value = true
   errorMsg.value = ''
   try {
-    const result = await callKhqrPayment()
+    const result = await callKhqrPayment(forceNew)
     invoice.value = result.invoice
     qrImageUrl.value = result.qr_image_url || null
     qrImageError.value = false
@@ -312,7 +313,7 @@ async function regenerate() {
   countdown.value = -1
   step.value = 'generate'
   stopPolling()
-  await generateInvoice()
+  await generateInvoice(true)
 }
 
 watch(() => billingStatus.value, (val) => {

@@ -48,7 +48,7 @@ Deno.serve(async (req) => {
       })
     }
 
-    const { restaurant_id, plan_id, period_start, period_end } = await req.json()
+    const { restaurant_id, plan_id, period_start, period_end, force_new } = await req.json()
     if (!restaurant_id || !plan_id || !period_start || !period_end) {
       return new Response(JSON.stringify({ error: 'Missing required fields' }), {
         status: 400,
@@ -80,34 +80,32 @@ Deno.serve(async (req) => {
       })
     }
 
-    // ── Get plan pricing ───────────────────────────────────────────────
-    const cfg = settings?.app_config || {}
-    let monthlyFee: number
+    // ── Get plan pricing: single source of truth from public.plans ─────
+    const { data: plan, error: planError } = await serviceClient
+      .from('plans')
+      .select('monthly_fee')
+      .eq('id', plan_id)
+      .single()
 
-    if (plan_id === 'pro' && cfg.pro_price_manual) {
-      monthlyFee = Number(cfg.pro_price_manual)
-    } else if (plan_id === 'starter' && cfg.starter_price_manual) {
-      monthlyFee = Number(cfg.starter_price_manual)
-    } else {
-      const { data: plan, error: planError } = await serviceClient
-        .from('plans')
-        .select('monthly_fee')
-        .eq('id', plan_id)
-        .single()
-
-      if (planError || !plan) {
-        return new Response(JSON.stringify({ error: 'Plan not found' }), {
-          status: 400,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        })
-      }
-      monthlyFee = Number(plan.monthly_fee)
+    if (planError || !plan) {
+      return new Response(JSON.stringify({ error: 'Plan not found' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      })
     }
 
-    const totalAmount = Math.round(monthlyFee * 100) / 100
+    let monthlyFee = Number(plan.monthly_fee)
 
-    // ── Dedup: return existing open invoice if it already has a KHQR.dev payment ──
-    // This avoids hitting the 1 req/s rate limit on every modal re-mount.
+    // Optional: Sandbox / test mode override only if explicitly enabled
+    const cfg = settings?.app_config || {}
+    if (cfg.sandbox_mode === true && cfg.sandbox_amount) {
+      monthlyFee = Number(cfg.sandbox_amount)
+    }
+
+    // Ensure strict dot formatting with 2 decimals (e.g. 25.00)
+    const totalAmount = parseFloat(monthlyFee.toFixed(2))
+
+    // ── Check existing open invoice ────────────────────────────────────
     const { data: existing } = await serviceClient
       .from('subscription_invoices')
       .select('*')
@@ -116,29 +114,38 @@ Deno.serve(async (req) => {
       .order('created_at', { ascending: false })
       .limit(1)
 
-    if (existing && existing.length > 0 && existing[0].khqrdev_md5) {
+    if (existing && existing.length > 0) {
       const inv = existing[0]
-      return new Response(
-        JSON.stringify({
-          invoice: inv,
-          md5: inv.khqrdev_md5,
-          checkout_url: inv.khqrdev_checkout_url,
-          qr_image_url: `https://api.khqr.dev/v1/generate_khqr_image/${inv.khqrdev_md5}`,
-          deduped: true,
-        }),
-        {
-          status: 200,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        },
-      )
-    }
+      const elapsedMs = Date.now() - new Date(inv.created_at).getTime()
+      // KHQR.dev QR codes expire after 10 minutes (600 seconds)
+      const isExpired = elapsedMs >= 9.5 * 60 * 1000
+      const amountMismatch = Math.abs(Number(inv.total_amount) - totalAmount) > 0.001
+      const planMismatch = inv.plan_id !== plan_id
 
-    // If a stale invoice exists with no KHQR.dev payment, expire it
-    if (existing && existing.length > 0 && !existing[0].khqrdev_md5) {
-      await serviceClient
-        .from('subscription_invoices')
-        .update({ status: 'expired' })
-        .eq('id', existing[0].id)
+      if (force_new || isExpired || amountMismatch || planMismatch) {
+        // Expire outdated/mismatched invoice so we generate a fresh, accurate QR
+        await serviceClient
+          .from('subscription_invoices')
+          .update({ status: 'expired' })
+          .eq('id', inv.id)
+      } else if (inv.khqrdev_md5) {
+        const remainingSeconds = Math.max(10, Math.floor((10 * 60 * 1000 - elapsedMs) / 1000))
+        return new Response(
+          JSON.stringify({
+            invoice: inv,
+            md5: inv.khqrdev_md5,
+            checkout_url: inv.khqrdev_checkout_url,
+            qr_image_url: `https://api.khqr.dev/v1/generate_khqr_image/${inv.khqrdev_md5}`,
+            remaining_seconds: remainingSeconds,
+            amount: totalAmount,
+            deduped: true,
+          }),
+          {
+            status: 200,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          },
+        )
+      }
     }
 
     // ── Call KHQR.dev generate_qr ──────────────────────────────────────
