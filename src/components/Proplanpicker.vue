@@ -15,7 +15,9 @@
             <h2 class="picker-title">{{ $t('settings.upgradeToPro') }}</h2>
             <p class="picker-subtitle">
               <i18n-t keypath="plans.proFeatureDesc" tag="span">
-                <template #feature><strong>{{ featureName }}</strong></template>
+                <template #feature
+                  ><strong>{{ featureName }}</strong></template
+                >
               </i18n-t>
             </p>
           </div>
@@ -51,7 +53,9 @@
             <button class="btn-upgrade" :disabled="generating" @click="generateProKhqr">
               <span v-if="generating" class="spin-icon" />
               <Crown v-else :size="18" />
-              <span>{{ generating ? 'Generating KHQR…' : `Upgrade with KHQR ($${proPrice}/mo)` }}</span>
+              <span>{{
+                generating ? 'Generating KHQR…' : `Upgrade with KHQR ($${proPrice}/mo)`
+              }}</span>
             </button>
 
             <!-- KHQR billing info fallback -->
@@ -90,8 +94,16 @@
 
               <!-- Countdown timer (KHQR.dev 10 min expiry) -->
               <div v-if="countdown > 0" class="countdown-badge">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <polyline points="12 6 12 12 16 14" />
                 </svg>
                 <span>Expires in {{ countdownLabel }}</span>
               </div>
@@ -125,12 +137,22 @@
           <div v-else-if="step === 'paid'" class="picker-body">
             <div class="success-section">
               <div class="success-icon-wrap">
-                <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2">
-                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+                <svg
+                  width="56"
+                  height="56"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#22c55e"
+                  stroke-width="2"
+                >
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                  <polyline points="22 4 12 14.01 9 11.01" />
                 </svg>
               </div>
               <h3 class="success-title">Payment Confirmed!</h3>
-              <p class="success-desc">Your restaurant has been successfully upgraded to the Pro plan.</p>
+              <p class="success-desc">
+                Your restaurant has been successfully upgraded to the Pro plan.
+              </p>
               <button class="btn-upgrade" @click="close">Awesome</button>
             </div>
           </div>
@@ -145,15 +167,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
-import {
-  X,
-  Crown,
-  Activity,
-  Tag,
-  Users,
-  BarChart2,
-  Infinity,
-} from 'lucide-vue-next'
+import { X, Crown, Activity, Tag, Users, BarChart2, Infinity } from 'lucide-vue-next'
 
 const { t } = useI18n()
 const authStore = useAuthStore()
@@ -216,6 +230,16 @@ const countdownLabel = computed(() => {
 
 onMounted(async () => {
   try {
+    const { data: settings } = await supabase
+      .from('platform_settings')
+      .select('app_config')
+      .eq('id', true)
+      .maybeSingle()
+    const override = settings?.app_config?.pro_price_manual
+    if (override !== undefined && override !== null && override !== '') {
+      proPrice.value = Number(override)
+      return
+    }
     const { data: plan } = await supabase
       .from('plans')
       .select('monthly_fee')
@@ -386,7 +410,9 @@ function close() {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* ── Backdrop ── */
@@ -713,8 +739,8 @@ function close() {
 }
 
 .qr-container {
-  width: 220px;
-  height: 220px;
+  width: 280px;
+  height: 280px;
   background: white;
   border-radius: 16px;
   display: flex;

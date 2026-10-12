@@ -27,7 +27,10 @@ Deno.serve(async (req) => {
     )
 
     // Authenticate caller
-    const { data: { user }, error: userError } = await authClient.auth.getUser()
+    const {
+      data: { user },
+      error: userError,
+    } = await authClient.auth.getUser()
     if (userError || !user) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
@@ -66,38 +69,62 @@ Deno.serve(async (req) => {
       })
     }
 
-    // ── Load platform settings (KHQR.dev token + pricing) ─────────────
+    // ── Load platform settings (pricing config) ───────────────────────
     const { data: settings, error: settingsError } = await serviceClient
       .from('platform_settings')
-      .select('khqrdev_token, merchant_name, merchant_city, currency, app_config')
+      .select('merchant_name, merchant_city, currency, app_config')
       .eq('id', true)
       .single()
 
-    if (settingsError || !settings?.khqrdev_token) {
-      return new Response(JSON.stringify({ error: 'KHQR.dev token not configured in platform settings' }), {
+    if (settingsError || !settings) {
+      return new Response(JSON.stringify({ error: 'Platform settings not found' }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
 
-    // ── Get plan pricing: single source of truth from public.plans ─────
-    const { data: plan, error: planError } = await serviceClient
-      .from('plans')
-      .select('monthly_fee')
-      .eq('id', plan_id)
-      .single()
-
-    if (planError || !plan) {
-      return new Response(JSON.stringify({ error: 'Plan not found' }), {
-        status: 400,
+    // ── KHQR.dev token is a Supabase Edge Function secret ─────────────
+    const khqrdevToken = Deno.env.get('KHQRDEV_TOKEN')
+    if (!khqrdevToken) {
+      return new Response(JSON.stringify({ error: 'KHQR.dev token not configured' }), {
+        status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
 
-    let monthlyFee = Number(plan.monthly_fee)
+    // ── Resolve pricing ────────────────────────────────────────────────
+    // platform_settings.app_config is the single source of truth so the
+    // super admin can change prices without a redeploy. public.plans is
+    // only a fallback when no override is configured.
+    const cfg = settings?.app_config || {}
+    const override =
+      plan_id === 'pro'
+        ? cfg.pro_price_manual
+        : plan_id === 'starter'
+          ? cfg.starter_price_manual
+          : null
+
+    let monthlyFee: number
+    if (override !== undefined && override !== null && override !== '') {
+      monthlyFee = Number(override)
+    } else {
+      const { data: plan, error: planError } = await serviceClient
+        .from('plans')
+        .select('monthly_fee')
+        .eq('id', plan_id)
+        .single()
+
+      if (planError || !plan) {
+        return new Response(JSON.stringify({ error: 'Plan not found' }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+
+      monthlyFee = Number(plan.monthly_fee)
+    }
 
     // Optional: Sandbox / test mode override only if explicitly enabled
-    const cfg = settings?.app_config || {}
     if (cfg.sandbox_mode === true && cfg.sandbox_amount) {
       monthlyFee = Number(cfg.sandbox_amount)
     }
@@ -152,7 +179,7 @@ Deno.serve(async (req) => {
     const qrRes = await fetch('https://api.khqr.dev/v1/generate_qr', {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${settings.khqrdev_token}`,
+        Authorization: `Bearer ${khqrdevToken}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ amount: totalAmount }),
@@ -160,10 +187,13 @@ Deno.serve(async (req) => {
     })
 
     if (qrRes.status === 429) {
-      return new Response(JSON.stringify({ error: 'Rate limited by KHQR.dev. Please wait a moment and try again.' }), {
-        status: 429,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
+      return new Response(
+        JSON.stringify({ error: 'Rate limited by KHQR.dev. Please wait a moment and try again.' }),
+        {
+          status: 429,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        },
+      )
     }
 
     if (!qrRes.ok) {
@@ -201,8 +231,8 @@ Deno.serve(async (req) => {
         transaction_fee_amount: 0,
         total_amount: totalAmount,
         currency: settings.currency || 'USD',
-        khqr_string: null,       // Bakong library field — unused in KHQR.dev flow
-        khqr_md5: null,          // Bakong library field — unused in KHQR.dev flow
+        khqr_string: null, // Bakong library field — unused in KHQR.dev flow
+        khqr_md5: null, // Bakong library field — unused in KHQR.dev flow
         khqrdev_md5: md5,
         khqrdev_tran_id: tran_id,
         khqrdev_checkout_url: checkout_url,

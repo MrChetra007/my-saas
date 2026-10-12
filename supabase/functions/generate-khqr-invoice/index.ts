@@ -134,14 +134,18 @@ Deno.serve(async (req) => {
       })
     }
 
-    let monthlyFee: number
     let txFeePercent = 0
     const cfg = settings?.app_config || {}
+    const override =
+      plan_id === 'pro'
+        ? cfg.pro_price_manual
+        : plan_id === 'starter'
+          ? cfg.starter_price_manual
+          : null
 
-    if (plan_id === 'pro' && cfg.pro_price_manual) {
-      monthlyFee = Number(cfg.pro_price_manual)
-    } else if (plan_id === 'starter' && cfg.starter_price_manual) {
-      monthlyFee = Number(cfg.starter_price_manual)
+    let monthlyFee: number
+    if (override !== undefined && override !== null && override !== '') {
+      monthlyFee = Number(override)
     } else {
       const { data: plan, error: planError } = await serviceClient
         .from('plans')

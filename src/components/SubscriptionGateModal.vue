@@ -536,8 +536,8 @@ onUnmounted(() => {
   border-radius: 12px;
 }
 .sg-khqr-wrap {
-  width: 180px;
-  height: 180px;
+  width: 280px;
+  height: 280px;
   background: #fff;
   border: 1px solid #e8e6e1;
   border-radius: 12px;

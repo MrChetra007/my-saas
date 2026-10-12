@@ -15,10 +15,41 @@
             <rect x="23" y="5" width="4" height="4" rx="0.5" fill="white" />
             <rect x="2" y="20" width="10" height="10" rx="2" stroke="white" stroke-width="2" />
             <rect x="5" y="23" width="4" height="4" rx="0.5" fill="white" />
-            <line x1="22" y1="21" x2="22" y2="30" stroke="white" stroke-width="2" stroke-linecap="round" />
-            <line x1="26" y1="21" x2="26" y2="30" stroke="white" stroke-width="2" stroke-linecap="round" />
-            <line x1="30" y1="21" x2="30" y2="30" stroke="white" stroke-width="2" stroke-linecap="round" />
-            <path d="M22 21 Q22 25 26 27 Q30 25 30 21" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+            <line
+              x1="22"
+              y1="21"
+              x2="22"
+              y2="30"
+              stroke="white"
+              stroke-width="2"
+              stroke-linecap="round"
+            />
+            <line
+              x1="26"
+              y1="21"
+              x2="26"
+              y2="30"
+              stroke="white"
+              stroke-width="2"
+              stroke-linecap="round"
+            />
+            <line
+              x1="30"
+              y1="21"
+              x2="30"
+              y2="30"
+              stroke="white"
+              stroke-width="2"
+              stroke-linecap="round"
+            />
+            <path
+              d="M22 21 Q22 25 26 27 Q30 25 30 21"
+              stroke="white"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              fill="none"
+            />
           </svg>
         </div>
         <span class="logo-wordmark">{{ $t('trialWall.logo') }}</span>
@@ -113,9 +144,7 @@
         </div>
       </div>
 
-      <p class="secure-note">
-        <Lock :size="11" /> Bakong KHQR Secure Payment
-      </p>
+      <p class="secure-note"><Lock :size="11" /> Bakong KHQR Secure Payment</p>
     </div>
 
     <!-- ── KHQR Payment Modal ── -->
@@ -138,7 +167,11 @@
               <div class="tw-error-icon"><AlertCircle :size="36" /></div>
               <h3 class="tw-modal-title">Unable to generate QR</h3>
               <p class="tw-modal-desc">{{ khqrError }}</p>
-              <button class="plan-btn plan-btn-primary" style="margin-top:16px;" @click="selectPlan(selectedPlanId, true)">
+              <button
+                class="plan-btn plan-btn-primary"
+                style="margin-top: 16px"
+                @click="selectPlan(selectedPlanId, true)"
+              >
                 Try Again
               </button>
             </div>
@@ -147,8 +180,14 @@
             <div v-else-if="isPaid" class="tw-modal-body tw-center">
               <div class="tw-success-icon"><Check :size="40" /></div>
               <h3 class="tw-modal-title">Payment Confirmed!</h3>
-              <p class="tw-modal-desc">Your subscription is now active. Redirecting to dashboard…</p>
-              <button class="plan-btn plan-btn-primary" style="margin-top:16px;" @click="router.push('/app/dashboard')">
+              <p class="tw-modal-desc">
+                Your subscription is now active. Redirecting to dashboard…
+              </p>
+              <button
+                class="plan-btn plan-btn-primary"
+                style="margin-top: 16px"
+                @click="router.push('/app/dashboard')"
+              >
                 Go to Dashboard
               </button>
             </div>
@@ -158,7 +197,8 @@
               <div class="tw-modal-header">
                 <div class="tw-plan-badge">{{ selectedPlanName }} Plan</div>
                 <div class="tw-price-tag">
-                  <span class="tw-dollar">$</span>{{ selectedPlanPrice }}<span class="tw-mo">/mo</span>
+                  <span class="tw-dollar">$</span>{{ selectedPlanPrice
+                  }}<span class="tw-mo">/mo</span>
                 </div>
               </div>
 
@@ -208,9 +248,7 @@
                 Open checkout page
               </a>
 
-              <button class="tw-btn-back" @click="closeKhqrModal">
-                Back
-              </button>
+              <button class="tw-btn-back" @click="closeKhqrModal">Back</button>
             </div>
           </div>
         </div>
@@ -250,7 +288,7 @@ const prices = ref({ starter: 15, pro: 25 })
 const showKhqrModal = ref(false)
 const selectedPlanId = ref('starter')
 const selectedPlanPrice = computed(() => prices.value[selectedPlanId.value] || 15)
-const selectedPlanName = computed(() => selectedPlanId.value === 'pro' ? 'Pro' : 'Starter')
+const selectedPlanName = computed(() => (selectedPlanId.value === 'pro' ? 'Pro' : 'Starter'))
 
 const qrImageUrl = ref('')
 const qrImageError = ref(false)
@@ -302,16 +340,36 @@ onMounted(async () => {
     restaurantName.value = data?.name || ''
   }
 
-  // Single source of truth: load pricing directly from public.plans
+  // Single source of truth: platform_settings.app_config override first, then public.plans
   try {
-    const { data: plans } = await supabase
-      .from('plans')
-      .select('id, monthly_fee')
-    if (plans) {
-      plans.forEach((p) => {
-        if (p.id === 'starter' && p.monthly_fee) prices.value.starter = Number(p.monthly_fee)
-        if (p.id === 'pro' && p.monthly_fee) prices.value.pro = Number(p.monthly_fee)
-      })
+    const { data: settings } = await supabase
+      .from('platform_settings')
+      .select('app_config')
+      .eq('id', true)
+      .maybeSingle()
+
+    const cfg = settings?.app_config || {}
+    const hasStarter =
+      cfg.starter_price_manual !== undefined &&
+      cfg.starter_price_manual !== null &&
+      cfg.starter_price_manual !== ''
+    const hasPro =
+      cfg.pro_price_manual !== undefined &&
+      cfg.pro_price_manual !== null &&
+      cfg.pro_price_manual !== ''
+
+    if (hasStarter) prices.value.starter = Number(cfg.starter_price_manual)
+    if (hasPro) prices.value.pro = Number(cfg.pro_price_manual)
+
+    if (!hasStarter || !hasPro) {
+      const { data: plans } = await supabase.from('plans').select('id, monthly_fee')
+      if (plans) {
+        plans.forEach((p) => {
+          if (p.id === 'starter' && !hasStarter && p.monthly_fee)
+            prices.value.starter = Number(p.monthly_fee)
+          if (p.id === 'pro' && !hasPro && p.monthly_fee) prices.value.pro = Number(p.monthly_fee)
+        })
+      }
     }
   } catch (e) {
     console.warn('Failed to load plans pricing', e)
@@ -854,8 +912,8 @@ async function signOut() {
 }
 
 .tw-qr-frame {
-  width: 220px;
-  height: 220px;
+  width: 280px;
+  height: 280px;
   background: white;
   border-radius: 16px;
   display: flex;
@@ -995,7 +1053,9 @@ async function signOut() {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* ── Responsive ── */

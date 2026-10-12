@@ -48,56 +48,54 @@
         <span>KHQR.dev Automated Payment</span>
       </div>
 
-      <!-- KHQR.dev API Token -->
+      <!-- Credentials live as Supabase Edge Function secrets, not in the DB -->
       <div class="form-group">
-        <label class="form-label">KHQR.dev API Token <span class="badge-required">required</span></label>
-        <div class="input-secret-wrap">
-          <input
-            v-model="form.khqrdev_token"
-            :type="showToken ? 'text' : 'password'"
-            class="form-input"
-            placeholder="Paste your KHQR.dev Bearer token…"
-            autocomplete="off"
-          />
-          <button type="button" class="input-eye-btn" @click="showToken = !showToken">
-            <svg v-if="!showToken" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-            <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-          </button>
+        <label class="form-label">KHQR.dev credentials</label>
+        <div class="form-hint">
+          The KHQR.dev API token and Webhook Secret are configured as Supabase Edge Function secrets
+          (<code>KHQRDEV_TOKEN</code>, <code>KHQRDEV_WEBHOOK_SECRET</code>), not here. Set them from
+          the CLI:<br />
+          <code>supabase secrets set KHQRDEV_TOKEN=... KHQRDEV_WEBHOOK_SECRET=...</code>
         </div>
-        <div class="form-hint">From your KHQR.dev store dashboard → API tab. Starts with <code>RBK_</code></div>
-      </div>
-
-      <!-- KHQR.dev Webhook Secret -->
-      <div class="form-group">
-        <label class="form-label">KHQR.dev Webhook Secret <span class="badge-required">required</span></label>
-        <div class="input-secret-wrap">
-          <input
-            v-model="form.khqrdev_webhook_secret"
-            :type="showWebhookSecret ? 'text' : 'password'"
-            class="form-input"
-            placeholder="Paste your KHQR.dev Webhook Secret…"
-            autocomplete="off"
-          />
-          <button type="button" class="input-eye-btn" @click="showWebhookSecret = !showWebhookSecret">
-            <svg v-if="!showWebhookSecret" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-            <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-          </button>
-        </div>
-        <div class="form-hint">From your KHQR.dev store dashboard → Webhook tab.</div>
       </div>
 
       <!-- Webhook URL (read-only, copy) -->
       <div class="form-group">
-        <label class="form-label">Your Webhook URL <span class="badge-info">set this in KHQR.dev dashboard</span></label>
+        <label class="form-label"
+          >Your Webhook URL <span class="badge-info">set this in KHQR.dev dashboard</span></label
+        >
         <div class="webhook-url-row">
           <code class="webhook-url-code">{{ webhookUrl }}</code>
           <button type="button" class="btn-copy" @click="copyWebhookUrl">
-            <svg v-if="!copied" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-            <svg v-else width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            <svg
+              v-if="!copied"
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <rect x="9" y="9" width="13" height="13" rx="2" />
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+            </svg>
+            <svg
+              v-else
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#15803d"
+              stroke-width="2.5"
+            >
+              <polyline points="20 6 9 17 4 12" />
+            </svg>
             {{ copied ? 'Copied!' : 'Copy' }}
           </button>
         </div>
-        <div class="form-hint">Paste this URL as your store's Webhook URL in the KHQR.dev dashboard.</div>
+        <div class="form-hint">
+          Paste this URL as your store's Webhook URL in the KHQR.dev dashboard.
+        </div>
       </div>
     </div>
 
@@ -107,7 +105,9 @@
         {{ msg.text }}
       </div>
       <button class="btn-primary" :disabled="saving" @click="saveSettings">
-        {{ saving ? $t('superAdmin.platformSettings.saving') : $t('superAdmin.platformSettings.save') }}
+        {{
+          saving ? $t('superAdmin.platformSettings.saving') : $t('superAdmin.platformSettings.save')
+        }}
       </button>
     </div>
   </div>
@@ -128,12 +128,8 @@ const form = ref({
   bakong_account_id: '',
   merchant_name: 'QRserve',
   merchant_city: 'Phnom Penh',
-  khqrdev_token: '',
-  khqrdev_webhook_secret: '',
 })
 const savedBakongId = ref('')
-const showToken = ref(false)
-const showWebhookSecret = ref(false)
 const copied = ref(false)
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
@@ -143,7 +139,9 @@ async function copyWebhookUrl() {
   try {
     await navigator.clipboard.writeText(webhookUrl)
     copied.value = true
-    setTimeout(() => { copied.value = false }, 2000)
+    setTimeout(() => {
+      copied.value = false
+    }, 2000)
   } catch {}
 }
 
@@ -159,22 +157,14 @@ async function saveSettings() {
       updated_by: authStore.user?.id,
       updated_at: new Date().toISOString(),
     }
-    // Only include token/secret if filled in (don't overwrite with empty string)
-    if (form.value.khqrdev_token.trim()) {
-      upsertData.khqrdev_token = form.value.khqrdev_token.trim()
-    }
-    if (form.value.khqrdev_webhook_secret.trim()) {
-      upsertData.khqrdev_webhook_secret = form.value.khqrdev_webhook_secret.trim()
-    }
-
     const { error } = await supabase.from('platform_settings').upsert(upsertData)
     if (error) throw error
+
     savedBakongId.value = form.value.bakong_account_id.trim()
-    // Clear secret fields after save (write-only UX)
-    form.value.khqrdev_token = ''
-    form.value.khqrdev_webhook_secret = ''
     msg.value = { type: 'success', text: t('superAdmin.platformSettings.success') }
-    setTimeout(() => { msg.value = null }, 3000)
+    setTimeout(() => {
+      msg.value = null
+    }, 3000)
   } catch (err) {
     msg.value = { type: 'error', text: err.message }
   } finally {
@@ -185,9 +175,7 @@ async function saveSettings() {
 async function loadSettings() {
   const { data, error } = await supabase
     .from('platform_settings')
-    // Note: khqrdev_token and khqrdev_webhook_secret are write-only in the UI —
-    // we load a boolean indicator of whether they are set, not the values.
-    .select('bakong_account_id, merchant_name, merchant_city, khqrdev_token, khqrdev_webhook_secret')
+    .select('bakong_account_id, merchant_name, merchant_city')
     .eq('id', true)
     .single()
 
@@ -196,15 +184,8 @@ async function loadSettings() {
     form.value.merchant_name = data.merchant_name || 'QRserve'
     form.value.merchant_city = data.merchant_city || 'Phnom Penh'
     savedBakongId.value = data.bakong_account_id || ''
-    // Don't pre-fill token/secret — write-only UX (clear after save)
-    // We do track if they're configured for the status indicator
-    tokenConfigured.value = !!data.khqrdev_token
-    webhookSecretConfigured.value = !!data.khqrdev_webhook_secret
   }
 }
-
-const tokenConfigured = ref(false)
-const webhookSecretConfigured = ref(false)
 
 onMounted(loadSettings)
 
@@ -467,7 +448,9 @@ const icons = {
   align-items: center;
   transition: color 0.15s;
 }
-.input-eye-btn:hover { color: #f97316; }
+.input-eye-btn:hover {
+  color: #f97316;
+}
 .badge-required {
   display: inline-block;
   font-size: 10px;
@@ -525,6 +508,8 @@ const icons = {
   transition: all 0.15s;
   flex-shrink: 0;
 }
-.btn-copy:hover { border-color: #f97316; color: #f97316; }
+.btn-copy:hover {
+  border-color: #f97316;
+  color: #f97316;
+}
 </style>
-

@@ -32,14 +32,15 @@ Deno.serve(async (req) => {
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
   )
 
-  // ── 2. Load webhook secret from platform_settings ─────────────────────────
-  const { data: settings, error: settingsError } = await serviceClient
+  // ── 2. Load pricing config + read webhook secret from env ────────────────
+  const { data: settings } = await serviceClient
     .from('platform_settings')
-    .select('khqrdev_webhook_secret')
+    .select('app_config')
     .eq('id', true)
     .single()
 
-  if (settingsError || !settings?.khqrdev_webhook_secret) {
+  const secret = Deno.env.get('KHQRDEV_WEBHOOK_SECRET')
+  if (!secret) {
     console.error('Webhook secret not configured')
     // Return 200 so KHQR.dev doesn't retry — this is a platform config problem
     return new Response(JSON.stringify({ ok: false, reason: 'webhook_secret_not_configured' }), {
@@ -47,8 +48,6 @@ Deno.serve(async (req) => {
       headers: { 'Content-Type': 'application/json' },
     })
   }
-
-  const secret = settings.khqrdev_webhook_secret
 
   // ── 3. Replay-window check (X-RBK-Delivery is unix ms) ───────────────────
   const deliveryHeader = req.headers.get('x-rbk-delivery')
@@ -102,7 +101,11 @@ Deno.serve(async (req) => {
   }
 
   // ── 5. Parse payload (only after signature verified) ─────────────────────
-  let payload: { event: string; timestamp: number; data: { md5?: string; tran_id?: string; paid_at?: string } }
+  let payload: {
+    event: string
+    timestamp: number
+    data: { md5?: string; tran_id?: string; paid_at?: string }
+  }
   try {
     payload = JSON.parse(new TextDecoder().decode(bodyBytes))
   } catch {
@@ -150,19 +153,36 @@ Deno.serve(async (req) => {
   }
 
   // ── 7b. Server-side amount verification ──────────────────────────────────
-  const { data: plan } = await serviceClient
-    .from('plans')
-    .select('monthly_fee')
-    .eq('id', invoice.plan_id)
-    .single()
+  // Price source mirrors khqr-payment: platform_settings.app_config override
+  // first, then public.plans as a fallback.
+  const cfg = settings?.app_config || {}
+  const override =
+    invoice.plan_id === 'pro'
+      ? cfg.pro_price_manual
+      : invoice.plan_id === 'starter'
+        ? cfg.starter_price_manual
+        : null
 
-  const expectedFee = plan?.monthly_fee != null ? Number(plan.monthly_fee) : 25
+  let expectedFee: number
+  if (override !== undefined && override !== null && override !== '') {
+    expectedFee = Number(override)
+  } else {
+    const { data: plan } = await serviceClient
+      .from('plans')
+      .select('monthly_fee')
+      .eq('id', invoice.plan_id)
+      .single()
+    expectedFee = plan?.monthly_fee != null ? Number(plan.monthly_fee) : 25
+  }
+
   const invoiceAmount = Number(invoice.total_amount)
 
-  // Verify that invoice was not billed below official plan fee (unless sandbox_mode is active)
-  const isSandbox = Boolean(settings?.app_config?.sandbox_mode)
+  // Verify that invoice was not billed below the configured price (unless sandbox_mode is active)
+  const isSandbox = Boolean(cfg.sandbox_mode)
   if (!isSandbox && invoiceAmount < expectedFee) {
-    console.error(`Fraud/Underbilling alert: invoice total_amount (${invoiceAmount}) < plan monthly_fee (${expectedFee})`)
+    console.error(
+      `Fraud/Underbilling alert: invoice total_amount (${invoiceAmount}) < configured price (${expectedFee})`,
+    )
     return new Response(JSON.stringify({ ok: false, reason: 'amount_mismatch' }), {
       status: 400,
       headers: { 'Content-Type': 'application/json' },
@@ -173,7 +193,9 @@ Deno.serve(async (req) => {
   if (data.amount !== undefined) {
     const paidAmount = Number(data.amount)
     if (paidAmount < invoiceAmount) {
-      console.error(`Underpayment alert: paid amount (${paidAmount}) < invoice amount (${invoiceAmount})`)
+      console.error(
+        `Underpayment alert: paid amount (${paidAmount}) < invoice amount (${invoiceAmount})`,
+      )
       return new Response(JSON.stringify({ ok: false, reason: 'underpaid' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' },
@@ -238,7 +260,7 @@ Deno.serve(async (req) => {
 
   console.log(
     `Payment confirmed: invoice ${invoice.id}, restaurant ${invoice.restaurant_id}, ` +
-    `plan ${invoice.plan_id}, expires ${newExpiry.toISOString()}`,
+      `plan ${invoice.plan_id}, expires ${newExpiry.toISOString()}`,
   )
 
   return new Response(
