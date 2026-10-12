@@ -11,7 +11,7 @@
           <p class="sg-sub">{{ $t('subscriptionGate.subtitle') }}</p>
         </div>
 
-        <!-- Step 1: Generate invoice -->
+        <!-- Step 1: Confirm plan + generate QR -->
         <div v-if="step === 'generate'" class="sg-body">
           <p class="sg-desc">{{ $t('subscriptionGate.generateDesc') }}</p>
           <div class="sg-summary">
@@ -21,7 +21,7 @@
             </div>
             <div class="sg-summary-row">
               <span>{{ $t('subscriptionGate.monthlyFee') }}</span>
-              <span class="sg-badge" style="color:#1a1917">${{ planPrice }}</span>
+              <span class="sg-badge" style="color:#1a1917">${{ planPrice }}/mo</span>
             </div>
             <div class="sg-summary-row" v-if="errorMsg">
               <span class="sg-error" v-html="errorMsg" />
@@ -33,70 +33,87 @@
           </button>
         </div>
 
-        <!-- Step 2: Show KHQR + upload proof -->
+        <!-- Step 2: Show KHQR QR image + polling -->
         <div v-else-if="step === 'invoice'" class="sg-body">
           <div v-if="invoiceLoading" class="sg-invoice">
             <span class="sg-spinner" style="border-top-color:#f97316;border-color:rgba(249,115,22,0.25)" />
           </div>
           <div v-else-if="invoice" class="sg-invoice">
-            <template v-if="invoice.qr_image">
-              <div class="sg-khqr-wrap">
-                <img :src="invoice.qr_image" alt="KHQR" class="sg-khqr-img" />
+            <!-- KHQR.dev QR image (served from api.khqr.dev, no token needed) -->
+            <div class="sg-khqr-wrap">
+              <img
+                v-if="qrImageUrl"
+                :src="qrImageUrl"
+                alt="KHQR"
+                class="sg-khqr-img"
+                @error="qrImageError = true"
+              />
+              <div v-else-if="qrImageError" class="sg-qr-fallback">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#a8a49e" stroke-width="1.5"><path d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"/><circle cx="12" cy="12" r="10"/></svg>
+                <span>QR unavailable</span>
               </div>
-              <div class="sg-amount">${{ invoice.total_amount }}</div>
-              <div class="sg-khqr-hint">{{ $t('subscriptionGate.scanAndPay') }}</div>
-            </template>
-            <template v-else>
-              <div class="sg-no-khqr">
-                <div class="sg-amount">${{ invoice.total_amount }}</div>
-                <p class="sg-bank-info">{{ $t('subscriptionGate.bankTransfer') }}</p>
-                <p class="sg-bank-detail">{{ $t('subscriptionGate.bankAccount') }}</p>
-              </div>
-            </template>
-          </div>
+              <span v-else class="sg-spinner" style="border-top-color:#f97316;border-color:rgba(249,115,22,0.25)" />
+            </div>
 
-          <div class="sg-upload">
-  <label class="sg-upload-label">{{ $t('subscriptionGate.uploadProofLabel') }}</label>
-  <label class="sg-upload-dropzone" :class="{ 'sg-has-file': selectedFile }">
-    <input type="file" accept="image/*" class="sg-upload-input" @change="onFileChange" />
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-      <polyline points="17 8 12 3 7 8"/>
-      <line x1="12" y1="3" x2="12" y2="15"/>
-    </svg>
-    <span v-if="!selectedFile" class="sg-upload-placeholder">{{ $t('subscriptionGate.chooseFile') || 'Choose a screenshot to upload' }}</span>
-    <span v-else class="sg-file-name">{{ selectedFile.name }}</span>
-  </label>
-</div>
+            <div class="sg-amount">${{ invoice.total_amount }}</div>
+            <div class="sg-khqr-hint">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10zm0-6v-4m0-4h.01"/></svg>
+              {{ $t('subscriptionGate.scanAndPay') }}
+            </div>
+
+            <!-- Countdown timer (KHQR.dev QR expires in 10 min) -->
+            <div v-if="countdown > 0" class="sg-countdown">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              {{ $t('subscriptionGate.expiresIn') || 'Expires in' }} {{ countdownLabel }}
+            </div>
+            <div v-else-if="countdown === 0" class="sg-expired-hint">
+              {{ $t('subscriptionGate.qrExpired') || 'QR expired' }}
+              <button class="sg-link-btn" @click="regenerate">{{ $t('subscriptionGate.generateNew') || 'Generate new' }}</button>
+            </div>
+
+            <!-- Waiting for payment indicator -->
+            <div v-if="polling" class="sg-polling">
+              <span class="sg-spinner-sm" />
+              {{ $t('subscriptionGate.waitingForPayment') || 'Waiting for payment confirmation…' }}
+            </div>
+          </div>
 
           <div v-if="errorMsg" class="sg-error">{{ errorMsg }}</div>
 
-          <button class="sg-btn-primary" :disabled="submitting || !selectedFile" @click="submitProof">
-            <span v-if="submitting" class="sg-spinner" />
-            {{ submitting ? $t('subscriptionGate.submitting') : $t('subscriptionGate.submitProof') }}
+          <!-- Fallback: open KHQR.dev checkout page in new tab -->
+          <a
+            v-if="invoice?.khqrdev_checkout_url"
+            :href="invoice.khqrdev_checkout_url"
+            target="_blank"
+            rel="noopener"
+            class="sg-btn-secondary"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            {{ $t('subscriptionGate.openCheckout') || 'Open full checkout page' }}
+          </a>
+        </div>
+
+        <!-- Step 3: Payment confirmed (webhook received) -->
+        <div v-else-if="step === 'paid'" class="sg-body">
+          <div class="sg-success-icon">
+            <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="1.8" stroke-linecap="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          </div>
+          <h3 class="sg-success-title">{{ $t('subscriptionGate.paidTitle') || 'Payment confirmed!' }}</h3>
+          <p class="sg-success-desc">{{ $t('subscriptionGate.paidDesc') || 'Your subscription has been renewed. Enjoy QRserve!' }}</p>
+          <button class="sg-btn-primary" @click="closeModal">
+            {{ $t('common.done') || 'Done' }}
           </button>
         </div>
 
-        <!-- Step 3: Submitted / rejected -->
+        <!-- Step 4: Submitted proof (old manual flow, kept for backwards compat) -->
         <div v-else-if="step === 'submitted'" class="sg-body">
-  <div class="sg-success-icon">
-    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="1.8" stroke-linecap="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-  </div>
-  <h3 class="sg-success-title">{{ $t('subscriptionGate.submittedTitle') }}</h3>
-  <p class="sg-success-desc">{{ $t('subscriptionGate.submittedDesc', { date: graceDate }) }}</p>
-  <button class="sg-btn-primary" @click="closeModal">
-    {{ $t('common.done') || 'Done' }}
-  </button>
-</div>
-        <div v-else-if="step === 'rejected'" class="sg-body">
-          <div class="sg-rejected-icon">
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#e11d48" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+          <div class="sg-success-icon">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="1.8" stroke-linecap="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
           </div>
-          <h3 class="sg-rejected-title">{{ $t('subscriptionGate.rejectedTitle') }}</h3>
-          <p v-if="rejectedReason" class="sg-rejected-reason">{{ $t('subscriptionGate.rejectedReason') }} "{{ rejectedReason }}"</p>
-          <p class="sg-rejected-desc">{{ $t('subscriptionGate.rejectedDesc') }}</p>
-          <button class="sg-btn-primary" @click="retry">
-            {{ $t('subscriptionGate.retry') }}
+          <h3 class="sg-success-title">{{ $t('subscriptionGate.submittedTitle') }}</h3>
+          <p class="sg-success-desc">{{ $t('subscriptionGate.submittedDesc', { date: graceDate }) }}</p>
+          <button class="sg-btn-primary" @click="closeModal">
+            {{ $t('common.done') || 'Done' }}
           </button>
         </div>
 
@@ -110,7 +127,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
 import { useI18n } from 'vue-i18n'
@@ -118,34 +135,103 @@ import { useBillingStatus } from '@/composables/useBillingStatus'
 
 const authStore = useAuthStore()
 const { t } = useI18n()
-const { billingStatus, planName, planPrice, graceEndsAt } = useBillingStatus()
+const { billingStatus, planName, planPrice } = useBillingStatus()
 
 const visible = computed(() => billingStatus.value === 'blocked' && !dismissed.value)
-
 
 const step = ref('generate')
 const errorMsg = ref('')
 const generating = ref(false)
-const submitting = ref(false)
 const invoiceLoading = ref(false)
-const selectedFile = ref(null)
 const invoice = ref(null)
-const rejectedReason = ref('')
-const graceDate = ref('')
+const qrImageUrl = ref(null)
+const qrImageError = ref(false)
 const dismissed = ref(false)
+const graceDate = ref('')
 
+// KHQR.dev QR countdown: expires in 10 minutes (600 seconds)
+const countdown = ref(-1) // -1 = not started, 0 = expired, >0 = seconds left
+let countdownTimer = null
 
-function closeModal() {
-  dismissed.value = true
-}
+const countdownLabel = computed(() => {
+  if (countdown.value <= 0) return ''
+  const m = Math.floor(countdown.value / 60)
+  const s = countdown.value % 60
+  return `${m}:${s.toString().padStart(2, '0')}`
+})
+
+// Polling for payment confirmation
+const polling = ref(false)
+let pollTimer = null
+const POLL_INTERVAL_MS = 4000 // poll every 4 seconds
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 
-// Calls the edge function for the CURRENT open period, always returning a
-// fresh qr_image. The edge function's own dedup logic decides whether to
-// reuse an existing invoice row or create a new one, and always computes
-// qr_image on the fly since that field is never stored in the DB.
-async function fetchInvoiceViaFunction() {
+function closeModal() {
+  dismissed.value = true
+  stopPolling()
+  stopCountdown()
+}
+
+function startCountdown(seconds = 600) {
+  countdown.value = seconds
+  stopCountdown()
+  countdownTimer = setInterval(() => {
+    countdown.value--
+    if (countdown.value <= 0) {
+      countdown.value = 0
+      stopCountdown()
+      stopPolling()
+    }
+  }, 1000)
+}
+
+function stopCountdown() {
+  if (countdownTimer) {
+    clearInterval(countdownTimer)
+    countdownTimer = null
+  }
+}
+
+// Poll the invoice status via Supabase directly (no edge function needed for status reads)
+async function startPolling(invoiceId) {
+  polling.value = true
+  stopPolling()
+  pollTimer = setInterval(async () => {
+    try {
+      const { data } = await supabase
+        .from('subscription_invoices')
+        .select('status')
+        .eq('id', invoiceId)
+        .single()
+
+      if (data?.status === 'paid') {
+        stopPolling()
+        stopCountdown()
+        polling.value = false
+        // Refresh restaurant data so billingStatus flips to 'active'
+        if (authStore.refreshRestaurant) {
+          await authStore.refreshRestaurant()
+        }
+        step.value = 'paid'
+        // Dismiss after short delay so user sees the success screen
+        setTimeout(() => { dismissed.value = true }, 4000)
+      }
+    } catch (err) {
+      console.warn('Poll error:', err)
+    }
+  }, POLL_INTERVAL_MS)
+}
+
+function stopPolling() {
+  if (pollTimer) {
+    clearInterval(pollTimer)
+    pollTimer = null
+  }
+  polling.value = false
+}
+
+async function callKhqrPayment() {
   const token = (await supabase.auth.getSession()).data.session?.access_token
   const rid = authStore.profile?.restaurant_id
   if (!rid) throw new Error('No restaurant ID')
@@ -157,7 +243,7 @@ async function fetchInvoiceViaFunction() {
   const rawPlan = authStore._restaurant?.plan || 'starter'
   const planId = (rawPlan === 'expired' || rawPlan === 'trial') ? 'starter' : rawPlan
 
-  const res = await fetch(`${supabaseUrl}/functions/v1/generate-khqr-invoice`, {
+  const res = await fetch(`${supabaseUrl}/functions/v1/khqr-payment`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -171,16 +257,25 @@ async function fetchInvoiceViaFunction() {
     }),
   })
   const data = await res.json()
-  if (!res.ok) throw new Error(data.error || 'Failed to load invoice')
-  return data.invoice
+  if (!res.ok) throw new Error(data.error || 'Failed to create payment')
+  return data
 }
 
 async function generateInvoice() {
   generating.value = true
   errorMsg.value = ''
   try {
-    invoice.value = await fetchInvoiceViaFunction()
+    const result = await callKhqrPayment()
+    invoice.value = result.invoice
+    qrImageUrl.value = result.qr_image_url || null
+    qrImageError.value = false
     step.value = 'invoice'
+    // Start 10-min countdown for the KHQR.dev QR
+    startCountdown(600)
+    // Start polling for payment confirmation
+    if (invoice.value?.id) {
+      startPolling(invoice.value.id)
+    }
   } catch (err) {
     errorMsg.value = err.message
   } finally {
@@ -188,15 +283,19 @@ async function generateInvoice() {
   }
 }
 
-// Loads an already-open invoice (pending / pending_review) for display,
-// always going through the edge function so qr_image gets computed —
-// never reads the subscription_invoices row directly for this purpose.
 async function loadOpenInvoice() {
   invoiceLoading.value = true
   errorMsg.value = ''
   try {
-    invoice.value = await fetchInvoiceViaFunction()
-    step.value = invoice.value?.status === 'pending_review' ? 'submitted' : 'invoice'
+    const result = await callKhqrPayment()
+    invoice.value = result.invoice
+    qrImageUrl.value = result.qr_image_url || null
+    qrImageError.value = false
+    step.value = 'invoice'
+    startCountdown(600)
+    if (invoice.value?.id) {
+      startPolling(invoice.value.id)
+    }
   } catch (err) {
     errorMsg.value = err.message
     step.value = 'generate'
@@ -205,185 +304,66 @@ async function loadOpenInvoice() {
   }
 }
 
-function onFileChange(e) {
-  selectedFile.value = e.target.files[0] || null
+async function regenerate() {
+  // Force a fresh QR by going back to generate step (the old invoice will be expired by the edge fn)
+  invoice.value = null
+  qrImageUrl.value = null
+  qrImageError.value = false
+  countdown.value = -1
+  step.value = 'generate'
+  stopPolling()
+  await generateInvoice()
 }
 
-async function submitProof() {
-  if (!selectedFile.value || !invoice.value) return
-  submitting.value = true
-  errorMsg.value = ''
-  try {
-    const token = (await supabase.auth.getSession()).data.session?.access_token
-    const rid = authStore.profile?.restaurant_id
-    const ext = selectedFile.value.name.split('.').pop()
-    const filePath = `${rid}/${invoice.value.id}_${Date.now()}.${ext}`
-
-    const { error: uploadError } = await supabase.storage
-      .from('payment-proofs')
-      .upload(filePath, selectedFile.value, {
-        cacheControl: '3600',
-        upsert: true,
-      })
-    if (uploadError) throw uploadError
-
-    const proofUrl = filePath
-
-    const res = await fetch(`${supabaseUrl}/functions/v1/submit-payment-proof`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        invoice_id: invoice.value.id,
-        proof_url: proofUrl,
-      }),
-    })
-    const data = await res.json()
-    if (!res.ok) throw new Error(data.error || 'Failed to submit proof')
-
-    if (authStore.refreshRestaurant) {
-      await authStore.refreshRestaurant()
-    }
-
-    graceDate.value = data.grace_period_ends_at
-      ? new Date(data.grace_period_ends_at).toLocaleDateString()
-      : ''
-    step.value = 'submitted'
-  } catch (err) {
-    errorMsg.value = err.message
-  } finally {
-    submitting.value = false
-  }
-}
-
-function retry() {
-  step.value = 'invoice'
-  selectedFile.value = null
-  errorMsg.value = ''
-}
-
-// Watch for rejected invoice updates
 watch(() => billingStatus.value, (val) => {
+  if (val === 'active' || val === 'grace') {
+    stopPolling()
+    stopCountdown()
+  }
   if (val === 'blocked') {
-    const r = authStore._restaurant
-    if (r?.plan === 'expired' || (r?.plan_expires_at && new Date(r.plan_expires_at) < new Date())) {
-      // Rejected-invoice lookup is read-only display info (reason text),
-      // no QR involved, so a direct table read is fine here.
-      supabase
-        .from('subscription_invoices')
-        .select('*')
-        .eq('restaurant_id', authStore.profile?.restaurant_id)
-        .eq('status', 'rejected')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .then(({ data }) => {
-          if (data && data.length > 0) {
-            rejectedReason.value = data[0].rejected_reason || ''
-            step.value = 'rejected'
-          } else {
-            supabase
-              .from('subscription_invoices')
-              .select('id, status')
-              .eq('restaurant_id', authStore.profile?.restaurant_id)
-              .in('status', ['pending', 'pending_review'])
-              .order('created_at', { ascending: false })
-              .limit(1)
-              .then(({ data: openInv }) => {
-                if (openInv && openInv.length > 0) {
-                  loadOpenInvoice()
-                } else {
-                  step.value = 'generate'
-                }
-              })
-          }
-        })
-    }
+    dismissed.value = false
+    // Check for existing open invoice
+    supabase
+      .from('subscription_invoices')
+      .select('id, status')
+      .eq('restaurant_id', authStore.profile?.restaurant_id)
+      .in('status', ['pending', 'pending_review'])
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .then(({ data }) => {
+        if (data && data.length > 0) {
+          loadOpenInvoice()
+        } else {
+          step.value = 'generate'
+        }
+      })
   }
 })
 
 onMounted(() => {
   if (visible.value) {
-    // Only check id/status here — never read khqr_string/qr fields
-    // directly, since qr_image is computed by the edge function and is
-    // never persisted to the DB.
     supabase
       .from('subscription_invoices')
-      .select('id, status, rejected_reason')
+      .select('id, status')
       .eq('restaurant_id', authStore.profile?.restaurant_id)
-      .in('status', ['pending', 'pending_review', 'rejected'])
+      .in('status', ['pending', 'pending_review'])
       .order('created_at', { ascending: false })
       .limit(1)
       .then(({ data }) => {
         if (data && data.length > 0) {
-          const inv = data[0]
-          if (inv.status === 'rejected') {
-            rejectedReason.value = inv.rejected_reason || ''
-            step.value = 'rejected'
-          } else {
-            loadOpenInvoice()
-          }
+          loadOpenInvoice()
         }
       })
   }
 })
+
+onUnmounted(() => {
+  stopPolling()
+  stopCountdown()
+})
 </script>
 
 <style scoped>
-.sg-upload {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.sg-upload-label {
-  font-size: 12px;
-  font-weight: 600;
-  color: #3d3d3a;
-}
-.sg-upload-dropzone {
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 14px;
-  border: 1.5px dashed #e0ddd6;
-  border-radius: 10px;
-  background: #fafaf9;
-  color: #a8a49e;
-  cursor: pointer;
-  transition: border-color 0.15s, background 0.15s, color 0.15s;
-}
-.sg-upload-dropzone:hover {
-  border-color: #f97316;
-  background: #fff8f2;
-  color: #f97316;
-}
-.sg-upload-dropzone.sg-has-file {
-  border-style: solid;
-  border-color: #f97316;
-  background: #fff8f2;
-  color: #1a1917;
-}
-.sg-upload-input {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0;
-  cursor: pointer;
-}
-.sg-upload-placeholder {
-  font-size: 13px;
-}
-.sg-file-name {
-  font-size: 13px;
-  font-weight: 500;
-  color: #1a1917;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
 .sg-overlay {
   position: fixed;
   inset: 0;
@@ -485,9 +465,38 @@ onMounted(() => {
   justify-content: center;
   gap: 8px;
   width: 100%;
+  text-decoration: none;
 }
 .sg-btn-primary:hover:not(:disabled) { background: #ea6c10; }
 .sg-btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+.sg-btn-secondary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 38px;
+  padding: 0 16px;
+  background: transparent;
+  border: 1.5px solid #e0ddd6;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #3d3d3a;
+  text-decoration: none;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.sg-btn-secondary:hover { border-color: #f97316; color: #f97316; }
+.sg-link-btn {
+  background: none;
+  border: none;
+  color: #f97316;
+  font-size: inherit;
+  font-family: inherit;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+}
 .sg-spinner {
   width: 16px;
   height: 16px;
@@ -495,6 +504,17 @@ onMounted(() => {
   border-top-color: #fff;
   border-radius: 50%;
   animation: sgSpin 0.6s linear infinite;
+  flex-shrink: 0;
+}
+.sg-spinner-sm {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(249,115,22,0.25);
+  border-top-color: #f97316;
+  border-radius: 50%;
+  animation: sgSpin 0.6s linear infinite;
+  flex-shrink: 0;
 }
 @keyframes sgSpin { to { transform: rotate(360deg); } }
 .sg-error {
@@ -515,11 +535,11 @@ onMounted(() => {
   border-radius: 12px;
 }
 .sg-khqr-wrap {
-  width: 140px;
-  height: 140px;
+  width: 180px;
+  height: 180px;
   background: #fff;
   border: 1px solid #e8e6e1;
-  border-radius: 8px;
+  border-radius: 12px;
   padding: 8px;
   display: flex;
   align-items: center;
@@ -529,50 +549,56 @@ onMounted(() => {
   width: 100%;
   height: 100%;
   object-fit: contain;
+  border-radius: 4px;
+}
+.sg-qr-fallback {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  color: #a8a49e;
+  font-size: 12px;
 }
 .sg-amount {
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 700;
   color: #1a1917;
+  letter-spacing: -0.5px;
 }
 .sg-khqr-hint {
   font-size: 12px;
   color: #a8a49e;
   text-align: center;
-}
-.sg-no-khqr {
-  text-align: center;
-}
-.sg-bank-info {
-  font-size: 13px;
-  color: #6b6963;
-  margin: 8px 0 0;
-  line-height: 1.5;
-}
-.sg-bank-detail {
-  font-size: 14px;
-  font-weight: 600;
-  color: #1a1917;
-  margin: 4px 0 0;
-}
-.sg-upload {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.sg-countdown {
+  font-size: 11.5px;
+  color: #f97316;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-variant-numeric: tabular-nums;
+}
+.sg-expired-hint {
+  font-size: 12px;
+  color: #e11d48;
+  display: flex;
+  align-items: center;
   gap: 6px;
 }
-.sg-upload-label {
-  font-size: 12px;
-  font-weight: 600;
-  color: #3d3d3a;
-}
-.sg-upload-input {
-  font-size: 13px;
-  font-family: inherit;
-  padding: 8px 0;
-}
-.sg-file-name {
+.sg-polling {
   font-size: 12px;
   color: #6b6963;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  animation: sgFade 1.5s ease-in-out infinite;
+}
+@keyframes sgFade {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }
 .sg-success-icon,
 .sg-rejected-icon {
@@ -588,27 +614,6 @@ onMounted(() => {
   margin: 0;
 }
 .sg-success-desc {
-  font-size: 13px;
-  color: #6b6963;
-  text-align: center;
-  margin: 0;
-  line-height: 1.5;
-}
-.sg-rejected-title {
-  font-size: 16px;
-  font-weight: 700;
-  color: #e11d48;
-  text-align: center;
-  margin: 0;
-}
-.sg-rejected-reason {
-  font-size: 13px;
-  color: #e11d48;
-  text-align: center;
-  margin: 0;
-  font-style: italic;
-}
-.sg-rejected-desc {
   font-size: 13px;
   color: #6b6963;
   text-align: center;

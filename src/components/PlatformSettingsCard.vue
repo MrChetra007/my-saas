@@ -43,25 +43,61 @@
         />
       </div>
 
-      <div v-if="savedBakongId && form.bakong_account_id" class="khqr-test-row">
-        <span class="khqr-test-label">{{ $t('superAdmin.platformSettings.testQRLabel') }}</span>
-        <button class="btn-secondary" @click="showTestQR = !showTestQR">
-          {{ showTestQR ? $t('superAdmin.platformSettings.hideTestQR') : $t('superAdmin.platformSettings.showTestQR') }}
-        </button>
+      <!-- KHQR.dev section separator -->
+      <div class="section-divider">
+        <span>KHQR.dev Automated Payment</span>
       </div>
 
-      <div v-if="showTestQR && testQRData" class="khqr-preview">
-        <img :src="testQRData" alt="KHQR Test QR" class="khqr-img" />
-        <div class="khqr-details">
-          <div class="khqr-detail-row">
-            <span class="khqr-detail-label">{{ $t('superAdmin.platformSettings.merchantName') }}</span>
-            <span class="khqr-detail-value">{{ form.merchant_name || 'QRserve' }}</span>
-          </div>
-          <div class="khqr-detail-row">
-            <span class="khqr-detail-label">{{ $t('superAdmin.platformSettings.accountId') }}</span>
-            <span class="khqr-detail-value">{{ form.bakong_account_id }}</span>
-          </div>
+      <!-- KHQR.dev API Token -->
+      <div class="form-group">
+        <label class="form-label">KHQR.dev API Token <span class="badge-required">required</span></label>
+        <div class="input-secret-wrap">
+          <input
+            v-model="form.khqrdev_token"
+            :type="showToken ? 'text' : 'password'"
+            class="form-input"
+            placeholder="Paste your KHQR.dev Bearer token…"
+            autocomplete="off"
+          />
+          <button type="button" class="input-eye-btn" @click="showToken = !showToken">
+            <svg v-if="!showToken" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+          </button>
         </div>
+        <div class="form-hint">From your KHQR.dev store dashboard → API tab. Starts with <code>RBK_</code></div>
+      </div>
+
+      <!-- KHQR.dev Webhook Secret -->
+      <div class="form-group">
+        <label class="form-label">KHQR.dev Webhook Secret <span class="badge-required">required</span></label>
+        <div class="input-secret-wrap">
+          <input
+            v-model="form.khqrdev_webhook_secret"
+            :type="showWebhookSecret ? 'text' : 'password'"
+            class="form-input"
+            placeholder="Paste your KHQR.dev Webhook Secret…"
+            autocomplete="off"
+          />
+          <button type="button" class="input-eye-btn" @click="showWebhookSecret = !showWebhookSecret">
+            <svg v-if="!showWebhookSecret" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            <svg v-else width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+          </button>
+        </div>
+        <div class="form-hint">From your KHQR.dev store dashboard → Webhook tab.</div>
+      </div>
+
+      <!-- Webhook URL (read-only, copy) -->
+      <div class="form-group">
+        <label class="form-label">Your Webhook URL <span class="badge-info">set this in KHQR.dev dashboard</span></label>
+        <div class="webhook-url-row">
+          <code class="webhook-url-code">{{ webhookUrl }}</code>
+          <button type="button" class="btn-copy" @click="copyWebhookUrl">
+            <svg v-if="!copied" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            <svg v-else width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            {{ copied ? 'Copied!' : 'Copy' }}
+          </button>
+        </div>
+        <div class="form-hint">Paste this URL as your store's Webhook URL in the KHQR.dev dashboard.</div>
       </div>
     </div>
 
@@ -78,7 +114,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted } from 'vue'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
 import { useI18n } from 'vue-i18n'
@@ -88,33 +124,55 @@ const { t } = useI18n()
 
 const saving = ref(false)
 const msg = ref(null)
-const form = ref({ bakong_account_id: '', merchant_name: 'QRserve', merchant_city: 'Phnom Penh' })
-const savedBakongId = ref('')
-const showTestQR = ref(false)
-const testQRData = ref(null)
-
-watch(() => form.value.bakong_account_id, () => {
-  showTestQR.value = false
-  testQRData.value = null
+const form = ref({
+  bakong_account_id: '',
+  merchant_name: 'QRserve',
+  merchant_city: 'Phnom Penh',
+  khqrdev_token: '',
+  khqrdev_webhook_secret: '',
 })
+const savedBakongId = ref('')
+const showToken = ref(false)
+const showWebhookSecret = ref(false)
+const copied = ref(false)
+
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+const webhookUrl = `${supabaseUrl}/functions/v1/khqr-webhook`
+
+async function copyWebhookUrl() {
+  try {
+    await navigator.clipboard.writeText(webhookUrl)
+    copied.value = true
+    setTimeout(() => { copied.value = false }, 2000)
+  } catch {}
+}
 
 async function saveSettings() {
   saving.value = true
   msg.value = null
   try {
-    const { error } = await supabase
-      .from('platform_settings')
-      .upsert({
-        id: true,
-        bakong_account_id: form.value.bakong_account_id.trim() || null,
-        merchant_name: form.value.merchant_name.trim() || 'QRserve',
-        merchant_city: form.value.merchant_city.trim() || 'Phnom Penh',
-        updated_by: authStore.user?.id,
-        updated_at: new Date().toISOString(),
-      })
+    const upsertData = {
+      id: true,
+      bakong_account_id: form.value.bakong_account_id.trim() || null,
+      merchant_name: form.value.merchant_name.trim() || 'QRserve',
+      merchant_city: form.value.merchant_city.trim() || 'Phnom Penh',
+      updated_by: authStore.user?.id,
+      updated_at: new Date().toISOString(),
+    }
+    // Only include token/secret if filled in (don't overwrite with empty string)
+    if (form.value.khqrdev_token.trim()) {
+      upsertData.khqrdev_token = form.value.khqrdev_token.trim()
+    }
+    if (form.value.khqrdev_webhook_secret.trim()) {
+      upsertData.khqrdev_webhook_secret = form.value.khqrdev_webhook_secret.trim()
+    }
 
+    const { error } = await supabase.from('platform_settings').upsert(upsertData)
     if (error) throw error
     savedBakongId.value = form.value.bakong_account_id.trim()
+    // Clear secret fields after save (write-only UX)
+    form.value.khqrdev_token = ''
+    form.value.khqrdev_webhook_secret = ''
     msg.value = { type: 'success', text: t('superAdmin.platformSettings.success') }
     setTimeout(() => { msg.value = null }, 3000)
   } catch (err) {
@@ -127,7 +185,9 @@ async function saveSettings() {
 async function loadSettings() {
   const { data, error } = await supabase
     .from('platform_settings')
-    .select('bakong_account_id, merchant_name, merchant_city')
+    // Note: khqrdev_token and khqrdev_webhook_secret are write-only in the UI —
+    // we load a boolean indicator of whether they are set, not the values.
+    .select('bakong_account_id, merchant_name, merchant_city, khqrdev_token, khqrdev_webhook_secret')
     .eq('id', true)
     .single()
 
@@ -136,8 +196,15 @@ async function loadSettings() {
     form.value.merchant_name = data.merchant_name || 'QRserve'
     form.value.merchant_city = data.merchant_city || 'Phnom Penh'
     savedBakongId.value = data.bakong_account_id || ''
+    // Don't pre-fill token/secret — write-only UX (clear after save)
+    // We do track if they're configured for the status indicator
+    tokenConfigured.value = !!data.khqrdev_token
+    webhookSecretConfigured.value = !!data.khqrdev_webhook_secret
   }
 }
+
+const tokenConfigured = ref(false)
+const webhookSecretConfigured = ref(false)
 
 onMounted(loadSettings)
 
@@ -365,4 +432,99 @@ const icons = {
   font-weight: 600;
   color: #1a1917;
 }
+.section-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #a8a49e;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 4px 0;
+}
+.section-divider::before,
+.section-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #f0ede8;
+}
+.input-secret-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.input-eye-btn {
+  position: absolute;
+  right: 10px;
+  background: none;
+  border: none;
+  color: #a8a49e;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  transition: color 0.15s;
+}
+.input-eye-btn:hover { color: #f97316; }
+.badge-required {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 600;
+  background: #fff7ed;
+  color: #f97316;
+  border-radius: 4px;
+  padding: 1px 6px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+.badge-info {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 600;
+  background: #eff6ff;
+  color: #3b82f6;
+  border-radius: 4px;
+  padding: 1px 6px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+.webhook-url-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #fafaf9;
+  border: 1px solid #e8e6e1;
+  border-radius: 9px;
+}
+.webhook-url-code {
+  flex: 1;
+  font-size: 11.5px;
+  color: #3d3d3a;
+  font-family: ui-monospace, monospace;
+  word-break: break-all;
+  background: none;
+}
+.btn-copy {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 28px;
+  padding: 0 10px;
+  background: transparent;
+  border: 1px solid #e8e6e1;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: inherit;
+  color: #6b6963;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.btn-copy:hover { border-color: #f97316; color: #f97316; }
 </style>
+
