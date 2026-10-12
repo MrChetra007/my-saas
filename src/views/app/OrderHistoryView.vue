@@ -62,11 +62,20 @@
         <!-- Date range -->
         <div class="filter-group">
           <label class="filter-label">{{ $t('orderHistory.from') }}</label>
-          <input v-model="filters.dateFrom" type="date" class="filter-input date" />
+          <DatePicker
+            v-model="filters.dateFrom"
+            :placeholder="$t('orderHistory.selectDate')"
+            :max="filters.dateTo || maxDate"
+          />
         </div>
         <div class="filter-group">
           <label class="filter-label">{{ $t('orderHistory.to') }}</label>
-          <input v-model="filters.dateTo" type="date" class="filter-input date" />
+          <DatePicker
+            v-model="filters.dateTo"
+            :placeholder="$t('orderHistory.selectDate')"
+            :min="filters.dateFrom"
+            :max="maxDate"
+          />
         </div>
       </div>
 
@@ -139,7 +148,9 @@
                   d="M3 10h18M3 14h18M5 6h14M7 18h10"
                 />
               </svg>
-              <span class="table-name">{{ order.tables?.name || $t('orderHistory.unknownTable') }}</span>
+              <span class="table-name">{{
+                order.tables?.name || $t('orderHistory.unknownTable')
+              }}</span>
             </div>
 
             <!-- Items count -->
@@ -186,7 +197,9 @@
               <div v-for="item in order.order_items" :key="item.id" class="item-row">
                 <div class="item-main">
                   <span class="item-qty">{{ item.quantity }}×</span>
-                  <span class="item-name">{{ item.menu_items?.name || $t('orderHistory.unknownItem') }}</span>
+                  <span class="item-name">{{
+                    item.menu_items?.name || $t('orderHistory.unknownItem')
+                  }}</span>
                 </div>
                 <span class="item-price">{{
                   formatCurrency(item.unit_price * item.quantity)
@@ -270,7 +283,10 @@
 
     <!-- Pagination hint -->
     <div v-if="filteredOrders.length > 0" class="pagination-hint">
-      <p>{{ $t('orderHistory.showing') }} {{ filteredOrders.length }} {{ $t('orderHistory.showingOrders') }}</p>
+      <p>
+        {{ $t('orderHistory.showing') }} {{ filteredOrders.length }}
+        {{ $t('orderHistory.showingOrders') }}
+      </p>
     </div>
   </div>
 </template>
@@ -280,9 +296,17 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
 import { useI18n } from 'vue-i18n'
+import DatePicker from '@/components/DatePicker.vue'
+import { formatLocalizedDate } from '@/lib/localizedDate'
 
 const authStore = useAuthStore()
-const { t } = useI18n()
+const { t, locale } = useI18n()
+
+function todayISO() {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+const maxDate = todayISO()
 
 // ── State ──────────────────────────────────────────────────────────────────
 const orders = ref([])
@@ -420,7 +444,7 @@ function formatCurrency(amount) {
 }
 
 function formatDate(dateStr) {
-  return new Date(dateStr).toLocaleDateString('en-US', {
+  return formatLocalizedDate(new Date(dateStr), locale.value, {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
@@ -428,7 +452,7 @@ function formatDate(dateStr) {
 }
 
 function formatDateTime(dateStr) {
-  return new Date(dateStr).toLocaleString('en-US', {
+  return formatLocalizedDate(new Date(dateStr), locale.value, {
     month: 'short',
     day: 'numeric',
     hour: '2-digit',
@@ -608,11 +632,6 @@ function resetFilters() {
 
 .filter-input::placeholder {
   color: rgba(255, 255, 255, 0.35);
-}
-
-.filter-input.date {
-  padding-left: 12px;
-  font-family: var(--font-body, 'DM Sans', 'Noto Sans Khmer', sans-serif);
 }
 
 /* Filters Footer */
@@ -1117,16 +1136,5 @@ function resetFilters() {
   padding: 24px;
   color: rgba(255, 255, 255, 0.35);
   font-size: 13px;
-}
-
-/* Date input styling for dark theme */
-input[type='date']::-webkit-calendar-picker-indicator {
-  filter: invert(1);
-  opacity: 0.5;
-  cursor: pointer;
-}
-
-input[type='date']::-webkit-calendar-picker-indicator:hover {
-  opacity: 0.8;
 }
 </style>

@@ -545,6 +545,7 @@
     "itemNamePlaceholder": "e.g. Burger",
     "from": "From",
     "to": "To",
+    "selectDate": "Select date",
     "status": "Status:",
     "statusAll": "All",
     "statusPaid": "Paid",
@@ -564,6 +565,12 @@
     "showing": "Showing",
     "showingOrders": "orders",
     "unknownItem": "Unknown Item"
+  },
+  "datePicker": {
+    "today": "Today",
+    "clear": "Clear",
+    "prevMonth": "Previous month",
+    "nextMonth": "Next month"
   },
   "staff": {
     "title": "Staff",

@@ -540,6 +540,7 @@
     "itemNamePlaceholder": "ឧ. ប៊ឺហ្គឺ",
     "from": "ពី",
     "to": "ដល់",
+    "selectDate": "ជ្រើសរើសកាលបរិច្ឆេទ",
     "status": "ស្ថានភាព:",
     "statusAll": "ទាំងអស់",
     "statusPaid": "បានបង់",
@@ -559,6 +560,12 @@
     "showing": "បង្ហាញ",
     "showingOrders": "ការបញ្ជាទិញ",
     "unknownItem": "មុខម្ហូបមិនស្គាល់"
+  },
+  "datePicker": {
+    "today": "ថ្ងៃនេះ",
+    "clear": "សម្អាត",
+    "prevMonth": "ខែមុន",
+    "nextMonth": "ខែបន្ទាប់"
   },
   "staff": {
     "title": "បុគ្គលិក",
