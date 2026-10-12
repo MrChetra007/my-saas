@@ -2,6 +2,14 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
 
+// Shared promise resolved once authStore.init() completes.
+// The guard awaits this on every navigation so it never runs
+// with a stale (null) user due to the App.vue onMounted race.
+let authReadyPromise = null
+export function setAuthReady(promise) {
+  authReadyPromise = promise
+}
+
 export function roleHome(role) {
   switch (role) {
     case 'admin':
@@ -195,10 +203,17 @@ router.beforeEach(async (to) => {
 
   const authStore = useAuthStore()
 
+  // Wait for the initial auth init to complete before any guard logic.
+  // This prevents the race where the guard runs before App.vue onMounted
+  // has finished awaiting authStore.init(), which would leave authStore.user
+  // as null even for an authenticated session.
+  if (authReadyPromise) await authReadyPromise
+
   if (to.meta.public) {
     if (!authStore.user) return true
     if (to.path === '/' || to.path === '/login' || to.path === '/signup') {
       const role = authStore.profile?.role
+      if (authStore.isSuperAdmin) return '/super-admin/dashboard'
       if (role) return roleHome(role)
     }
     return true
