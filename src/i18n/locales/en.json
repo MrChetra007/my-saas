@@ -965,6 +965,7 @@
       "available": "available",
       "inactive": "Inactive",
       "promoBannerApplied": "will be applied automatically",
+      "promoActive": "is active",
       "soldOut": "Sold Out",
       "notesPlaceholder": "Add note (e.g. no onions, extra spicy...)",
       "emptyTitle": "Select a Table",
@@ -1016,6 +1017,8 @@
       "items": "items",
       "total": "Total",
       "updatesAutomatically": "Updates automatically",
+      "muteSound": "Mute sound",
+      "unmuteSound": "Unmute sound",
       "statusPending": "Pending",
       "statusCooking": "Cooking",
       "statusReady": "Ready"

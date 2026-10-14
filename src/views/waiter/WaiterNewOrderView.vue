@@ -47,7 +47,7 @@
       <div v-if="autoPromo" class="promo-banner">
         <Tag class="promo-banner-icon" />
         <div class="promo-banner-text">
-          <strong>{{ autoPromo.name }}</strong> is active —
+          <strong>{{ autoPromo.name }}</strong> {{ $t('waiter.newOrder.promoActive') }} —
           {{
             autoPromo.type === 'percentage'
               ? `${autoPromo.value}% ${$t('waiter.newOrder.off')}`
@@ -266,7 +266,7 @@
                         ? `${appliedPromo.value}% ${$t('waiter.newOrder.off')}`
                         : `${formatCurrency(appliedPromo.value)} ${$t('waiter.newOrder.off')}`
                     }}
-                    — saving {{ formatCurrency(discountAmount) }}
+                    — {{ $t('waiter.newOrder.saving') }} {{ formatCurrency(discountAmount) }}
                   </span>
                 </div>
                 <button class="remove-promo-btn" @click="removePromoCode">
