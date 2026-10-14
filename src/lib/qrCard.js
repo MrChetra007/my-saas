@@ -148,3 +148,128 @@ export function downloadBlob(blob, filename) {
   a.click()
   setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
+
+// Prints card images onto A4 portrait pages, 3 columns x 3 rows (9 per page).
+// Uses the top-level window.print() with a print-only container. This is the
+// only approach that works on iOS: printing an iframe (iframe.contentWindow
+// .print()) makes iOS WebKit print the parent page instead, and some in-app
+// browsers block iframe printing entirely.
+let qrPrintCleanupTimer = null
+
+export function printQrSheet(blobs, { title = 'QR codes', perPage = 9 } = {}) {
+  if (!blobs?.length || typeof document === 'undefined') return
+
+  const urls = blobs.map((b) => URL.createObjectURL(b))
+
+  const pages = []
+  for (let i = 0; i < urls.length; i += perPage) {
+    const cells = urls
+      .slice(i, i + perPage)
+      .map((u) => `<div class="qr-print-card"><img src="${u}" alt="" /></div>`)
+      .join('')
+    pages.push(`<section class="qr-print-sheet">${cells}</section>`)
+  }
+
+  document.getElementById('qr-print-root')?.remove()
+  document.getElementById('qr-print-style')?.remove()
+
+  const style = document.createElement('style')
+  style.id = 'qr-print-style'
+  style.textContent = `
+    #qr-print-root {
+      position: fixed;
+      left: -100000px;
+      top: 0;
+      background: #fff;
+    }
+    #qr-print-root .qr-print-sheet {
+      width: 190mm;
+      height: 274mm;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      gap: 6mm;
+      page-break-after: always;
+      break-after: page;
+    }
+    #qr-print-root .qr-print-sheet:last-child {
+      page-break-after: auto;
+      break-after: auto;
+    }
+    #qr-print-root .qr-print-card {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    #qr-print-root .qr-print-card img {
+      max-width: 100%;
+      max-height: 100%;
+      display: block;
+    }
+    @page { size: A4 portrait; margin: 10mm; }
+    @media print {
+      html, body { margin: 0 !important; padding: 0 !important; background: #fff !important; }
+      body.qr-printing > *:not(#qr-print-root) { display: none !important; }
+      #qr-print-root { position: static !important; left: auto !important; }
+    }
+  `
+
+  const root = document.createElement('div')
+  root.id = 'qr-print-root'
+  root.innerHTML = pages.join('')
+
+  document.head.appendChild(style)
+  document.body.appendChild(root)
+
+  const previousTitle = document.title
+  document.title = title
+
+  let cleaned = false
+  const cleanup = () => {
+    if (cleaned) return
+    cleaned = true
+    document.title = previousTitle
+    document.body.classList.remove('qr-printing')
+    urls.forEach((u) => URL.revokeObjectURL(u))
+    root.remove()
+    style.remove()
+    if (qrPrintCleanupTimer) {
+      clearTimeout(qrPrintCleanupTimer)
+      qrPrintCleanupTimer = null
+    }
+  }
+
+  const run = () => {
+    document.body.classList.add('qr-printing')
+    // iOS fires afterprint as soon as the dialog opens, so keep the node in the
+    // DOM long enough for the print preview to capture it, then clean up.
+    window.addEventListener('afterprint', () => setTimeout(cleanup, 5000), { once: true })
+    try {
+      window.print()
+    } catch (e) {
+      cleanup()
+      throw e
+    }
+    qrPrintCleanupTimer = setTimeout(cleanup, 60000)
+  }
+
+  const images = Array.from(root.querySelectorAll('img'))
+  if (images.length === 0) {
+    setTimeout(run, 150)
+    return
+  }
+
+  let remaining = images.length
+  const done = () => {
+    if (--remaining === 0) setTimeout(run, 150)
+  }
+  images.forEach((img) => {
+    if (img.complete && img.naturalWidth) {
+      done()
+    } else {
+      img.onload = done
+      img.onerror = done
+    }
+  })
+}

@@ -75,7 +75,7 @@
               {{
                 $t(
                   'tables.batchLabelHint',
-                  'Each card uses its own table name. {count} cards will be downloaded.',
+                  'Each card uses its own table name. {count} cards will be printed, 9 per A4 page.',
                   { count: targets.length },
                 )
               }}
@@ -97,9 +97,11 @@
           >
             {{
               busy
-                ? $t('common.saving')
+                ? isBatch
+                  ? $t('tables.preparing', 'Preparing…')
+                  : $t('common.saving')
                 : isBatch
-                  ? $t('tables.downloadAllDesigns', 'Download all ({count})', {
+                  ? $t('tables.printSheet', 'Print sheet ({count})', {
                       count: targets.length,
                     })
                   : $t('tables.downloadPng')
@@ -113,7 +115,7 @@
 
 <script setup>
 import { ref, computed, watch, onBeforeUnmount } from 'vue'
-import { QR_TEMPLATES, DEFAULT_HEADLINE, renderQrCard, downloadBlob } from '@/lib/qrCard'
+import { QR_TEMPLATES, DEFAULT_HEADLINE, renderQrCard, downloadBlob, printQrSheet } from '@/lib/qrCard'
 
 const props = defineProps({
   open: { type: Boolean, default: false },
@@ -219,25 +221,40 @@ onBeforeUnmount(() => {
   if (previewUrl.value) URL.revokeObjectURL(previewUrl.value)
 })
 
+async function renderCards(scale) {
+  const cards = []
+  for (const t of targets.value) {
+    const url = urlForTarget(t)
+    if (!url) continue
+    const label = isBatch.value ? t.name || '' : tableLabel.value
+    const blob = await renderQrCard({
+      template: selectedTemplate.value,
+      qrUrl: url,
+      headline: headline.value,
+      tableLabel: label,
+      footer: footer.value,
+      scale,
+    })
+    cards.push({ blob, label })
+  }
+  return cards
+}
+
 async function download() {
   if (!selectedTemplate.value || !targets.value.length) return
   busy.value = true
   try {
-    for (const t of targets.value) {
-      const url = urlForTarget(t)
-      if (!url) continue
-      const label = isBatch.value ? t.name || '' : tableLabel.value
-      const blob = await renderQrCard({
-        template: selectedTemplate.value,
-        qrUrl: url,
-        headline: headline.value,
-        tableLabel: label,
-        footer: footer.value,
-        scale: 2, // 2160px wide for print
-      })
-      const safe = (label || 'table').trim().toLowerCase().replace(/\s+/g, '-')
-      downloadBlob(blob, `${safe}-design-${selectedTemplate.value.id}.png`)
-      if (isBatch.value) await new Promise((r) => setTimeout(r, 250))
+    if (isBatch.value) {
+      const cards = await renderCards(1.5)
+      printQrSheet(
+        cards.map((c) => c.blob),
+        { title: 'Table QR Codes' },
+      )
+    } else {
+      const [card] = await renderCards(2)
+      if (!card) return
+      const safe = (card.label || 'table').trim().toLowerCase().replace(/\s+/g, '-')
+      downloadBlob(card.blob, `${safe}-design-${selectedTemplate.value.id}.png`)
     }
   } catch (e) {
     console.error('QR download failed', e)
