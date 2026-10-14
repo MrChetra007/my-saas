@@ -17,7 +17,7 @@
     </div>
 
     <!-- Empty State -->
-    <div v-if="orders.length === 0" class="empty-state">
+    <div v-if="tableGroups.length === 0" class="empty-state">
       <div class="empty-icon-wrap">
         <Banknote class="empty-icon" />
       </div>
@@ -27,7 +27,7 @@
 
     <!-- Orders List -->
     <div v-else class="orders-list">
-      <div v-for="order in orders" :key="order.id" class="order-card">
+      <div v-for="group in tableGroups" :key="group.id" class="order-card">
         <!-- Card Header -->
         <div class="order-header">
           <div class="table-info">
@@ -35,23 +35,26 @@
               <Armchair class="table-icon" />
             </div>
             <div class="table-details">
-              <span class="table-name">{{ order.tables?.name ?? $t('cashier.orders.unknownTable') }}</span>
+              <span class="table-name">{{ group.tables?.name ?? $t('cashier.orders.unknownTable') }}</span>
               <span class="order-meta">
                 <Clock class="meta-icon" />
-                {{ formatTime(order.created_at) }}
-                <span class="order-id">#{{ order.id.slice(-6).toUpperCase() }}</span>
+                {{ formatTime(group.createdAt) }}
+                <span class="order-id">#{{ group.id.slice(-6).toUpperCase() }}</span>
+                <span v-if="group.orderCount > 1" class="order-count">
+                  {{ group.orderCount }} {{ $t('cashier.orders.orders') }}
+                </span>
               </span>
             </div>
           </div>
           <div class="order-total-wrap">
             <span class="total-label">{{ $t('cashier.orders.total') }}</span>
-            <span class="total-value">{{ formatCurrency(orderTotal(order)) }}</span>
+            <span class="total-value">{{ formatCurrency(orderTotal(group)) }}</span>
           </div>
         </div>
 
         <!-- Order Items -->
         <div class="order-items">
-          <div v-for="item in order.order_items" :key="item.id" class="item-row">
+          <div v-for="item in group.order_items" :key="item.id" class="item-row">
             <div class="item-main">
               <span class="item-qty">{{ item.quantity }}×</span>
               <div class="item-details">
@@ -71,10 +74,10 @@
           <div class="order-stats">
             <span class="stat-item">
               <Hash class="stat-icon" />
-              {{ order.order_items?.length || 0 }} {{ $t('cashier.orders.items') }}
+              {{ group.order_items?.length || 0 }} {{ $t('cashier.orders.items') }}
             </span>
           </div>
-          <button class="btn-paid" @click="openReceiptModal(order)">
+          <button class="btn-paid" @click="openReceiptModal(group)">
             <CheckCircle2 class="btn-icon" />
             {{ $t('cashier.orders.markAsPaid') }}
           </button>
@@ -217,7 +220,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
@@ -251,6 +254,35 @@ const receiptModal = ref({
   order: null,
   saving: false,
   downloaded: false,
+})
+
+// ── Group ready orders by table ──────────────────
+const tableGroups = computed(() => {
+  const groups = new Map()
+  for (const order of orders.value) {
+    // Orders without a table are kept separate (e.g. takeaway)
+    const key = order.table_id ?? `order:${order.id}`
+    if (!groups.has(key)) {
+      groups.set(key, {
+        id: order.id,
+        ids: [],
+        tableId: order.table_id,
+        tables: order.tables ?? null,
+        createdAt: order.created_at,
+        order_items: [],
+        orderCount: 0,
+      })
+    }
+    const group = groups.get(key)
+    group.ids.push(order.id)
+    group.orderCount += 1
+    group.order_items.push(...(order.order_items ?? []))
+    if (new Date(order.created_at) < new Date(group.createdAt)) {
+      group.createdAt = order.created_at
+      group.id = order.id
+    }
+  }
+  return Array.from(groups.values())
 })
 
 // ── Cash Register Sound (Web Audio API) ─────────
@@ -388,8 +420,7 @@ async function fetchOrders() {
       newOrders.forEach((o) => {
         const tableName = o.tables?.name ?? t('cashier.orders.unknownTable')
         const itemCount = o.order_items?.length ?? 0
-        const itemLabel = itemCount !== 1 ? t('cashier.orders.items') : 'item'
-        addToast(`${tableName} · ${itemCount} ${itemLabel}`)
+        addToast(`${tableName} · ${itemCount} ${t('cashier.orders.items')}`)
         playCashRegisterSound()
       })
     }
@@ -430,8 +461,8 @@ async function fetchRestaurantName() {
 
 // ── Receipt Modal ────────────────────────────────
 
-function openReceiptModal(order) {
-  receiptModal.value = { open: true, order, saving: false, downloaded: false }
+function openReceiptModal(group) {
+  receiptModal.value = { open: true, order: group, saving: false, downloaded: false }
 }
 
 async function confirmPaid() {
@@ -440,10 +471,11 @@ async function confirmPaid() {
   }
 
   receiptModal.value.saving = true
-  const order = receiptModal.value.order
-  const { error } = await supabase.from('orders').update({ status: 'paid' }).eq('id', order.id)
+  const group = receiptModal.value.order
+  const ids = group.ids ?? [group.id]
+  const { error } = await supabase.from('orders').update({ status: 'paid' }).in('id', ids)
   if (!error) {
-    orders.value = orders.value.filter((o) => o.id !== order.id)
+    orders.value = orders.value.filter((o) => !ids.includes(o.id))
   }
   receiptModal.value.open = false
   receiptModal.value.saving = false
@@ -950,6 +982,17 @@ onUnmounted(() => {
   color: var(--color-text-muted);
   font-size: 12px;
   letter-spacing: 0.02em;
+}
+.order-count {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-accent);
+  background: var(--color-accent-muted);
+  border: 1px solid var(--color-accent-border);
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 .order-total-wrap {
   display: flex;

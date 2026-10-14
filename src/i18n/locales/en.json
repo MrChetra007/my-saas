@@ -1032,6 +1032,7 @@
       "total": "Total",
       "unknownItem": "Unknown Item",
       "items": "items",
+      "orders": "orders",
       "markAsPaid": "Mark as Paid",
       "receiptTitle": "Order Receipt",
       "receiptSubtitle": "Preview before downloading",

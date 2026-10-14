@@ -10,6 +10,10 @@
       </div>
       <div class="header-right">
         <span class="clock">{{ currentTime }}</span>
+        <select class="lang-switcher" :value="currentLocale" @change="switchLang">
+          <option value="en">{{ $t('language.english') }}</option>
+          <option value="kh">{{ $t('language.khmer') }}</option>
+        </select>
         <button class="btn-signout" @click="signOut">{{ $t('layouts.signOut') }}</button>
       </div>
     </header>
@@ -24,13 +28,19 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
+import { setLocale } from '@/i18n'
 
 const router = useRouter()
 const authStore = useAuthStore()
 const restaurantName = ref('')
 const restaurantLogo = ref('')
 const now = ref(new Date())
+const currentLocale = computed(() => localStorage.getItem('locale') || 'en')
 let timer = null
+
+function switchLang(e) {
+  setLocale(e.target.value)
+}
 
 // Show clock in restaurant's local timezone
 const currentTime = computed(() => {
@@ -128,6 +138,27 @@ async function signOut() {
   font-size: 1.1rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
+  color: #f9fafb;
+}
+.lang-switcher {
+  background: #1f2937;
+  border: 1px solid #374151;
+  color: #9ca3af;
+  font-size: 0.75rem;
+  font-weight: 600;
+  font-family: inherit;
+  padding: 0.4rem 0.6rem;
+  border-radius: 8px;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.15s;
+}
+.lang-switcher:hover {
+  border-color: #c8733a;
+  color: #f9fafb;
+}
+.lang-switcher option {
+  background: #1f2937;
   color: #f9fafb;
 }
 .btn-signout {

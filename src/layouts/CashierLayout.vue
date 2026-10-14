@@ -31,6 +31,10 @@
       </nav>
 
       <div class="sidebar-footer">
+        <select class="lang-switcher" :value="currentLocale" @change="switchLang">
+          <option value="en">{{ $t('language.english') }}</option>
+          <option value="kh">{{ $t('language.khmer') }}</option>
+        </select>
         <div class="user-card">
           <div class="user-avatar">
             <User class="avatar-icon" />
@@ -58,9 +62,15 @@
           </div>
           <span class="brand-text">{{ restaurantName }}</span>
         </div>
-        <button class="btn-icon" @click="signOut" :title="$t('layouts.signOut')">
-          <LogOut class="icon" />
-        </button>
+        <div class="mobile-actions">
+          <select class="lang-switcher" :value="currentLocale" @change="switchLang">
+            <option value="en">{{ $t('language.english') }}</option>
+            <option value="kh">{{ $t('language.khmer') }}</option>
+          </select>
+          <button class="btn-icon" @click="signOut" :title="$t('layouts.signOut')">
+            <LogOut class="icon" />
+          </button>
+        </div>
       </header>
 
       <main class="cashier-main">
@@ -94,20 +104,25 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
+import { setLocale } from '@/i18n'
 import { Utensils, ClipboardList, History, User, LogOut } from 'lucide-vue-next'
 
 const router = useRouter()
-const route = useRoute()
 const authStore = useAuthStore()
 
 const restaurantName = ref('')
 const restaurantLogo = ref('')
 const pendingOrdersCount = ref(0)
+const currentLocale = computed(() => localStorage.getItem('locale') || 'en')
 let ordersChannel = null
+
+function switchLang(e) {
+  setLocale(e.target.value)
+}
 
 onMounted(async () => {
   const { data } = await supabase
@@ -396,6 +411,42 @@ async function signOut() {
 .signout-icon {
   width: 16px;
   height: 16px;
+}
+
+.lang-switcher {
+  width: 100%;
+  background: #1a1a1a;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  padding: 9px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.lang-switcher:hover {
+  border-color: rgba(200, 115, 58, 0.4);
+  color: #c8733a;
+}
+
+.lang-switcher option {
+  background: #161616;
+  color: #ffffff;
+}
+
+.mobile-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mobile-actions .lang-switcher {
+  width: auto;
+  padding: 8px 10px;
 }
 
 .main-wrapper {
