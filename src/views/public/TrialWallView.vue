@@ -152,7 +152,7 @@
     <!-- ── KHQR Payment Modal ── -->
     <Teleport to="body">
       <Transition name="modal">
-        <div v-if="showKhqrModal" class="tw-modal-backdrop" @click.self="closeKhqrModal">
+        <div v-if="showKhqrModal" class="tw-modal-backdrop">
           <div class="tw-modal">
             <button class="tw-modal-close" @click="closeKhqrModal">
               <X :size="20" />

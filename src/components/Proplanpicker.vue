@@ -1,7 +1,7 @@
 <template>
   <Teleport to="body">
     <Transition name="modal">
-      <div v-if="modelValue" class="modal-backdrop" @click.self="close">
+      <div v-if="modelValue" class="modal-backdrop">
         <div class="modal-pro-picker">
           <!-- ── Header ── -->
           <div class="picker-header">
