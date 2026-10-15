@@ -450,7 +450,7 @@ function renderCharts() {
         cornerRadius: 8,
         displayColors: false,
         callbacks: {
-          label: (ctx) => ' ' + formatCurrency(ctx.parsed.y || ctx.parsed),
+          label: (ctx) => ' ' + formatCurrency(ctx.parsed?.y ?? ctx.parsed ?? 0),
         },
       },
     },
@@ -568,6 +568,15 @@ function renderCharts() {
       },
       options: {
         ...commonOptions,
+        plugins: {
+          ...commonOptions.plugins,
+          tooltip: {
+            ...commonOptions.plugins.tooltip,
+            callbacks: {
+              label: (ctx) => ` ${ctx.parsed.y} ${t('analytics.tooltipOrders')}`,
+            },
+          },
+        },
         scales: {
           ...commonOptions.scales,
           y: {
@@ -659,7 +668,9 @@ onBeforeUnmount(destroyCharts)
 // ── Helpers ──────────────────────────────────────────────────────────────────
 function formatCurrency(amount) {
   const currency = authStore.restaurantCurrency || 'USD'
-  const num = (amount || 0).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+  const value = Number(amount)
+  const safe = Number.isFinite(value) ? value : 0
+  const num = safe.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',')
 
   // Custom currency: "RM MYR" → extract symbol before the space
   const spaceIndex = currency.indexOf(' ')
@@ -674,7 +685,7 @@ function formatCurrency(amount) {
       style: 'currency',
       currency,
       maximumFractionDigits: 0,
-    }).format(amount || 0)
+    }).format(safe)
   } catch {
     return `${currency} ${num}`
   }
