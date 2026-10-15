@@ -2,6 +2,7 @@
   <Teleport to="body">
     <div v-if="open" class="qc-backdrop" @click.self="emit('close')">
       <div class="qc-modal">
+        <!-- Header (pinned) -->
         <div class="qc-header">
           <h2 class="qc-title">
             {{
@@ -17,15 +18,17 @@
           No templates found in src/assets/images/qr-templates
         </div>
 
+        <!-- Scrollable body (between pinned header and footer) -->
         <div v-else class="qc-body">
-          <!-- Preview -->
+          <!-- 1. Live preview -->
           <div class="qc-preview">
             <img v-if="previewUrl" :src="previewUrl" class="qc-preview-img" alt="QR card preview" />
             <div v-else class="qc-spinner" />
           </div>
 
-          <!-- Controls -->
+          <!-- 2-7. Controls -->
           <div class="qc-controls">
+            <!-- 2 + 3. Templates -->
             <div class="qc-label">{{ $t('tables.templates', 'Templates') }}</div>
             <div class="qc-templates">
               <button
@@ -40,6 +43,7 @@
               </button>
             </div>
 
+            <!-- 4. Header language -->
             <div class="qc-label">{{ $t('tables.headerLanguage', 'Header language') }}</div>
             <div class="qc-lang">
               <button
@@ -60,34 +64,32 @@
               </button>
             </div>
 
+            <!-- 5. Header text -->
             <label class="qc-label" for="qc-headline">{{
               $t('tables.headerText', 'Header text')
             }}</label>
             <input id="qc-headline" v-model="headline" class="qc-input" maxlength="40" />
 
+            <!-- Table label (single-table mode only) -->
             <template v-if="!isBatch">
               <label class="qc-label" for="qc-table">{{
                 $t('tables.tableLabel', 'Table label')
               }}</label>
               <input id="qc-table" v-model="tableLabel" class="qc-input" maxlength="30" />
             </template>
-            <p v-else class="qc-batch-hint">
-              {{
-                $t(
-                  'tables.batchLabelHint',
-                  'Each card uses its own table name. {count} cards will be printed, 9 per A4 page.',
-                  { count: targets.length },
-                )
-              }}
-            </p>
 
+            <!-- 6. Footer text -->
             <label class="qc-label" for="qc-footer">{{
               $t('tables.footerText', 'Footer text')
             }}</label>
             <input id="qc-footer" v-model="footer" class="qc-input" maxlength="50" />
+
+            <!-- 7. Helper text -->
+            <p v-if="isBatch" class="qc-batch-hint">{{ batchHint }}</p>
           </div>
         </div>
 
+        <!-- Footer (pinned) -->
         <div class="qc-footer">
           <button class="qc-btn-ghost" @click="emit('close')">{{ $t('common.close') }}</button>
           <button
@@ -95,17 +97,7 @@
             :disabled="busy || QR_TEMPLATES.length === 0 || targets.length === 0"
             @click="download"
           >
-            {{
-              busy
-                ? isBatch
-                  ? $t('tables.preparing', 'Preparing…')
-                  : $t('common.saving')
-                : isBatch
-                  ? $t('tables.printSheet', 'Print sheet ({count})', {
-                      count: targets.length,
-                    })
-                  : $t('tables.downloadPng')
-            }}
+            {{ primaryLabel }}
           </button>
         </div>
       </div>
@@ -115,7 +107,15 @@
 
 <script setup>
 import { ref, computed, watch, onBeforeUnmount } from 'vue'
-import { QR_TEMPLATES, DEFAULT_HEADLINE, renderQrCard, downloadBlob, printQrSheet } from '@/lib/qrCard'
+import { useI18n } from 'vue-i18n'
+import {
+  QR_TEMPLATES,
+  DEFAULT_HEADLINE,
+  renderQrCard,
+  downloadBlob,
+  printQrSheet,
+  CARDS_PER_PAGE,
+} from '@/lib/qrCard'
 
 const props = defineProps({
   open: { type: Boolean, default: false },
@@ -125,6 +125,7 @@ const props = defineProps({
   urlFor: { type: Function, default: null },
 })
 const emit = defineEmits(['close'])
+const { t } = useI18n()
 
 const selectedId = ref(QR_TEMPLATES[0]?.id ?? '')
 const lang = ref('en')
@@ -135,13 +136,32 @@ const previewUrl = ref('')
 const busy = ref(false)
 
 const selectedTemplate = computed(
-  () => QR_TEMPLATES.find((t) => t.id === selectedId.value) || QR_TEMPLATES[0],
+  () => QR_TEMPLATES.find((tpl) => tpl.id === selectedId.value) || QR_TEMPLATES[0],
 )
 
 // Batch mode: download a designed card for every table at once
 const isBatch = computed(() => Array.isArray(props.tables) && props.tables.length > 0)
 const targets = computed(() => (isBatch.value ? props.tables : props.table ? [props.table] : []))
 const previewTable = computed(() => targets.value[0] || null)
+const printCount = computed(() => targets.value.length)
+
+// Text that must always agree with the actual print layout (CARDS_PER_PAGE).
+const batchHint = computed(() =>
+  t('tables.batchLabelHint', {
+    count: printCount.value,
+    perPage: CARDS_PER_PAGE,
+  }),
+)
+
+const primaryLabel = computed(() => {
+  if (busy.value) {
+    return isBatch.value ? t('tables.preparing', 'Preparing…') : t('common.saving')
+  }
+  if (!isBatch.value) return t('tables.downloadPng')
+  return printCount.value
+    ? t('tables.printSheet', { count: printCount.value })
+    : t('tables.printSheetPlain', 'Print sheet')
+})
 
 function urlForTarget(target) {
   return isBatch.value ? props.urlFor?.(target.id) || '' : props.orderUrl
@@ -223,10 +243,10 @@ onBeforeUnmount(() => {
 
 async function renderCards(scale) {
   const cards = []
-  for (const t of targets.value) {
-    const url = urlForTarget(t)
+  for (const target of targets.value) {
+    const url = urlForTarget(target)
     if (!url) continue
-    const label = isBatch.value ? t.name || '' : tableLabel.value
+    const label = isBatch.value ? target.name || '' : tableLabel.value
     const blob = await renderQrCard({
       template: selectedTemplate.value,
       qrUrl: url,
@@ -265,47 +285,55 @@ async function download() {
 </script>
 
 <style scoped>
+/* ── Backdrop: bottom sheet on mobile, centered dialog on desktop ── */
 .qc-backdrop {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.7);
   backdrop-filter: blur(4px);
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: center;
   z-index: 1100;
-  padding: 20px;
+  padding: 0;
 }
+
+/* ── Modal: flex column; body scrolls between pinned header & footer ── */
 .qc-modal {
   background: var(--color-bg-surface);
   border: 1px solid var(--color-border-subtle);
-  border-radius: var(--radius-panel);
+  border-radius: var(--radius-panel) var(--radius-panel) 0 0;
   box-shadow: var(--shadow-float);
   width: 100%;
-  max-width: 820px;
-  max-height: 92vh;
+  max-height: 100dvh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
+
 .qc-header {
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 18px 24px;
+  gap: 12px;
+  padding: 16px;
   border-bottom: 1px solid var(--color-border-subtle);
+  background: var(--color-bg-surface);
 }
 .qc-title {
   font-family: var(--font-display);
-  font-size: 20px;
+  font-size: 17px;
   font-weight: 700;
   margin: 0;
 }
 .qc-close {
+  flex: 0 0 auto;
   background: none;
   border: none;
   color: var(--color-text-muted);
   font-size: 24px;
+  line-height: 1;
   cursor: pointer;
   width: 36px;
   height: 36px;
@@ -321,28 +349,40 @@ async function download() {
   color: var(--color-text-muted);
 }
 
+/* Scroll region. Extra bottom padding keeps the last input clear of the footer. */
 .qc-body {
-  display: grid;
-  grid-template-columns: minmax(0, 300px) minmax(0, 1fr);
-  gap: 24px;
-  padding: 24px;
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 16px 96px;
 }
+
+/* ── 1. Preview card ── */
 .qc-preview {
   display: flex;
-  align-items: flex-start;
   justify-content: center;
-  min-height: 300px;
+  align-items: flex-start;
+  margin-bottom: 8px;
 }
 .qc-preview-img {
-  width: 100%;
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 38dvh;
+  aspect-ratio: 3 / 4;
+  object-fit: contain;
   border-radius: 12px;
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.35);
 }
 .qc-spinner {
   width: 28px;
   height: 28px;
-  margin-top: 60px;
+  margin-top: 40px;
   border: 3px solid var(--color-border-subtle);
   border-top-color: var(--color-accent);
   border-radius: 50%;
@@ -354,6 +394,7 @@ async function download() {
   }
 }
 
+/* ── 2-7. Controls ── */
 .qc-controls {
   display: flex;
   flex-direction: column;
@@ -368,24 +409,33 @@ async function download() {
 .qc-label:first-child {
   margin-top: 0;
 }
+
+/* 3. Template thumbnails — horizontal snap scroller */
 .qc-templates {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
-  gap: 10px;
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 6px;
 }
 .qc-tpl {
+  flex: 0 0 72px;
+  scroll-snap-align: start;
   padding: 0;
   border: 2px solid var(--color-border-subtle);
   border-radius: 10px;
   overflow: hidden;
   background: none;
   cursor: pointer;
-  transition: all 0.14s;
+  transition:
+    border-color 0.14s ease,
+    box-shadow 0.14s ease;
 }
 .qc-tpl img {
   display: block;
   width: 100%;
-  aspect-ratio: 9 / 16;
+  aspect-ratio: 3 / 4;
   object-fit: cover;
 }
 .qc-tpl:hover {
@@ -396,6 +446,7 @@ async function download() {
   box-shadow: 0 0 0 3px var(--color-accent-muted);
 }
 
+/* 4. Language toggle */
 .qc-lang {
   display: flex;
   gap: 8px;
@@ -416,6 +467,8 @@ async function download() {
   border-color: var(--color-accent);
   color: white;
 }
+
+/* 5-6. Inputs */
 .qc-input {
   width: 100%;
   padding: 11px 14px;
@@ -425,32 +478,38 @@ async function download() {
   color: var(--color-text-primary);
   font-size: 15px;
 }
-.qc-batch-hint {
-  font-size: 12px;
-  line-height: 1.5;
-  color: var(--color-text-muted);
-  margin: 10px 0 2px;
-}
 .qc-input:focus {
   outline: none;
   border-color: var(--color-accent);
   box-shadow: 0 0 0 3px var(--color-accent-muted);
 }
 
+/* 7. Helper text */
+.qc-batch-hint {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--color-text-muted);
+  margin: 12px 0 2px;
+}
+
+/* ── Footer (pinned) ── */
 .qc-footer {
+  flex: 0 0 auto;
   display: flex;
   justify-content: flex-end;
   gap: 12px;
-  padding: 16px 24px;
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
   border-top: 1px solid var(--color-border-subtle);
   background: var(--color-bg-elevated);
 }
 .qc-btn-primary {
+  flex: 1;
   background: var(--color-accent);
   color: white;
   border: none;
-  padding: 10px 20px;
+  padding: 12px 20px;
   font-weight: 600;
+  font-size: 14px;
   border-radius: var(--radius-pill);
   cursor: pointer;
 }
@@ -462,10 +521,11 @@ async function download() {
   cursor: not-allowed;
 }
 .qc-btn-ghost {
+  flex: 0 0 auto;
   background: transparent;
   border: 1px solid var(--color-border-medium);
   color: var(--color-text-secondary);
-  padding: 10px 18px;
+  padding: 12px 18px;
   border-radius: var(--radius-pill);
   font-weight: 500;
   cursor: pointer;
@@ -475,15 +535,44 @@ async function download() {
   color: var(--color-accent);
 }
 
-@media (max-width: 680px) {
+/* ── Desktop: centered dialog, two columns (sticky preview | controls) ── */
+@media (min-width: 768px) {
+  .qc-backdrop {
+    align-items: center;
+    padding: 20px;
+  }
+  .qc-modal {
+    max-width: 820px;
+    max-height: 92dvh;
+    border-radius: var(--radius-panel);
+  }
+  .qc-header {
+    padding: 18px 24px;
+  }
+  .qc-title {
+    font-size: 20px;
+  }
   .qc-body {
-    grid-template-columns: 1fr;
+    flex-direction: row;
+    gap: 24px;
+    padding: 24px;
   }
   .qc-preview {
-    min-height: 0;
+    position: sticky;
+    top: 0;
+    align-self: flex-start;
+    flex: 0 0 300px;
+    margin-bottom: 0;
   }
   .qc-preview-img {
-    max-width: 240px;
+    width: 100%;
+    max-height: none;
+  }
+  .qc-controls {
+    flex: 1 1 auto;
+  }
+  .qc-footer {
+    padding: 16px 24px;
   }
 }
 </style>

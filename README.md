@@ -39,7 +39,7 @@ A browser-based, bilingual (English / Khmer) platform where:
 - **Khmer-localised** end to end (guest ordering, kitchen, admin).
 - **No app for guests** — works in any mobile browser and as an installable PWA.
 - **Bakong KHQR native billing** — low barrier for local merchants.
-- **QR card designer** — multiple templates, bilingual header/footer, bulk print 9 cards per A4 sheet.
+- **QR card designer** — multiple templates, bilingual header/footer, bulk print 4 cards per A4 sheet.
 - **Real-time kitchen display** with audio and connection status.
 - **Flat monthly pricing** — low, predictable fixed cost.
 
@@ -127,7 +127,7 @@ Order History, Kitchen), **Setup** (Menu, Tables, Staff, Promotions) and **Accou
   QR orders). Plan-based table limit with upgrade prompt.
 - **QR generation** for the public URL `/order/{slug}/{tableId}`; enlarge, **download PNG**, and
   switch to card design.
-- **Bulk print** — 3×3 grid of **9 QR cards per A4 portrait page**.
+- **Bulk print** — 2×2 grid of **4 QR cards per A4 portrait page**.
 - **QR card designer** (`QrCardModal`): multiple image **templates**, **bilingual header**
   (English / ខ្មែរ), editable **headline**, **table label** and **footer** text, with a live canvas
   preview and download.

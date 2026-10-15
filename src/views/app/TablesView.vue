@@ -121,7 +121,7 @@
         <span class="print-icon">🖨</span>
         <div>
           <div class="print-title">{{ $t('tables.printAllQr') }}</div>
-          <div class="print-subtitle">{{ $t('tables.printAllDescription') }}</div>
+          <div class="print-subtitle">{{ $t('tables.printAllDescription', { perPage: CARDS_PER_PAGE }) }}</div>
         </div>
       </div>
       <button class="btn-outline" @click="openBatchDesign">
@@ -274,6 +274,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useI18n } from 'vue-i18n'
 import QRCode from 'qrcode'
 import QrCardModal from '@/components/QrCardModal.vue'
+import { CARDS_PER_PAGE } from '@/lib/qrCard'
 
 const authStore = useAuthStore()
 const { t } = useI18n()

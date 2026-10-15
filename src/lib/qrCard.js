@@ -149,15 +149,23 @@ export function downloadBlob(blob, filename) {
   setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
-// Prints card images onto A4 portrait pages, 3 columns x 3 rows (9 per page).
-// Uses the top-level window.print() with a print-only container. This is the
-// only approach that works on iOS: printing an iframe (iframe.contentWindow
-// .print()) makes iOS WebKit print the parent page instead, and some in-app
-// browsers block iframe printing entirely.
+// Single source of truth for how many cards fit on one printed A4 sheet.
+// The UI text and the print layout below both derive from this constant,
+// so they can never disagree. (Currently 2 x 2 = 4 per page.)
+export const CARDS_PER_PAGE = 4
+
+// Prints card images onto A4 portrait pages, as a square-ish grid derived from
+// CARDS_PER_PAGE (currently 2 columns x 2 rows). Uses the top-level window.print()
+// with a print-only container. This is the only approach that works on iOS:
+// printing an iframe (iframe.contentWindow.print()) makes iOS WebKit print the
+// parent page instead, and some in-app browsers block iframe printing entirely.
 let qrPrintCleanupTimer = null
 
-export function printQrSheet(blobs, { title = 'QR codes', perPage = 9 } = {}) {
+export function printQrSheet(blobs, { title = 'QR codes', perPage = CARDS_PER_PAGE } = {}) {
   if (!blobs?.length || typeof document === 'undefined') return
+
+  const cols = Math.max(1, Math.round(Math.sqrt(perPage)))
+  const rows = Math.max(1, Math.ceil(perPage / cols))
 
   const urls = blobs.map((b) => URL.createObjectURL(b))
 
@@ -186,9 +194,9 @@ export function printQrSheet(blobs, { title = 'QR codes', perPage = 9 } = {}) {
       width: 190mm;
       height: 274mm;
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      grid-template-rows: repeat(3, 1fr);
-      gap: 6mm;
+      grid-template-columns: repeat(${cols}, 1fr);
+      grid-template-rows: repeat(${rows}, 1fr);
+      gap: 8mm;
       page-break-after: always;
       break-after: page;
     }
