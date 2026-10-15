@@ -49,10 +49,9 @@
             <div class="table-icon-wrap">
               <Armchair class="table-icon" />
             </div>
-            <div class="table-details">
-              <span class="table-name">{{ order.tables?.name ?? $t('waiter.orders.unknownTable') }}</span>
-              <span class="order-id">#{{ order.id.slice(-6).toUpperCase() }}</span>
-            </div>
+              <div class="table-details">
+                <span class="table-name">{{ order.tables?.name ?? $t('waiter.orders.unknownTable') }}</span>
+              </div>
           </div>
           <div class="status-badge" :class="`badge-${order.status}`">
             <span class="status-dot"></span>
@@ -201,6 +200,7 @@ function formatStatus(status) {
     pending: t('waiter.orders.statusPending'),
     cooking: t('waiter.orders.statusCooking'),
     ready: t('waiter.orders.statusReady'),
+    delivered: t('waiter.orders.statusDelivered'),
   }
   return map[status] || status
 }
@@ -210,6 +210,7 @@ function statusMeta(status) {
     pending: { title: t('waiter.orders.statusPending'), tone: 'pending' },
     cooking: { title: t('waiter.orders.statusCooking'), tone: 'cooking' },
     ready: { title: t('waiter.orders.statusReady'), tone: 'ready' },
+    delivered: { title: t('waiter.orders.statusDelivered'), tone: 'delivered' },
   }
   return map[status] || null
 }
@@ -283,9 +284,10 @@ function notifyChange(order) {
 
 function progressWidth(status) {
   const map = {
-    pending: '33%',
-    cooking: '66%',
-    ready: '100%',
+    pending: '25%',
+    cooking: '50%',
+    ready: '75%',
+    delivered: '100%',
   }
   return map[status] || '0%'
 }
@@ -303,8 +305,9 @@ async function fetchOrders() {
     .select('*, tables(name), order_items(*, menu_items(name))')
     .eq('restaurant_id', authStore.profile?.restaurant_id)
     .gte('created_at', today.toISOString())
-    .not('status', 'in', '(paid,rejected)')
-    .order('created_at', { ascending: false })
+  .not('status', 'in', '(paid,rejected)')
+  .in('status', ['pending', 'cooking', 'ready', 'delivered'])
+  .order('created_at', { ascending: false })
 
   if (error || !data) return
 
@@ -576,8 +579,8 @@ onUnmounted(() => {
   background: #f97316;
 }
 
-.status-ready::before {
-  background: #4ade80;
+.status-delivered::before {
+  background: #60a5fa;
 }
 
 /* ── Order Header ── */
@@ -670,14 +673,14 @@ onUnmounted(() => {
   background: #f97316;
 }
 
-.badge-ready {
-  background: rgba(74, 222, 128, 0.15);
-  border: 1px solid rgba(74, 222, 128, 0.25);
-  color: #4ade80;
+.badge-delivered {
+  background: rgba(96, 165, 250, 0.15);
+  border: 1px solid rgba(96, 165, 250, 0.25);
+  color: #60a5fa;
 }
 
-.badge-ready .status-dot {
-  background: #4ade80;
+.badge-delivered .status-dot {
+  background: #60a5fa;
   animation: bounce 1s ease-in-out infinite;
 }
 
@@ -831,8 +834,8 @@ onUnmounted(() => {
   background: #f97316;
 }
 
-.progress-ready {
-  background: #4ade80;
+.progress-delivered {
+  background: #60a5fa;
 }
 
 /* ── Refresh Hint ── */

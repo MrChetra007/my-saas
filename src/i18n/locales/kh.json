@@ -1055,7 +1055,8 @@
       "unmuteSound": "បើកសំឡេង",
       "statusPending": "កំពុងរង់ចាំ",
       "statusCooking": "កំពុងចម្អិន",
-      "statusReady": "រួចរាល់"
+      "statusReady": "រួចរាល់",
+      "statusDelivered": "បានដឹកជូន"
     }
   },
   "cashier": {
