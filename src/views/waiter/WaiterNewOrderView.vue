@@ -567,7 +567,7 @@ async function submitOrder() {
       status: 'pending',
       total_amount: finalTotal,
       promotion_id: usedPromo?.id || null,
-      discount_amount: finalDiscount > 0 ? finalDiscount : null,
+      discount_amount: finalDiscount > 0 ? finalDiscount : 0,
     })
     if (orderErr) throw orderErr
 
