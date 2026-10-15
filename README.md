@@ -197,13 +197,18 @@ order-count badge.
 
 ### Tables (`/waiter/tables`)
 
-- View all tables and **toggle active/inactive** (whether the table accepts QR ordering).
+- View all tables with live **status**: **Available** or **Occupied** (occupied = the table has at
+  least one active order in `pending`, `cooking` or `ready`), plus available/occupied counts.
+- **Toggle active/inactive** per table (whether the table accepts QR ordering).
 
 ### My Orders (`/waiter/orders`)
 
 - Today's live orders (excluding paid/rejected) with status badge and **progress bar**
-  (pending → cooking → ready), realtime updates and **notification chimes** (mute toggle persisted).
-- Read-only status tracking.
+  (pending → cooking → ready → delivered), realtime updates and **notification chimes** (mute toggle
+  persisted). Waiters can mark an order **Delivered** once served.
+- Read-only status tracking except the Delivered action.
+- **Connection status**: if the browser or realtime channel drops, a red **"Offline — showing last
+  known orders"** banner appears until the connection is restored.
 
 ---
 
@@ -218,6 +223,8 @@ Role-locked layout with a live pending-order badge.
 - **Receipt modal** with **Download PNG** and **Download PDF** (print). **Confirm Paid** marks every
   order in the group paid.
 - Newly-ready orders trigger a **cash-register sound** and toast.
+- **Connection status**: if the browser or realtime channel drops, a red **"Offline — showing last
+  known orders"** banner appears until the connection is restored.
 
 ### History (`/cashier/history`)
 
@@ -236,6 +243,8 @@ A single always-on board (`/kitchen/orders`) with the restaurant name and a live
 - **Actions**: Pending → **Accept** (cooking) or **Reject** (rejected); Cooking → **Mark Ready**;
   Ready shows "Ready for pickup".
 - **New-order ping** (Web Audio) with mute toggle, force-focus on Pending, and realtime inserts.
+- **Connection status**: if the browser or realtime channel drops, a red **"Offline — showing last
+  known orders"** banner appears until the connection is restored.
 
 ---
 

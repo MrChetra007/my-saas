@@ -1,4 +1,9 @@
 {
+  "connection": {
+    "offline": "Offline — showing last known orders",
+    "reconnecting": "Reconnecting — showing last known orders",
+    "offlineShort": "Offline"
+  },
   "settings": {
     "title": "Settings",
     "subtitle": "Manage your restaurant profile & preferences",
@@ -1024,7 +1029,10 @@
       "statusPending": "Pending",
       "statusCooking": "Cooking",
       "statusReady": "Ready",
-      "statusDelivered": "Delivered"
+      "statusDelivered": "Delivered",
+      "markDelivered": "Mark as Delivered",
+      "marking": "Updating…",
+      "deliveredToast": "Order marked as delivered"
     }
   },
   "cashier": {

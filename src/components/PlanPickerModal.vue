@@ -122,7 +122,7 @@ const { t } = useI18n()
 import { supabase } from '@/lib/supabase'
 import { Zap, X, Star, Check, ArrowRight, Lock, Loader2, AlertCircle } from 'lucide-vue-next'
 
-const props = defineProps({
+defineProps({
   modelValue: {
     type: Boolean,
     default: false,

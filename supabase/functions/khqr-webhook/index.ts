@@ -116,7 +116,6 @@ Deno.serve(async (req) => {
   }
 
   const { event, data } = payload
-  const deliveryId = String(delivery)
 
   // ── 6. Only act on payment.success ───────────────────────────────────────
   if (event !== 'payment.success') {

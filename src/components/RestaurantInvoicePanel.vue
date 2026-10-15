@@ -112,15 +112,10 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { supabase } from '@/lib/supabase'
-import { useAuthStore } from '@/stores/auth'
-import { useI18n } from 'vue-i18n'
 
 const props = defineProps({
   restaurant: { type: Object, required: true },
 })
-
-const authStore = useAuthStore()
-const { t } = useI18n()
 
 const invoices = ref([])
 const loading = ref(false)
@@ -218,7 +213,6 @@ async function approveInvoice(invoice) {
 
 async function viewProof(proofUrl) {
   if (!proofUrl) return
-  const token = (await supabase.auth.getSession()).data.session?.access_token
   const { data } = await supabase.storage
     .from('payment-proofs')
     .createSignedUrl(proofUrl, 300)

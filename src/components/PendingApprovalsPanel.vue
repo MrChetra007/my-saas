@@ -81,10 +81,8 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 import { supabase } from '@/lib/supabase'
-import { useAuthStore } from '@/stores/auth'
 import { useI18n } from 'vue-i18n'
 
-const authStore = useAuthStore()
 const { t } = useI18n()
 
 const emit = defineEmits(['approved', 'rejected'])

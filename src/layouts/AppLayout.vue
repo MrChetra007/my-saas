@@ -266,7 +266,7 @@ import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
 import { setLocale } from '@/i18n'
 import { useI18n } from 'vue-i18n'
-import ProPlanPicker from '@/components/Proplanpicker.vue'
+import ProPlanPicker from '@/components/ProPlanPicker.vue'
 import SubscriptionGateModal from '@/components/SubscriptionGateModal.vue'
 
 const { t } = useI18n()

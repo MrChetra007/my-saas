@@ -169,13 +169,13 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
-import { X, Crown, Activity, Tag, Users, BarChart2, Infinity } from 'lucide-vue-next'
+import { X, Crown, Activity, Tag, Users, BarChart2, Infinity as InfinityIcon } from 'lucide-vue-next'
 import SupportContact from '@/components/SupportContact.vue'
 
 const { t } = useI18n()
 const authStore = useAuthStore()
 
-const props = defineProps({
+defineProps({
   modelValue: { type: Boolean, default: false },
   featureName: { type: String, default: '' },
 })
@@ -198,7 +198,7 @@ let pollTimer = null
 
 const proFeatures = [
   {
-    icon: Infinity,
+    icon: InfinityIcon,
     label: t('trialWall.feature.unlimitedTables'),
     desc: t('plans.featureUnlimitedTablesDesc'),
   },

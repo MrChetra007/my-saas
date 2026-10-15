@@ -433,7 +433,6 @@ function destroyCharts() {
 
 function renderCharts() {
   const labels = buildDayLabels()
-  const currency = authStore.profile?.restaurants?.currency || 'USD'
 
   // Common chart options for dark theme
   const commonOptions = {

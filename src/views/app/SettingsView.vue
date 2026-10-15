@@ -469,8 +469,7 @@ const {
   promptInstall: pwaPromptInstall,
 } = usePWAInstall()
 
-// LemonSqueezy billing is disabled — flip to true to re-enable checkout/portal UI
-const LEMONSQUEEZY_ENABLED = false
+// LemonSqueezy billing is disabled — checkout/portal UI is hidden behind the manual/KHQR flow.
 
 import {
   Save,

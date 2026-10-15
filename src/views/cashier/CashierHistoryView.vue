@@ -113,7 +113,6 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useI18n } from 'vue-i18n'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
 import {
@@ -128,7 +127,6 @@ import {
 } from 'lucide-vue-next'
 
 const authStore = useAuthStore()
-const { t } = useI18n()
 const orders = ref([])
 
 // Computed

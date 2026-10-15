@@ -175,7 +175,9 @@ async function copyWebhookUrl() {
     setTimeout(() => {
       copied.value = false
     }, 2000)
-  } catch {}
+  } catch {
+    // Ignore clipboard errors (e.g. insecure context / permission denied)
+  }
 }
 
 async function saveSettings() {

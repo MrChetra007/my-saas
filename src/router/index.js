@@ -1,13 +1,12 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
 
 // Shared promise resolved once authStore.init() completes.
 // The guard awaits this on every navigation so it never runs
 // with a stale (null) user due to the App.vue onMounted race.
-let authReadyPromise = null
+let _authReadyPromise = null
 export function setAuthReady(promise) {
-  authReadyPromise = promise
+  _authReadyPromise = promise
 }
 
 export function roleHome(role) {
@@ -28,13 +27,13 @@ export function roleHome(role) {
 const routes = [
   // ── Public ──────────────────────────────────────
   { path: '/', component: () => import('@/views/public/LandingView.vue'), meta: { public: true } },
-  { path: '/terms', component: () => import('@/views/public/Terms.vue'), meta: { public: true } },
+  { path: '/terms', component: () => import('@/views/public/TermsView.vue'), meta: { public: true } },
   {
     path: '/privacy',
-    component: () => import('@/views/public/Privacypolicy.vue'),
+    component: () => import('@/views/public/PrivacyPolicyView.vue'),
     meta: { public: true },
   },
-  { path: '/refund', component: () => import('@/views/public/Refund.vue'), meta: { public: true } },
+  { path: '/refund', component: () => import('@/views/public/RefundView.vue'), meta: { public: true } },
   {
     path: '/order/:slug/:tableId',
     component: () => import('@/views/public/OrderView.vue'),

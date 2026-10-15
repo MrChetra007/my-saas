@@ -53,7 +53,7 @@ onMounted(async () => {
     setTimeout(() => {
       if (status.value === 'waiting') status.value = 'invalid'
     }, 4000)
-  } catch (err) {
+  } catch {
     status.value = 'invalid'
   }
 })

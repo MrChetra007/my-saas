@@ -1,5 +1,7 @@
 <template>
   <div class="view-page">
+    <ConnectionBanner :connected="isConnected" :online="browserOnline" />
+
     <div class="view-header">
       <div class="header-content">
         <h1 class="view-title">{{ $t('cashier.orders.title') }}</h1>
@@ -224,6 +226,8 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
+import { useConnectionStatus } from '@/composables/useConnectionStatus'
+import ConnectionBanner from '@/components/ConnectionBanner.vue'
 import {
   TrendingUp,
   Banknote,
@@ -239,6 +243,7 @@ import {
 } from 'lucide-vue-next'
 
 const authStore = useAuthStore()
+const { isConnected, browserOnline, setChannelStatus } = useConnectionStatus()
 const { t } = useI18n()
 const orders = ref([])
 const todayRevenue = ref(0)
@@ -606,6 +611,8 @@ function downloadPdf() {
     )
     .join('')
 
+  const closedScriptTag = '<' + '/script>'
+
   const html = `<!DOCTYPE html>
 <html>
 <head>
@@ -714,7 +721,7 @@ function downloadPdf() {
     <div class="divider">· · · · · · · · · · · · ·</div>
     <div class="footer-thanks">${t('cashier.orders.receiptFooter')}</div>
   </div>
-  <script>window.onload = () => { window.print(); window.onafterprint = () => window.close(); }</script>
+  <script>window.onload = () => { window.print(); window.onafterprint = () => window.close(); }${closedScriptTag}
 </body>
 </html>`
 
@@ -751,7 +758,7 @@ onMounted(async () => {
         fetchTodayRevenue()
       },
     )
-    .subscribe()
+    .subscribe((status) => setChannelStatus(status))
 })
 
 onUnmounted(() => {

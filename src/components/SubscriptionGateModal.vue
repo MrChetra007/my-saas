@@ -228,12 +228,10 @@
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
-import { useI18n } from 'vue-i18n'
 import { useBillingStatus } from '@/composables/useBillingStatus'
 import SupportContact from '@/components/SupportContact.vue'
 
 const authStore = useAuthStore()
-const { t } = useI18n()
 const { billingStatus, planName, planPrice } = useBillingStatus()
 
 const visible = computed(() => billingStatus.value === 'blocked' && !dismissed.value)

@@ -1,5 +1,7 @@
 <template>
   <div class="kitchen-page">
+    <ConnectionBanner :connected="isConnected" :online="browserOnline" />
+
     <!-- ── Toast Container ────────────────── -->
     <Transition name="toast">
       <div v-if="toast.show" class="toast" :class="`toast--${toast.type}`">
@@ -13,8 +15,10 @@
       <div class="header-left">
         <h1 class="kitchen-title">{{ $t('kitchenOrders.title') }}</h1>
         <div class="live-dot-wrap">
-          <span class="live-dot connected" />
-          <span class="live-label">{{ $t('kitchenOrders.live') }}</span>
+          <span class="live-dot" :class="isConnected ? 'connected' : 'disconnected'" />
+          <span class="live-label">
+            {{ isConnected ? $t('kitchenOrders.live') : $t('connection.offlineShort') }}
+          </span>
         </div>
       </div>
       <div class="header-right">
@@ -147,6 +151,8 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
+import { useConnectionStatus } from '@/composables/useConnectionStatus'
+import ConnectionBanner from '@/components/ConnectionBanner.vue'
 import {
   Clock,
   Calendar,
@@ -164,6 +170,7 @@ import {
 import { useI18n } from 'vue-i18n'
 
 const authStore = useAuthStore()
+const { isConnected, browserOnline, setChannelStatus } = useConnectionStatus()
 const { t } = useI18n()
 const orders = ref([])
 const activeTab = ref('pending')
@@ -331,13 +338,13 @@ onMounted(async () => {
   channel = supabase
     .channel('kitchen-orders')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, handleRealtimeChange)
-    .subscribe()
+    .subscribe((status) => setChannelStatus(status))
 })
 
 onUnmounted(() => {
-  channel && supabase.removeChannel(channel)
-  audioCtx && audioCtx.close()
-  toastTimer && clearTimeout(toastTimer)
+  if (channel) supabase.removeChannel(channel)
+  if (audioCtx) audioCtx.close()
+  if (toastTimer) clearTimeout(toastTimer)
 })
 </script>
 
@@ -442,6 +449,10 @@ onUnmounted(() => {
   background: #4ade80;
   box-shadow: 0 0 6px rgba(74, 222, 128, 0.6);
   animation: pulse 2s infinite;
+}
+.live-dot.disconnected {
+  background: #ef4444;
+  box-shadow: 0 0 6px rgba(239, 68, 68, 0.6);
 }
 @keyframes pulse {
   0%,

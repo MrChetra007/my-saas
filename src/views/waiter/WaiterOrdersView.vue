@@ -1,5 +1,7 @@
 <template>
   <div class="my-orders-page">
+    <ConnectionBanner :connected="isConnected" :online="browserOnline" />
+
     <!-- Header -->
     <div class="page-header">
       <div class="header-content">
@@ -15,9 +17,11 @@
           <VolumeX v-if="muted" class="sound-icon" />
           <Volume2 v-else class="sound-icon" />
         </button>
-        <div class="live-indicator">
+        <div class="live-indicator" :class="{ offline: !isConnected }">
           <span class="live-dot"></span>
-          <span class="live-text">{{ $t('waiter.orders.live') }}</span>
+          <span class="live-text">
+            {{ isConnected ? $t('waiter.orders.live') : $t('connection.offlineShort') }}
+          </span>
         </div>
       </div>
     </div>
@@ -91,6 +95,22 @@
           </div>
         </div>
 
+        <!-- Action: mark as delivered (only once the kitchen marks it ready) -->
+        <div v-if="order.status === 'ready'" class="order-actions">
+          <button
+            class="btn-deliver"
+            :disabled="updatingId === order.id"
+            @click="markDelivered(order)"
+          >
+            <CheckCheck class="btn-icon" />
+            {{
+              updatingId === order.id
+                ? $t('waiter.orders.marking')
+                : $t('waiter.orders.markDelivered')
+            }}
+          </button>
+        </div>
+
         <!-- Status Progress Bar -->
         <div class="status-progress">
           <div
@@ -139,14 +159,28 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
-import { ClipboardList, Plus, Armchair, Clock, RefreshCw, Bell, Volume2, VolumeX } from 'lucide-vue-next'
+import { useConnectionStatus } from '@/composables/useConnectionStatus'
+import ConnectionBanner from '@/components/ConnectionBanner.vue'
+import {
+  ClipboardList,
+  Plus,
+  Armchair,
+  Clock,
+  RefreshCw,
+  Bell,
+  Volume2,
+  VolumeX,
+  CheckCheck,
+} from 'lucide-vue-next'
 import { useI18n } from 'vue-i18n'
 
 const authStore = useAuthStore()
+const { isConnected, browserOnline, setChannelStatus } = useConnectionStatus()
 const { t } = useI18n()
 const orders = ref([])
 const toasts = ref([])
 const muted = ref(localStorage.getItem('waiterSoundMuted') === 'true')
+const updatingId = ref(null)
 let channel = null
 let knownOrders = new Map()
 let toastIdCounter = 0
@@ -296,6 +330,35 @@ function orderTotal(order) {
   return order.order_items?.reduce((sum, item) => sum + item.unit_price * item.quantity, 0) || 0
 }
 
+async function markDelivered(order) {
+  if (updatingId.value) return
+  updatingId.value = order.id
+
+  const { error } = await supabase
+    .from('orders')
+    .update({ status: 'delivered' })
+    .eq('id', order.id)
+
+  if (error) {
+    addToast(t('waiter.orders.statusDelivered'), error.message, 'delivered', 5000)
+  } else {
+    // Update locally so the card reflects the change immediately; the realtime
+    // refetch will confirm it (knownOrders is synced to avoid a duplicate toast).
+    const idx = orders.value.findIndex((o) => o.id === order.id)
+    if (idx !== -1) orders.value[idx] = { ...orders.value[idx], status: 'delivered' }
+    knownOrders.set(order.id, 'delivered')
+    const tableName = order.tables?.name ?? t('waiter.orders.unknownTable')
+    addToast(
+      t('waiter.orders.statusDelivered'),
+      `${tableName} · ${t('waiter.orders.deliveredToast')}`,
+      'delivered',
+      3000,
+    )
+  }
+
+  updatingId.value = null
+}
+
 async function fetchOrders() {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
@@ -337,7 +400,7 @@ onMounted(async () => {
     // order_items are inserted just after the order row, so listen for them too
     // and debounce so a single refetch picks up the order together with its items.
     .on('postgres_changes', { event: '*', schema: 'public', table: 'order_items' }, scheduleFetch)
-    .subscribe()
+    .subscribe((status) => setChannelStatus(status))
 })
 
 onUnmounted(() => {
@@ -463,6 +526,20 @@ onUnmounted(() => {
   letter-spacing: 0.05em;
 }
 
+.live-indicator.offline {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.live-indicator.offline .live-dot {
+  background: #ef4444;
+  animation: none;
+}
+
+.live-indicator.offline .live-text {
+  color: #ef4444;
+}
+
 /* ── Empty State ── */
 .empty-state {
   text-align: center;
@@ -579,6 +656,10 @@ onUnmounted(() => {
   background: #f97316;
 }
 
+.status-ready::before {
+  background: #4ade80;
+}
+
 .status-delivered::before {
   background: #60a5fa;
 }
@@ -671,6 +752,16 @@ onUnmounted(() => {
 
 .badge-cooking .status-dot {
   background: #f97316;
+}
+
+.badge-ready {
+  background: rgba(74, 222, 128, 0.15);
+  border: 1px solid rgba(74, 222, 128, 0.25);
+  color: #4ade80;
+}
+
+.badge-ready .status-dot {
+  background: #4ade80;
 }
 
 .badge-delivered {
@@ -809,6 +900,46 @@ onUnmounted(() => {
   color: #c8733a;
 }
 
+/* ── Order Actions ── */
+.order-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.btn-deliver {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  background: #4ade80;
+  border: none;
+  border-radius: 10px;
+  color: #06281a;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-deliver:hover:not(:disabled) {
+  background: #6ee7a0;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(74, 222, 128, 0.25);
+}
+
+.btn-deliver:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-deliver .btn-icon {
+  width: 16px;
+  height: 16px;
+  color: #06281a;
+}
+
 /* ── Status Progress Bar ── */
 .status-progress {
   height: 4px;
@@ -832,6 +963,10 @@ onUnmounted(() => {
 
 .progress-cooking {
   background: #f97316;
+}
+
+.progress-ready {
+  background: #4ade80;
 }
 
 .progress-delivered {

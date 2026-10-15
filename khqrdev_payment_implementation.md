@@ -590,6 +590,6 @@ size parameter — QR size is CSS only.
 | Create payment | `supabase/functions/khqr-payment/index.ts` |
 | Confirm payment | `supabase/functions/khqr-webhook/index.ts` |
 | Price config UI | `src/components/PlatformSettingsCard.vue`, `src/views/super-admin/SuperAdminSettings.vue` |
-| Payment modals | `src/components/SubscriptionGateModal.vue`, `src/components/Proplanpicker.vue`, `src/views/public/TrialWallView.vue` |
+| Payment modals | `src/components/SubscriptionGateModal.vue`, `src/components/ProPlanPicker.vue`, `src/views/public/TrialWallView.vue` |
 | Schema + RLS | `002_khqr_billing.sql`, `004_khqrdev_payment.sql` |
 | API reference | `khqr_platform_guide.md` |
