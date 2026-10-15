@@ -6,11 +6,15 @@
         <h1 class="page-title">{{ $t('waiter.tables.title') }}</h1>
         <p class="page-subtitle">{{ $t('waiter.tables.subtitle') }}</p>
       </div>
-      <div class="stats-pill" v-if="!loading && tables.length > 0">
-        <span class="stats-active">{{ activeCount }}</span>
-        <span class="stats-separator">/</span>
-        <span class="stats-total">{{ tables.length }}</span>
-        <span class="stats-label">{{ $t('waiter.tables.active') }}</span>
+      <div class="stats-group" v-if="!loading && tables.length > 0">
+        <div class="stats-pill">
+          <span class="stats-count stats-count--available">{{ availableCount }}</span>
+          <span class="stats-label">{{ $t('waiter.tables.statusAvailable') }}</span>
+        </div>
+        <div class="stats-pill">
+          <span class="stats-count stats-count--occupied">{{ occupiedCount }}</span>
+          <span class="stats-label">{{ $t('waiter.tables.statusOccupied') }}</span>
+        </div>
       </div>
     </div>
 
@@ -36,20 +40,21 @@
         :key="table.id"
         class="table-card"
         :class="{
-          'table-card--active': table.is_active,
-          'table-card--inactive': !table.is_active,
+          'table-card--available': tableStatus(table) === 'available',
+          'table-card--occupied': tableStatus(table) === 'occupied',
+          'table-card--inactive': tableStatus(table) === 'inactive',
           'table-card--toggling': toggling === table.id,
         }"
       >
         <div class="table-card-content">
-          <div class="table-icon-wrap" :class="{ 'table-icon--active': table.is_active }">
+          <div class="table-icon-wrap" :class="`table-icon--${tableStatus(table)}`">
             <Armchair class="table-icon" />
           </div>
           <div class="table-info">
             <h3 class="table-name">{{ table.name }}</h3>
             <div class="table-status">
-              <span class="status-dot" :class="{ 'status-dot--active': table.is_active }"></span>
-              <span class="status-text">{{ table.is_active ? $t('waiter.tables.statusActive') : $t('waiter.tables.statusInactive') }}</span>
+              <span class="status-dot" :class="`status-dot--${tableStatus(table)}`"></span>
+              <span class="status-text" :class="`status-text--${tableStatus(table)}`">{{ statusLabel(table) }}</span>
             </div>
             <p class="table-hint" v-if="!table.is_active">{{ $t('waiter.tables.qrDisabled') }}</p>
           </div>
@@ -82,16 +87,37 @@
 
 <script setup>
 import { ref, onMounted, computed, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { supabase } from '@/lib/supabase'
 import { useAuthStore } from '@/stores/auth'
 import { LayoutGrid, Armchair, Power, Info } from 'lucide-vue-next'
 
+const { t } = useI18n()
 const authStore = useAuthStore()
 const tables = ref([])
 const loading = ref(true)
 const toggling = ref(null)
+const occupiedTableIds = ref(new Set())
 
-const activeCount = computed(() => tables.value.filter((t) => t.is_active).length)
+const availableCount = computed(
+  () => tables.value.filter((tb) => tb.is_active && !occupiedTableIds.value.has(tb.id)).length,
+)
+const occupiedCount = computed(
+  () => tables.value.filter((tb) => occupiedTableIds.value.has(tb.id)).length,
+)
+
+function tableStatus(table) {
+  if (!table.is_active) return 'inactive'
+  return occupiedTableIds.value.has(table.id) ? 'occupied' : 'available'
+}
+
+function statusLabel(table) {
+  const status = tableStatus(table)
+  if (status === 'inactive') return t('waiter.tables.statusInactive')
+  return status === 'occupied'
+    ? t('waiter.tables.statusOccupied')
+    : t('waiter.tables.statusAvailable')
+}
 
 async function fetchTables() {
   const { data, error } = await supabase
@@ -103,14 +129,28 @@ async function fetchTables() {
   if (!error && data) tables.value = data
   loading.value = false
 }
-let realtimeChannel = null
+
+// A table is occupied while it has an order that is not paid yet
+// (i.e. pending, cooking or ready).
+async function fetchOccupied() {
+  const { data, error } = await supabase
+    .from('orders')
+    .select('table_id')
+    .eq('restaurant_id', authStore.profile?.restaurant_id)
+    .in('status', ['pending', 'cooking', 'ready'])
+    .not('table_id', 'is', null)
+
+  if (!error && data) occupiedTableIds.value = new Set(data.map((o) => o.table_id))
+}
+let tablesChannel = null
+let ordersChannel = null
 
 function subscribeRealtime() {
   const restaurantId = authStore.profile?.restaurant_id
   if (!restaurantId) return
 
-  realtimeChannel = supabase
-    .channel('kitchen-tables')
+  tablesChannel = supabase
+    .channel('waiter-tables')
     .on(
       'postgres_changes',
       {
@@ -122,10 +162,25 @@ function subscribeRealtime() {
       () => fetchTables(),
     )
     .subscribe()
+
+  ordersChannel = supabase
+    .channel('waiter-tables-orders')
+    .on(
+      'postgres_changes',
+      {
+        event: '*',
+        schema: 'public',
+        table: 'orders',
+        filter: `restaurant_id=eq.${restaurantId}`,
+      },
+      () => fetchOccupied(),
+    )
+    .subscribe()
 }
 
 onUnmounted(() => {
-  if (realtimeChannel) supabase.removeChannel(realtimeChannel)
+  if (tablesChannel) supabase.removeChannel(tablesChannel)
+  if (ordersChannel) supabase.removeChannel(ordersChannel)
 })
 
 async function toggleTable(table) {
@@ -152,7 +207,7 @@ async function toggleTable(table) {
 }
 
 onMounted(async () => {
-  await fetchTables()
+  await Promise.all([fetchTables(), fetchOccupied()])
   subscribeRealtime()
 })
 </script>
@@ -219,23 +274,26 @@ onMounted(async () => {
   font-family: var(--font-display, 'Fraunces', 'Noto Sans Khmer', serif);
 }
 
-.stats-active {
+.stats-group {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.stats-count {
   font-size: 24px;
   font-weight: 700;
+}
+
+.stats-count--available {
   color: #4ade80;
 }
 
-.stats-separator {
-  font-size: 18px;
-  color: rgba(255, 255, 255, 0.35);
-  margin: 0 2px;
+.stats-count--occupied {
+  color: #fbbf24;
 }
 
-.stats-total {
-  font-size: 20px;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.75);
-}
+
 
 .stats-label {
   font-size: 12px;
@@ -343,9 +401,14 @@ onMounted(async () => {
   transform: translateY(-2px);
 }
 
-.table-card--active {
+.table-card--available {
   border-color: rgba(74, 222, 128, 0.25);
   background: linear-gradient(135deg, #161616 0%, rgba(74, 222, 128, 0.05) 100%);
+}
+
+.table-card--occupied {
+  border-color: rgba(251, 191, 36, 0.3);
+  background: linear-gradient(135deg, #161616 0%, rgba(251, 191, 36, 0.06) 100%);
 }
 
 .table-card--inactive {
@@ -378,9 +441,14 @@ onMounted(async () => {
   flex-shrink: 0;
 }
 
-.table-icon-wrap.table-icon--active {
+.table-icon-wrap.table-icon--available {
   background: rgba(74, 222, 128, 0.15);
   box-shadow: 0 0 20px rgba(74, 222, 128, 0.2);
+}
+
+.table-icon-wrap.table-icon--occupied {
+  background: rgba(251, 191, 36, 0.15);
+  box-shadow: 0 0 20px rgba(251, 191, 36, 0.2);
 }
 
 .table-icon {
@@ -390,8 +458,12 @@ onMounted(async () => {
   transition: all 0.3s ease;
 }
 
-.table-icon-wrap.table-icon--active .table-icon {
+.table-icon-wrap.table-icon--available .table-icon {
   color: #4ade80;
+}
+
+.table-icon-wrap.table-icon--occupied .table-icon {
+  color: #fbbf24;
 }
 
 .table-info {
@@ -425,9 +497,15 @@ onMounted(async () => {
   transition: all 0.3s ease;
 }
 
-.status-dot--active {
+.status-dot--available {
   background: #4ade80;
   box-shadow: 0 0 8px #4ade80;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.status-dot--occupied {
+  background: #fbbf24;
+  box-shadow: 0 0 8px #fbbf24;
   animation: pulse 2s ease-in-out infinite;
 }
 
@@ -448,8 +526,12 @@ onMounted(async () => {
   transition: all 0.3s ease;
 }
 
-.table-card--active .status-text {
+.status-text--available {
   color: #4ade80;
+}
+
+.status-text--occupied {
+  color: #fbbf24;
 }
 
 .table-hint {

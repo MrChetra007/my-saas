@@ -714,7 +714,7 @@ function downloadPdf() {
     <div class="divider">· · · · · · · · · · · · ·</div>
     <div class="footer-thanks">${t('cashier.orders.receiptFooter')}</div>
   </div>
-  <script>window.onload = () => { window.print(); window.onafterprint = () => window.close(); }<\/script>
+  <script>window.onload = () => { window.print(); window.onafterprint = () => window.close(); }</script>
 </body>
 </html>`
 

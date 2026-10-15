@@ -992,17 +992,19 @@
     },
     "tables": {
       "title": "Tables",
-      "subtitle": "Toggle tables active or inactive. Inactive tables won't accept new orders via QR.",
+      "subtitle": "See which tables are available or occupied, and toggle QR ordering.",
       "active": "active",
       "loading": "Loading tables...",
       "emptyTitle": "No tables found",
       "emptySubtitle": "Contact your manager to add tables to the system",
       "statusActive": "Active",
       "statusInactive": "Inactive",
+      "statusAvailable": "Available",
+      "statusOccupied": "Occupied",
       "qrDisabled": "QR ordering disabled",
       "deactivate": "Deactivate {name}",
       "activate": "Activate {name}",
-      "infoFooter": "Active tables can receive orders via QR code scanning. Inactive tables are temporarily disabled."
+      "infoFooter": "A table is occupied while it has an unpaid order. Inactive tables are temporarily disabled for QR ordering."
     },
     "orders": {
       "title": "My Orders",
