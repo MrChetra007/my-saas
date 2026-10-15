@@ -41,7 +41,7 @@ A browser-based, bilingual (English / Khmer) platform where:
 - **Bakong KHQR native billing** — low barrier for local merchants.
 - **QR card designer** — multiple templates, bilingual header/footer, bulk print 9 cards per A4 sheet.
 - **Real-time kitchen display** with audio and connection status.
-- **Flat + transaction-fee pricing** — low fixed cost tied to order volume.
+- **Flat monthly pricing** — low, predictable fixed cost.
 
 ---
 
@@ -254,9 +254,8 @@ Platform-wide administration for QRserve staff.
 
 ### Dashboard (`/super-admin/dashboard`)
 
-- KPIs: **Total Restaurants**, **Total Users**, **Active Subscriptions**, **Total MRR** (Manual vs
-  LemonSqueezy split).
-- **Subscription breakdown** (LemonSqueezy / Manual / Trial / Expired) as proportion bars.
+- KPIs: **Total Restaurants**, **Total Users**, **Active Subscriptions**, **Total MRR**.
+- **Subscription breakdown** (Manual / Trial / Expired) as proportion bars.
 - **Expiring soon** list (manual subscriptions within 14 days) and **recently upgraded** restaurants.
 
 ### Restaurants (`/super-admin/restaurants`)
@@ -282,7 +281,7 @@ Platform-wide administration for QRserve staff.
 ### Settings (`/super-admin/settings`)
 
 - Super-admin **profile** and **password**.
-- **Pricing config**: base fees for Starter/Pro (Manual and LemonSqueezy).
+- **Pricing config**: flat monthly fees for Starter ($15) and Pro ($25).
 - **App settings**: trial days and expiry-warning days.
 - **Platform / KHQR card**: Bakong merchant config (account id, merchant name/city), KHQR.dev
   webhook URL (copy), and **support contacts** (phone / Facebook / Telegram) shown to merchants.
@@ -291,8 +290,7 @@ Platform-wide administration for QRserve staff.
 
 ## Billing & Plans
 
-Three billing flows exist; **KHQR.dev is the primary/local flow**, manual proof is the fallback, and
-LemonSqueezy is legacy.
+Two billing flows exist; **KHQR.dev is the primary/local flow** and manual proof is the fallback.
 
 1. **KHQR.dev (primary)** — `khqr-payment` creates the QR + invoice; `khqr-webhook` verifies the
    HMAC-SHA256 signature and activates the subscription. QR expires in 10 minutes; the client polls
@@ -300,22 +298,21 @@ LemonSqueezy is legacy.
 2. **Manual proof** — `generate-khqr-invoice`, `submit-payment-proof`, `approve-invoice`,
    `reject-invoice`, `mark-invoice-paid`. Super Admin reviews payment screenshots; a 2-day grace
    period starts on submission.
-3. **LemonSqueezy (legacy)** — `create-checkout-session`, `create-portal-session`,
-   `lemonsqueezy-webhook`. Retained for compatibility, not the primary flow.
 
 ### Pricing
 
 Subscription pricing lives in the database (`public.plans` and `platform_settings.app_config`) and
-is configurable from **Super Admin → Settings** without a redeploy. The seeded defaults are:
+is configurable from **Super Admin → Settings** without a redeploy. The seeded defaults are flat
+monthly fees — no transaction fees:
 
-| Plan    | Monthly base | Transaction fee       | Tables    | Staff | Notes                       |
-| ------- | ------------ | --------------------- | --------- | ----- | --------------------------- |
-| Trial   | Free         | —                     | 15        | 3     | 14 days                     |
-| Starter | $10 / mo     | 2.00% of order volume | 15        | 3     |                             |
-| Pro     | $20 / mo     | 1.00% of order volume | Unlimited | 10    | Analytics + Promotions, KDS |
+| Plan    | Monthly fee | Tables    | Staff | Notes                       |
+| ------- | ----------- | --------- | ----- | --------------------------- |
+| Trial   | Free        | 15        | 3     | 14 days                     |
+| Starter | $15 / mo    | 15        | 3     |                             |
+| Pro     | $25 / mo    | Unlimited | 10    | Analytics + Promotions, KDS |
 
-> Billing is a **flat base fee + a percentage of the restaurant's order volume** for the period.
-> Amounts are always computed server-side when generating the invoice.
+> Billing is a **flat monthly fee**. Amounts are always computed server-side when generating the
+> invoice.
 
 Plan limits are enforced in-app: **tables** (Trial/Starter 15, Pro unlimited) and **staff seats**
 (Trial/Starter 3, Pro 10). **Analytics** and **Promotions** are Pro features.
@@ -343,7 +340,7 @@ Plan limits are enforced in-app: **tables** (Trial/Starter 15, Pro unlimited) an
 
 - **Frontend:** Vue 3 (Composition API), Pinia, Vue Router 5, Tailwind CSS v4
 - **Backend:** Supabase — Auth, Postgres, Realtime, Storage, Edge Functions
-- **Payments:** Bakong KHQR via KHQR.dev (primary), manual proof flow, LemonSqueezy (legacy)
+- **Payments:** Bakong KHQR via KHQR.dev (primary), manual proof flow
 - **UI utilities:** Chart.js, `qrcode`
 - **i18n:** vue-i18n — English + Khmer
 - **PWA:** `vite-plugin-pwa` (installable, offline-capable)
