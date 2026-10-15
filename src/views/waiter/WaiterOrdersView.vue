@@ -340,7 +340,7 @@ async function markDelivered(order) {
     .eq('id', order.id)
 
   if (error) {
-    addToast(t('waiter.orders.statusDelivered'), error.message, 'delivered', 5000)
+    addToast(t('waiter.orders.deliverFailed'), error.message, 'delivered', 5000)
   } else {
     // Update locally so the card reflects the change immediately; the realtime
     // refetch will confirm it (knownOrders is synced to avoid a duplicate toast).

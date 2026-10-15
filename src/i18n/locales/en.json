@@ -1032,7 +1032,8 @@
       "statusDelivered": "Delivered",
       "markDelivered": "Mark as Delivered",
       "marking": "Updating…",
-      "deliveredToast": "Order marked as delivered"
+      "deliveredToast": "Order marked as delivered",
+      "deliverFailed": "Couldn't mark as delivered"
     }
   },
   "cashier": {
