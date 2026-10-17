@@ -188,7 +188,7 @@ async function fetchPendingOrdersCount() {
     .select('*', { count: 'exact', head: true })
     .eq('restaurant_id', restaurantId)
     .gte('created_at', startOfDay)
-    .in('status', ['pending', 'cooking', 'ready'])
+    .in('status', ['pending', 'cooking', 'ready', 'delivered'])
 
   pendingOrdersCount.value = count || 0
 }

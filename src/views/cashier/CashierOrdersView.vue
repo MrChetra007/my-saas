@@ -415,7 +415,7 @@ async function fetchOrders() {
     .from('orders')
     .select('*, tables(name), order_items(*, menu_items(name))')
     .eq('restaurant_id', authStore.profile?.restaurant_id)
-    .eq('status', 'ready')
+    .in('status', ['ready', 'delivered'])
     .order('created_at', { ascending: true })
 
   if (data) {
@@ -740,7 +740,7 @@ onMounted(async () => {
     .from('orders')
     .select('id')
     .eq('restaurant_id', authStore.profile?.restaurant_id)
-    .eq('status', 'ready')
+    .in('status', ['ready', 'delivered'])
   if (data) knownOrderIds = new Set(data.map((o) => o.id))
 
   channel = supabase
